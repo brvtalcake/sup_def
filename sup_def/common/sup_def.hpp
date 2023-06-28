@@ -49,16 +49,16 @@ namespace SupDef
     class Parser
     {
         private:
-            typedef std::ifstream::pos_type pos_type;
+            typedef char internal_parsed_char_t;
+            typedef std::basic_ifstream<internal_parsed_char_t>::pos_type pos_type;
 
-            std::ifstream* file;
+            std::basic_ifstream<internal_parsed_char_t>* file;
             pos_type last_error_pos;
 
-            operator bool() const noexcept;
-            Parser& operator>>(std::string& str);
-
         public:
-            std::string* file_content;
+            typedef internal_parsed_char_t parsed_char_t;
+            
+            std::basic_string<internal_parsed_char_t>* file_content;
             enum class State : uint64_t
             {
                 OK = 0,
@@ -71,6 +71,7 @@ namespace SupDef
             Parser(std::filesystem::path file_path);
             ~Parser() noexcept;
             
+            std::basic_string<parsed_char_t>* slurp_file();
             Parser& strip_comments(void);
     };
 
@@ -79,6 +80,7 @@ namespace SupDef
         private:
             std::filesystem::path tmp_file_path;
             class Parser* parser;
+
         public:
             std::filesystem::path src_file_path;
             std::filesystem::path dst_file_path;
