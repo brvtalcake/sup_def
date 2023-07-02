@@ -58,3 +58,4 @@ sup_def/clang/**
 sup_def/gcc/**
 test
 test.cpp
+test_copied.cpp

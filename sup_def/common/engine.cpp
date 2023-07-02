@@ -31,7 +31,8 @@ namespace SupDef
 {
     Engine::Engine()
     {
-        std::setlocale(LC_ALL, "en_US.UTF-8");
+        /* std::locale::global(std::locale("en_US.UTF-8")); */
+        set_app_locale();
         this->src_file_path = std::filesystem::path();
         this->dst_file_path = std::filesystem::path();
         this->parser = new Parser();
@@ -41,7 +42,8 @@ namespace SupDef
         requires FilePath<T> && FilePath<U>
     Engine::Engine(const T *const src_file_name, const U *const dst_file_name)
     {
-        std::setlocale(LC_ALL, "en_US.UTF-8");
+        /* std::locale::global(std::locale("en_US.UTF-8")); */
+        set_app_locale();
         this->src_file_path = std::filesystem::path(src_file_name);
         this->dst_file_path = std::filesystem::path(dst_file_name);
         if (!std::filesystem::exists(this->src_file_path))
