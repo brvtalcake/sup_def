@@ -26,19 +26,21 @@
 
 namespace SupDef
 {
-    template <typename T>
-        requires CharacterType<T>
-    Pragma<T>::Pragma()
+    CmdLine::CmdLine(int argc, char** argv)
     {
-        this->body = new std::basic_string<T>();
-        this->name = new std::basic_string<T>();
-        this->args = new std::vector<std::basic_string<T>>();
+        this->argc = argc;
+        this->argv = argv;
     }
 
-    template <typename T>
-        requires CharacterType<T>
-    Pragma<T>::Pragma(const std::vector<std::basic_string<T>>& full_pragma)
+    void CmdLine::update_engine(void)
     {
-        
+        Engine::clear_include_paths();
+        for (std::filesystem::path inc : this->include_paths)
+            Engine::add_include_path<std::filesystem::path>(inc);
+    }
+
+    void CmdLine::parse(void)
+    {
+        // TO BE IMPLEMENTED
     }
 }

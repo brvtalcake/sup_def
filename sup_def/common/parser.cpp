@@ -22,8 +22,14 @@
  * SOFTWARE.
  */
 
+#include <cassert>
 #include <cstring>
 #include <locale>
+#include <regex>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <map>
 
 #include <sup_def/common/sup_def.hpp>
 
@@ -33,10 +39,10 @@ namespace SupDef
     {
         try
         {
-            this->file = new std::basic_ifstream<private_parsed_char_t>();
-            this->file_content = new std::basic_string<private_parsed_char_t>();
+            this->file = new std::basic_ifstream<parsed_char_t>();
+            this->file_content = new std::basic_string<parsed_char_t>();
+            this->lines = nullptr;
             this->last_error_pos = 0;
-            this->pragmas = new std::unordered_map<Parser::location_type, Pragma<private_parsed_char_t>>();
         }
         catch (const std::exception& e)
         {
@@ -48,12 +54,10 @@ namespace SupDef
     {
         try
         {
-            this->file = new std::basic_ifstream<private_parsed_char_t>(file_path);
-            this->file_content = new std::basic_string<private_parsed_char_t>();
+            this->file = new std::basic_ifstream<parsed_char_t>(file_path);
+            this->file_content = new std::basic_string<parsed_char_t>();
+            this->lines = nullptr;
             this->last_error_pos = 0;
-            this->slurp_file();
-            this->strip_comments();
-            // TODO: Locate pragmas and feed this->pragmas with them
         }
         catch (const std::exception& e)
         {
@@ -63,9 +67,12 @@ namespace SupDef
 
     Parser::~Parser() noexcept
     {
-        delete this->file;
-        delete this->file_content;
-        delete this->pragmas;
+        if (this->file)
+            delete this->file;
+        if (this->file_content)
+            delete this->file_content;
+        if (this->lines)
+            delete this->lines;
     }
 
     std::basic_string<Parser::parsed_char_t>* Parser::slurp_file()
@@ -75,7 +82,7 @@ namespace SupDef
         if (!this->file->is_open())
             throw std::runtime_error("File is not open");
 
-        this->file->seekg(0, std::basic_ios<private_parsed_char_t>::end);
+        this->file->seekg(0, std::basic_ios<parsed_char_t>::end);
         try
         {
             this->file_content->reserve(this->file->tellg());
@@ -84,12 +91,12 @@ namespace SupDef
         {
             throw std::runtime_error("Failed to reserve file content: " + std::string(e.what()) + "\n");
         }
-        this->file->seekg(0, std::basic_ios<private_parsed_char_t>::beg);
+        this->file->seekg(0, std::basic_ios<parsed_char_t>::beg);
 
         try
         {
             this->file_content->clear();
-            std::basic_ostringstream<private_parsed_char_t> sstr;
+            std::basic_ostringstream<parsed_char_t> sstr;
             sstr << this->file->rdbuf();
             this->file_content->assign(sstr.str());
         }
@@ -97,10 +104,11 @@ namespace SupDef
         {
             throw std::runtime_error("Failed to slurp file content: " + std::string(e.what()) + "\n");
         }
+        this->lines = new std::vector<std::basic_string<parsed_char_t>>(split_string(*this->file_content, '\n'));
         return this->file_content;
     }
 
-    // Strip C- and C++- style comments from this->file_content string.
+    // Strip C and C++ style comments from this->file_content string.
     Parser& Parser::strip_comments(void)
     {
         if (!this->file_content)
@@ -167,29 +175,108 @@ namespace SupDef
         return *this;
     }
 
-    // Locates pragma start and pragma end positions in this->file_content string.
-    std::vector<std::vector<std::basic_string<Parser::parsed_char_t>::size_type>> Parser::locate_pragmas(void)
+    // Locates pragmas' start line and pragmas' end line in this->file_content string
+    std::vector<std::vector<string_size_type<Parser::parsed_char_t>>> Parser::locate_pragmas(void)
     {
         if (!this->file_content)
             throw std::runtime_error("File content is null");
         if (this->file_content->empty())
             throw std::runtime_error("File content is empty");
 
-        std::basic_string<Parser::parsed_char_t>::size_type pragma_start_pos = 0;
-        std::basic_string<Parser::parsed_char_t>::size_type pragma_end_pos = 0;
-        while ((pragma_start_pos = this->file_content->find("#pragma", pragma_start_pos)) != std::basic_string<Parser::parsed_char_t>::npos)
+        using loc_t = std::vector<string_size_type<Parser::parsed_char_t>>;
+
+        string_size_type<Parser::parsed_char_t> pragma_start_pos = 0;
+        string_size_type<Parser::parsed_char_t> pragma_end_pos = 0;
+        std::vector<loc_t> pragma_locations;
+
+        std::vector<std::basic_string<Parser::parsed_char_t>>
+            splitted_file_content   =
+                this->lines         ?
+                *this->lines        :
+                split_string(*this->file_content, '\n');
+        bool in_supdef = false;
+        using pos_t = string_size_type<Parser::parsed_char_t>;
+        pos_t line_num = 0;
+        for (std::basic_string<Parser::parsed_char_t> line : splitted_file_content)
         {
-            pragma_start_pos = skip_whitespaces<Parser::parsed_char_t>(*(this->file_content), pragma_start_pos);
-            std::basic_string<Parser::parsed_char_t> substr = this->file_content->substr(pragma_start_pos, std::strlen(SUPDEF_PRAGMA_NAME));
-            if (substr.compare(SUPDEF_PRAGMA_NAME) == 0)
+            pos_t p = line.find("#pragma");
+            if (p == std::basic_string<Parser::parsed_char_t>::npos)
             {
-                pragma_start_pos += std::strlen(SUPDEF_PRAGMA_NAME);
-                pragma_start_pos = skip_whitespaces<Parser::parsed_char_t>(*(this->file_content), pragma_start_pos);
-                
+                ++line_num;
+                continue;
             }
-            else
-                pragma_start_pos++;
+
+            using regex_t = std::basic_regex<Parser::parsed_char_t>;
+            using match_res_t = std::match_results<std::basic_string<Parser::parsed_char_t>::const_iterator>;
+
+            regex_t pragma_start_regex(R"((#(\s*)pragma(\s+)supdef(\s+)start(\s+)(.*)))", std::regex_constants::ECMAScript);
+            regex_t pragma_end_regex(R"((#(\s*)pragma(\s+)supdef(\s+)end(\s+)(.*)))", std::regex_constants::ECMAScript);
+            match_res_t match_res;
+
+            try
+            {
+                if (std::regex_match(line, match_res, pragma_start_regex))
+                {
+                    if (in_supdef)
+                    {
+                        this->last_error_pos = pragma_start_pos;
+                        throw std::runtime_error("Pragma start found while already in a supdef block");
+                    }
+                    pragma_start_pos = line_num;
+                    in_supdef = true;
+                }
+                else if (std::regex_match(line, match_res, pragma_end_regex))
+                {
+                    if (!in_supdef)
+                    {
+                        this->last_error_pos = pragma_end_pos;
+                        throw std::runtime_error("Pragma end found while not in a supdef block");
+                    }
+                    else if (match_res[0].first != line.begin())
+                    {
+                        this->last_error_pos = pragma_start_pos;
+                        throw std::runtime_error("Pragma end found not at start of line");
+                    }
+                    pragma_end_pos = line_num;
+                    // Add pragma start and end to location vector
+                    pragma_locations.push_back(loc_t{pragma_start_pos, pragma_end_pos});
+                    in_supdef = false;
+                }
+            }
+            catch (const std::exception& e)
+            {
+                throw std::runtime_error("Failed to locate pragmas: " + std::string(e.what()) + "\n");
+            }
+            ++line_num;
         }
+        return pragma_locations;
+    }
+
+    Parser& Parser::process_file(void)
+    {
+        try
+        {
+            this->slurp_file();
+            this->strip_comments();
+            this->pragmas.clear();
+            // TODO: Locate pragmas and feed this->pragmas with them
+            auto pragma_locs = this->locate_pragmas();
+            for (SupDef::Parser::pragma_loc_t loc : pragma_locs)
+            {
+                std::basic_string<Parser::parsed_char_t> pragma_content;
+                for (size_t i = loc[0]; i < loc[1]; i++)
+                {
+                    pragma_content += (*this->lines)[i];
+                    pragma_content += '\n';
+                }
+                this->pragmas.emplace(std::make_pair(loc, pragma_content));
+            }
+        }
+        catch (const std::exception& e)
+        {
+            throw std::runtime_error("Failed to process file: " + std::string(e.what()) + "\n");
+        }
+        // Next, locate supdefs instantiations and replace them with their content
     }
 }
 
