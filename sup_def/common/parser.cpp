@@ -258,7 +258,7 @@ namespace SupDef
         {
             this->slurp_file();
             this->strip_comments();
-            this->pragmas.clear();
+            /* this->pragmas.clear(); */
             // TODO: Locate pragmas and feed this->pragmas with them
             auto pragma_locs = this->locate_pragmas();
             for (SupDef::Parser::pragma_loc_t loc : pragma_locs)
@@ -269,7 +269,7 @@ namespace SupDef
                     pragma_content += (*this->lines)[i];
                     pragma_content += '\n';
                 }
-                this->pragmas.emplace(std::make_pair(loc, pragma_content));
+                /* this->pragmas.emplace(std::make_pair(loc, pragma_content)); */
             }
         }
         catch (const std::exception& e)

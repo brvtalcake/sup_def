@@ -26,6 +26,8 @@
 
 namespace SupDef
 {
+    std::vector<std::filesystem::path> Engine::include_paths;
+
     Engine::Engine()
     {
         set_app_locale();

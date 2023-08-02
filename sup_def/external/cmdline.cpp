@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+#include <getopt.h>
+
 #include <sup_def/common/sup_def.hpp>
 
 namespace SupDef
@@ -30,6 +32,12 @@ namespace SupDef
     {
         this->argc = argc;
         this->argv = argv;
+    }
+
+    CmdLine::CmdLine(int argc, const char* argv[])
+    {
+        this->argc = argc;
+        this->argv = const_cast<char**>(argv);
     }
 
     void CmdLine::update_engine(void)
@@ -41,6 +49,30 @@ namespace SupDef
 
     void CmdLine::parse(void)
     {
-        // TO BE IMPLEMENTED
+        int c;
+        while ((c = getopt(this->argc, this->argv, "I:o:")) != -1)
+        {
+            switch (c)
+            {
+                case 'I':
+                    if (!std::filesystem::exists(get_normalized_path(std::filesystem::path(optarg))))
+                        throw Exception<char>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(optarg) + "\" does not exist");
+                    this->include_paths.push_back(get_normalized_path(std::filesystem::path(optarg)));
+                    break;
+                case 'o':
+                    this->output_file = get_normalized_path(std::filesystem::path(optarg));
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (optind < this->argc && this->argv[optind] != nullptr 
+                && std::filesystem::exists(get_normalized_path(std::filesystem::path(this->argv[optind]))))
+            this->input_file = get_normalized_path(std::filesystem::path(this->argv[optind]));
+        else if (optind < this->argc && this->argv[optind] != nullptr)
+            throw Exception<char>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(this->argv[optind]) + "\" does not exist");
+        else
+            throw Exception<char>(ExcType::NO_INPUT_FILE_ERROR, "Please specify an input file");
     }
 }

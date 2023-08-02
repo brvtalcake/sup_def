@@ -26,7 +26,7 @@
 #define SUP_DEF_HPP
 
 #if !defined(_GNU_SOURCE)
-    #define _GNU_SOURCE
+    #define _GNU_SOURCE 1
 #endif
 
 #if defined(_WIN32)
@@ -35,6 +35,8 @@
 
 #include <cstdint>
 
+#include <coroutine>
+#include <utility>
 #include <optional>
 #include <fstream>
 #include <sstream>
@@ -98,12 +100,533 @@ namespace SupDef
 
     typedef uint64_t parser_state_underlying_type;
 
+    inline void exit_program(int exit_code)
+    {
+        std::cerr << "Program exited with code " << exit_code << std::endl;
+        std::exit(exit_code);
+    }
+    // To be deleted
     enum ParserState : parser_state_underlying_type
     {
         OK = 0,
         INTERNAL_ERROR = 1 << 0,
         INVALID_PRAGMA_ERROR = 1 << 1,
         INVALID_MACRO_ARGC_ERROR = 1 << 2
+    };
+
+    enum class ExcType : uint8_t
+    {
+        INTERNAL_ERROR = 0,
+        INVALID_FILE_PATH_ERROR = 1,
+        NO_INPUT_FILE_ERROR = 2,
+        UNSPECIFIED_ERROR = 255
+    };
+
+#if defined(ESC)
+    #undef ESC
+#endif
+#define ESC "\033"
+
+    enum class Color : uint8_t
+    {
+        FG_BLACK = 30,
+        FG_RED = 31,
+        FG_GREEN = 32,
+        FG_YELLOW = 33,
+        FG_BLUE = 34,
+        FG_MAGENTA = 35,
+        FG_CYAN = 36,
+        FG_WHITE = 37,
+        
+        FG_BRIGHT_BLACK = 90,
+        FG_BRIGHT_RED = 91,
+        FG_BRIGHT_GREEN = 92,
+        FG_BRIGHT_YELLOW = 93,
+        FG_BRIGHT_BLUE = 94,
+        FG_BRIGHT_MAGENTA = 95,
+        FG_BRIGHT_CYAN = 96,
+        FG_BRIGHT_WHITE = 97,
+
+        FG_DEFAULT = 39,
+
+    
+        BG_BLACK = 40,
+        BG_RED = 41,
+        BG_GREEN = 42,
+        BG_YELLOW = 43,
+        BG_BLUE = 44,
+        BG_MAGENTA = 45,
+        BG_CYAN = 46,
+        BG_WHITE = 47,
+
+        BG_BRIGHT_BLACK = 100,
+        BG_BRIGHT_RED = 101,
+        BG_BRIGHT_GREEN = 102,
+        BG_BRIGHT_YELLOW = 103,
+        BG_BRIGHT_BLUE = 104,
+        BG_BRIGHT_MAGENTA = 105,
+        BG_BRIGHT_CYAN = 106,
+        BG_BRIGHT_WHITE = 107,
+
+        BG_DEFAULT = 49,
+
+
+        FG_RESET = 0,
+        BG_RESET = 0
+    };
+
+    enum class Style : uint8_t
+    {
+        BOLD = 1,
+        DIM = 2,
+        UNDERLINED = 4,
+        BLINK = 5,
+        REVERSE = 7,
+        HIDDEN = 8,
+        STRIKETHROUGH = 9,
+
+        RESET_BOLD = 22,
+        RESET_DIM = 22,
+        RESET_UNDERLINED = 24,
+        RESET_BLINK = 25,
+        RESET_REVERSE = 27,
+        RESET_HIDDEN = 28,
+        RESET_STRIKETHROUGH = 29,
+
+        RESET = 0
+    };
+
+#if defined(FG)
+    #undef FG
+#endif
+#define FG(color) Color::FG_##color
+#if defined(BG)
+    #undef BG
+#endif
+#define BG(color) Color::BG_##color
+#if defined(TXT)
+    #undef TXT
+#endif
+#define TXT(style) Style::style
+
+    inline std::string to_string(Color color)
+    {
+        return ESC + std::string("[") + std::to_string(std::to_underlying(color)) + "m";
+    }
+
+    inline std::string to_string(Style style)
+    {
+        return ESC + std::string("[") + std::to_string(std::to_underlying(style)) + "m";
+    }
+
+    /* For 256 color mode (correspond to <{FG|BG},{256-bit color nb}>) */
+    typedef std::pair<uint8_t, uint8_t> Color256;
+
+#if defined(FG_256)
+    #undef FG_256
+#endif
+#define FG_256(value) std::make_pair(38, value)
+#if defined(BG_256)
+    #undef BG_256
+#endif
+#define BG_256(value) std::make_pair(48, value)
+
+    inline std::string to_string(Color256 color)
+    {
+        return ESC + std::string("[") + std::to_string(color.first) + ";5;" + std::to_string(color.second) + "m";
+    }
+
+    struct TrueColor
+    {
+        private:
+            uint8_t r;
+            uint8_t g;
+            uint8_t b;
+            uint8_t fg_or_bg;
+        public:
+            TrueColor(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b), fg_or_bg(38) {}
+            TrueColor(uint8_t r, uint8_t g, uint8_t b, uint8_t fg_or_bg) : r(r), g(g), b(b), fg_or_bg(fg_or_bg) {}
+            ~TrueColor() = default;
+
+            constexpr inline uint8_t get_r(void) const noexcept { return this->r; }
+            constexpr inline uint8_t get_g(void) const noexcept { return this->g; }
+            constexpr inline uint8_t get_b(void) const noexcept { return this->b; }
+            constexpr inline uint8_t get_fg_or_bg(void) const noexcept { return this->fg_or_bg; }
+
+            constexpr inline void set_r(uint8_t r) noexcept { this->r = r; }
+            constexpr inline void set_g(uint8_t g) noexcept { this->g = g; }
+            constexpr inline void set_b(uint8_t b) noexcept { this->b = b; }
+            constexpr inline void set_fg_or_bg(uint8_t fg_or_bg) noexcept { this->fg_or_bg = fg_or_bg; }
+            constexpr inline void set(int16_t r, int16_t g, int16_t b) noexcept
+            {
+                this->r = r < 0 ? this->r : r;
+                this->g = g < 0 ? this->g : g;
+                this->b = b < 0 ? this->b : b;
+            }
+
+            inline std::string to_string(void)
+            {
+                return ESC + std::string("[") + std::to_string(this->fg_or_bg) + ";2;" + std::to_string(this->r) + ";" + std::to_string(this->g) + ";" + std::to_string(this->b) + "m";
+            }
+    };
+
+#if defined(FG_TRUE)
+    #undef FG_TRUE
+#endif
+#define FG_TRUE(R, G, B) TrueColor(R, G, B)
+#if defined(BG_TRUE)
+    #undef BG_TRUE
+#endif
+#define BG_TRUE(R, G, B) TrueColor(R, G, B, 48)
+
+    template <typename T>
+    concept TextStyle =  std::same_as<Color, T> 
+                      || std::same_as<Style, T> 
+                      || std::same_as<Color256, T>
+                      || std::same_as<TrueColor, T>;
+
+    struct CursorMove
+    {
+        private:
+            bool is_absolute;
+            union
+            {
+                struct { int16_t x; int16_t y; };
+                struct { int16_t col; int16_t row; };
+            };
+        public:
+            CursorMove() : is_absolute(false), x(0), y(0) {}
+            /* x and y are respectively stored at the same memory location as col and row */
+            CursorMove(int16_t col, int16_t row, bool is_absolute = false) : is_absolute(is_absolute), col(col), row(row) {} 
+            ~CursorMove() = default;
+
+            constexpr inline bool get_is_absolute(void) const noexcept { return this->is_absolute; }
+            constexpr inline int16_t get_x(void) const noexcept { return this->x; }
+            constexpr inline int16_t get_y(void) const noexcept { return this->y; }
+            constexpr inline int16_t get_col(void) const noexcept { return this->col; }
+            constexpr inline int16_t get_row(void) const noexcept { return this->row; }
+
+            constexpr inline void set_is_absolute(bool is_absolute) noexcept { this->is_absolute = is_absolute; }
+            constexpr inline void set_x(int16_t x) noexcept { this->x = x; }
+            constexpr inline void set_y(int16_t y) noexcept { this->y = y; }
+            constexpr inline void set_col(int16_t col) noexcept { this->col = col; }
+            constexpr inline void set_row(int16_t row) noexcept { this->row = row; }
+
+            inline std::string to_string(void)
+            {
+                std::string result = "";
+                if (this->is_absolute)
+                {
+                    result += ESC + std::string("[") + std::to_string(this->row) + ";" + std::to_string(this->col) + "H";
+                }
+                else
+                {
+                    if (x != 0 && x < 0)
+                        result += ESC + std::string("[") + std::to_string(std::abs(this->x)) + "D";
+                    else if (x != 0 && x > 0)
+                        result += ESC + std::string("[") + std::to_string(std::abs(this->x)) + "C";
+                    if (y != 0 && y < 0)
+                        result += ESC + std::string("[") + std::to_string(std::abs(this->y)) + "A";
+                    else if (y != 0 && y > 0)
+                        result += ESC + std::string("[") + std::to_string(std::abs(this->y)) + "B";
+                }
+                return result;
+            }
+    };
+
+#if defined(CURSOR_MOVE)
+    #undef CURSOR_MOVE
+#endif
+#define CURSOR_MOVE(x, y) CursorMove(x, y)
+#if defined(CURSOR_MOVE_ABS)
+    #undef CURSOR_MOVE_ABS
+#endif
+#define CURSOR_MOVE_ABS(x, y) CursorMove(x, y, true)
+
+    template <typename T>
+    concept CursorControl = std::same_as<CursorMove, T>;
+
+
+#if defined(IS_CLASS_TYPE)
+    #undef IS_CLASS_TYPE
+#endif
+#define IS_CLASS_TYPE(type) std::is_class_v<std::remove_cv_t<type>>
+
+#if defined(HAS_MEMBER)
+    #undef HAS_MEMBER
+#endif
+#define HAS_MEMBER(obj, member) IS_CLASS_TYPE(obj) && std::is_member_pointer<decltype(&obj::member)>::value
+
+    template <typename T>
+    concept HasToStringMember = HAS_MEMBER(T, to_string) && requires(T t)
+    {
+        { t.to_string() };
+    };
+
+    template <typename T>
+    concept HasToStringFunction = requires(T t)
+    {
+        { to_string(t) };
+    };
+
+    template <typename T>
+    concept HasToString = HasToStringMember<T> || HasToStringFunction<T>;
+
+    template <typename T>
+    concept TermControl = (TextStyle<T> || CursorControl<T>)
+                        && HasToString<T>;
+
+    template <typename T>
+        requires TermControl<T> && HasToStringMember<T>
+    inline std::string operator+(const std::string& str, T style)
+    {
+        return str + style.to_string();
+    }
+
+    template <typename T>
+        requires TermControl<T>
+    inline std::string operator+(const std::string& str, T style)
+    {
+        return str + to_string(style);
+    }
+
+    template <typename T>
+        requires TermControl<T> && HasToStringMember<T>
+    inline std::string operator+(T style, const std::string& str)
+    {
+        return style.to_string() + str;
+    }
+
+    template <typename T>
+        requires TermControl<T>
+    inline std::string operator+(T style, const std::string& str)
+    {
+        return to_string(style) + str;
+    }
+
+    template <typename T>
+        requires TermControl<T> && HasToStringMember<T>
+    inline std::string& operator+=(std::string& str, T style)
+    {
+        return str += style.to_string();
+    }
+
+    template <typename T>
+        requires TermControl<T>
+    inline std::string& operator+=(std::string& str, T style)
+    {
+        return str += to_string(style);
+    }
+
+    template <typename T, typename U>
+        requires TermControl<T> && TermControl<U> && HasToStringMember<T> && HasToStringMember<U>
+    inline std::string operator+(T style1, U style2)
+    {
+        return style1.to_string() + style2.to_string();
+    }
+
+    template <typename T, typename U>
+        requires TermControl<T> && TermControl<U> && HasToStringMember<T>
+    inline std::string operator+(T style1, U style2)
+    {
+        return style1.to_string() + to_string(style2);
+    }
+
+    template <typename T, typename U>
+        requires TermControl<T> && TermControl<U> && HasToStringMember<U>
+    inline std::string operator+(T style1, U style2)
+    {
+        return to_string(style1) + style2.to_string();
+    }
+
+    template <typename T, typename U>
+        requires TermControl<T> && TermControl<U>
+    inline std::string operator+(T style1, U style2)
+    {
+        return to_string(style1) + to_string(style2);
+    }
+
+    /**
+     * @fn std::string format_error(const std::string& error_msg, std::optional<std::string> error_type, std::optional<string_size_type<char>> line, std::optional<string_size_type<char>> col, std::optional<std::string> context)
+     * @brief Format an error message
+     * 
+     * @param error_msg The main error message
+     * @param error_type Additional error type information
+     * @param line Line number where the error occured, if any
+     * @param col Column number where the error occured, if any
+     * @param context Line context where the error occured, if any
+     * @tparam T The character type of the parsed file
+     * @return The formatted error message
+     */
+    template <typename T>
+        requires CharacterType<T>
+    inline 
+    std::string 
+    format_error
+    (
+        const std::string& error_msg,
+        std::optional<std::string> error_type,
+        std::optional<string_size_type<T>> line,
+        std::optional<string_size_type<T>> col,
+        std::optional<std::basic_string<T>> context
+    )
+    {
+        std::string result = FG(BRIGHT_RED) + TXT(BOLD) + "[ ERROR ]" + FG(DEFAULT) + (error_type.has_value() ? "  (error type: " + error_type.value() + ")" : "") + "  " + TXT(RESET) + error_msg + "\n";
+        if (line.has_value())
+            result += "Line: " + std::to_string(line.value()) + "\n";
+        if (col.has_value())
+            result += "Column: " + std::to_string(col.value()) + "\n";
+        if (context.has_value())
+        {
+            if (col.has_value())
+            {
+                // Find the "word" in which the error occured
+                string_size_type<T> start = 0;
+                string_size_type<T> end = context.value().size();
+                for (string_size_type<T> i = col.value(); i > 0; --i)
+                {
+                    if (context.value()[i] == ' ' || context.value()[i] == '\t')
+                    {
+                        start = i + 1;
+                        break;
+                    }
+                }
+                for (string_size_type<T> i = col.value(); i < context.value().size(); ++i)
+                {
+                    if (context.value()[i] == ' ' || context.value()[i] == '\t')
+                    {
+                        end = i;
+                        break;
+                    }
+                }
+                result += "Context: " + context.value().substr(0, start);
+                result += FG(BRIGHT_RED) + TXT(BOLD) + context.value().substr(start, end - start) + FG(DEFAULT) + TXT(RESET);
+                result += context.value().substr(end, context.value().size() - end) + "\n";
+                uint16_t start_term_col = std::string("Context: ").size();
+                for (string_size_type<T> i = 0; i < start; ++i)
+                {
+                    if (context.value()[i] == '\t')
+                        start_term_col += 4;
+                    else
+                        ++start_term_col;
+                }
+                result += TXT(RESET);
+                // Move cursor position just under the error position (i.e. relative to the start of the line)
+                result += CURSOR_MOVE(start_term_col, 0);
+                // Add some '~' to underline the error position, and a '^' to point to the middle of the """word"""
+                result += FG(BRIGHT_RED) + TXT(BOLD);
+                for (string_size_type<T> i = start; i < end / 2; ++i)
+                    result += '~';
+                result += '^';
+                for (string_size_type<T> i = end / 2 + 1; i < end; ++i)
+                    result += '~';
+                result += FG(DEFAULT) + TXT(RESET);
+                result += "\n";
+            }
+            else
+                result += "Context: " + context.value() + "\n";
+        }
+        return result;
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    class Exception : public std::exception
+    {
+        private:
+            ExcType type;
+            std::string msg;
+            std::optional<string_size_type<T>> line;
+            std::optional<string_size_type<T>> col;
+            std::optional<std::basic_string<T>> context;
+
+            inline std::optional<std::string> get_type_str(void) const noexcept
+            {
+                switch (this->type)
+                {
+                    case ExcType::INTERNAL_ERROR:
+                        return std::string("Internal error");
+                    case ExcType::INVALID_FILE_PATH_ERROR:
+                        return std::string("Invalid file path");
+                    case ExcType::NO_INPUT_FILE_ERROR:
+                        return std::string("No input file");
+                    default:
+                        return std::nullopt;
+                }
+            }
+        public:
+            Exception() = default;
+            Exception(ExcType type) : type(type), line(std::nullopt), col(std::nullopt), context(std::nullopt) 
+                { this->msg = "An error occured"; }
+            Exception(std::string msg) : msg(msg), line(std::nullopt), col(std::nullopt), context(std::nullopt)
+                { this->type = ExcType::UNSPECIFIED_ERROR; }
+            Exception(ExcType type, std::string msg) : type(type), msg(msg), line(std::nullopt), col(std::nullopt), context(std::nullopt)
+            {}
+            Exception(ExcType type, std::string msg, string_size_type<T> line, string_size_type<T> col, std::basic_string<T> context) : type(type), msg(msg), line(line), col(col), context(context)
+            {}
+
+            ~Exception() = default;
+
+            constexpr inline const char* what() const noexcept override { return this->msg.c_str(); }
+            constexpr inline ExcType get_type() const noexcept { return this->type; }
+            constexpr inline Exception& set_type(ExcType type) noexcept { this->type = type; return *this; }
+            inline void report(std::ostream& os = std::cerr) const noexcept
+            {
+                os << format_error<T>(this->msg, this->get_type_str(), this->line, this->col, this->context);
+            }
+    };
+
+    template <typename T>
+        requires CharacterType<T>
+    using Error = Exception<T>;
+
+    template <typename T>
+    class Generator
+    {
+        private:
+            struct promise_type
+            {
+                std::optional<T> current_value;
+                std::suspend_always yield_value(T value)
+                {
+                    this->current_value = value;
+                    return std::suspend_always();
+                }
+                std::suspend_always initial_suspend() { return std::suspend_always(); }
+                std::suspend_always final_suspend() noexcept { return std::suspend_always(); }
+                Generator get_return_object() { return Generator(this); }
+                void return_void() {}
+                void unhandled_exception() { std::terminate(); }
+            };
+            std::coroutine_handle<promise_type> coro;
+        public:
+            using promise_type = promise_type;
+            Generator(promise_type* p) : coro(std::coroutine_handle<promise_type>::from_promise(*p)) {}
+            Generator(const Generator&) = delete;
+            Generator(Generator&& g) : coro(g.coro) { g.coro = nullptr; }
+            ~Generator() { if (coro) coro.destroy(); }
+            Generator& operator=(const Generator&) = delete;
+            Generator& operator=(Generator&& g)
+            {
+                if (this != &g)
+                {
+                    if (coro)
+                        coro.destroy();
+                    coro = g.coro;
+                    g.coro = nullptr;
+                }
+                return *this;
+            }
+            T operator()()
+            {
+                coro.resume();
+                return std::move(*coro.promise().current_value);
+            }
+            bool next()
+            {
+                coro.resume();
+                return !coro.done();
+            }
     };
 
     /**
@@ -125,6 +648,7 @@ namespace SupDef
             std::filesystem::path output_file;
 
             CmdLine(int argc, char** argv);
+            CmdLine(int argc, const char* argv[]);
             ~CmdLine() = default;
 
             void parse(void);
@@ -249,7 +773,7 @@ namespace SupDef
 
             std::basic_ifstream<parsed_char_t>* file;
             pos_type last_error_pos;
-            std::map<pragma_loc_t, Pragma<parsed_char_t>, PragmaLocCompare<parsed_char_t>> pragmas;
+            /* std::map<pragma_loc_t, Pragma<parsed_char_t>, PragmaLocCompare<parsed_char_t>> pragmas; */
     };
 
     class Engine
@@ -272,7 +796,7 @@ namespace SupDef
 
             template <typename T>
                 requires FilePath<T>
-            static inline void add_include_path(T path)
+            static void add_include_path(T path)
             {
                 if (!std::filesystem::exists(path))
                     throw std::runtime_error("Include path does not exist");
@@ -281,7 +805,7 @@ namespace SupDef
 
             template <typename T>
                 requires FilePath<T>
-            static inline void remove_include_path(T path)
+            static void remove_include_path(T path)
             {
                 if (!std::filesystem::exists(path))
                     throw std::runtime_error("Include path does not exist");
@@ -290,7 +814,7 @@ namespace SupDef
                     include_paths.erase(it);
             }
 
-            static inline void clear_include_paths(void)
+            static void clear_include_paths(void)
             {
                 include_paths.clear();
             }
@@ -343,11 +867,22 @@ namespace SupDef
         return result;
     }
 
+    /**
+     * @brief Get the normalized path object
+     * @details This function returns the normalized path of a file, i.e. the canonical path of the file if it exists, or an empty path otherwise
+     */
+    inline std::filesystem::path get_normalized_path(std::filesystem::path file_path)
+    {
+        if (!std::filesystem::exists(file_path))
+            return std::filesystem::path();
+        return std::filesystem::canonical(file_path);
+    }
+
     inline std::optional<std::filesystem::path> get_included_fpath(std::filesystem::path file_path)
     {
         for (auto& include_path : Engine::include_paths)
         {
-            auto include_file_path = include_path / file_path;
+            auto include_file_path = get_normalized_path(include_path) / file_path;
             if (std::filesystem::exists(include_file_path))
                 return include_file_path;        
         }
