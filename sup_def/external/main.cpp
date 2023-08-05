@@ -1,8 +1,9 @@
 #include <sup_def/common/sup_def.hpp>
+#include <sup_def/external/external.hpp>
 
 int main(int argc, char const *argv[])
 {
-    SupDef::CmdLine cmd_line(argc, argv);
+    SupDef::External::CmdLine cmd_line(argc, argv);
     try
     {
         cmd_line.parse();

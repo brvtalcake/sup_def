@@ -50,6 +50,7 @@
 #include <algorithm>
 #include <iostream>
 #include <locale>
+#include <memory>
 
 #if defined(SUPDEF_PRAGMA_NAME)
     #undef SUPDEF_PRAGMA_NAME
@@ -384,7 +385,7 @@ namespace SupDef
     }
 
     template <typename T>
-        requires TermControl<T>
+        requires TermControl<T> && HasToStringFunction<T>
     inline std::string operator+(const std::string& str, T style)
     {
         return str + to_string(style);
@@ -398,7 +399,7 @@ namespace SupDef
     }
 
     template <typename T>
-        requires TermControl<T>
+        requires TermControl<T> && HasToStringFunction<T>
     inline std::string operator+(T style, const std::string& str)
     {
         return to_string(style) + str;
@@ -412,7 +413,7 @@ namespace SupDef
     }
 
     template <typename T>
-        requires TermControl<T>
+        requires TermControl<T> && HasToStringFunction<T>
     inline std::string& operator+=(std::string& str, T style)
     {
         return str += to_string(style);
@@ -426,21 +427,21 @@ namespace SupDef
     }
 
     template <typename T, typename U>
-        requires TermControl<T> && TermControl<U> && HasToStringMember<T>
+        requires TermControl<T> && TermControl<U> && HasToStringMember<T> && HasToStringFunction<U>
     inline std::string operator+(T style1, U style2)
     {
         return style1.to_string() + to_string(style2);
     }
 
     template <typename T, typename U>
-        requires TermControl<T> && TermControl<U> && HasToStringMember<U>
+        requires TermControl<T> && TermControl<U> && HasToStringMember<U> && HasToStringFunction<T>
     inline std::string operator+(T style1, U style2)
     {
         return to_string(style1) + style2.to_string();
     }
 
     template <typename T, typename U>
-        requires TermControl<T> && TermControl<U>
+        requires TermControl<T> && TermControl<U> && HasToStringFunction<T> && HasToStringFunction<U>
     inline std::string operator+(T style1, U style2)
     {
         return to_string(style1) + to_string(style2);
@@ -581,82 +582,102 @@ namespace SupDef
     using Error = Exception<T>;
 
     template <typename T>
-    class Generator
+    concept Suspendable = requires(T t)
     {
-        private:
-            struct promise_type
-            {
-                std::optional<T> current_value;
-                std::suspend_always yield_value(T value)
-                {
-                    this->current_value = value;
-                    return std::suspend_always();
-                }
-                std::suspend_always initial_suspend() { return std::suspend_always(); }
-                std::suspend_always final_suspend() noexcept { return std::suspend_always(); }
-                Generator get_return_object() { return Generator(this); }
-                void return_void() {}
-                void unhandled_exception() { std::terminate(); }
-            };
-            std::coroutine_handle<promise_type> coro;
-        public:
-            using promise_type = promise_type;
-            Generator(promise_type* p) : coro(std::coroutine_handle<promise_type>::from_promise(*p)) {}
-            Generator(const Generator&) = delete;
-            Generator(Generator&& g) : coro(g.coro) { g.coro = nullptr; }
-            ~Generator() { if (coro) coro.destroy(); }
-            Generator& operator=(const Generator&) = delete;
-            Generator& operator=(Generator&& g)
-            {
-                if (this != &g)
-                {
-                    if (coro)
-                        coro.destroy();
-                    coro = g.coro;
-                    g.coro = nullptr;
-                }
-                return *this;
-            }
-            T operator()()
-            {
-                coro.resume();
-                return std::move(*coro.promise().current_value);
-            }
-            bool next()
-            {
-                coro.resume();
-                return !coro.done();
-            }
+        { t.resume() };
     };
 
-    /**
-     * @class CmdLine
-     * @brief A class representing the command line arguments, and used to parse them
-     * @details A typical invocation of SupDef is: @code sup_def [-I "<include_paths>"]* [-o <output_file>] <input_file> @endcode, with:
-     * - @code -I <include_paths> @endcode being an array of include paths, separated by a colon (:) (and as one argument, i.e. surrounded by quotes). There may be multiple -I arguments
-     * - @code -o <output_file> @endcode being the output file
-     * - @code <input_file> @endcode being the input file being processed
-     * 
-     * Example:
-     * @code sup_def -I "$HOME/my/project/path/include:../../other/project/include" -o ./output_file.c ./input_file.c @endcode
-     */
-    class CmdLine
+    template <typename T>
+    concept StdSuspend = std::same_as<std::suspend_always, T> || std::same_as<std::suspend_never, T>;
+
+    template <typename T, typename U, typename V>
+        requires StdSuspend<T> && StdSuspend<U>
+    class PromiseBase
     {
         public:
-            std::vector<std::filesystem::path> include_paths;
-            std::filesystem::path input_file;
-            std::filesystem::path output_file;
+            PromiseBase() = default;
+            ~PromiseBase() = default;
 
-            CmdLine(int argc, char** argv);
-            CmdLine(int argc, const char* argv[]);
-            ~CmdLine() = default;
+            virtual T initial_suspend() noexcept { return T(); }
+            virtual U final_suspend() noexcept { return U(); }
 
-            void parse(void);
-            void update_engine(void);
+            virtual void unhandled_exception() noexcept {}
 
+            virtual V return_value() noexcept {}
+
+            virtual void* address() noexcept { return this; }
+
+            virtual void destroy() noexcept {}
+
+            virtual void get_return_object() noexcept {}
+
+            virtual void rethrow_if_unhandled_exception() noexcept {}
+
+            virtual void set_exception(std::exception_ptr) noexcept {}
+
+            virtual void set_result() noexcept {}
+
+            virtual void set_value() noexcept {}
+    };
+
+    template <typename T, typename U>
+        requires StdSuspend<T> && StdSuspend<U>
+    class PromiseBase<T, U, void>
+    {
+        public:
+            PromiseBase() = default;
+            ~PromiseBase() = default;
+
+            virtual T initial_suspend() noexcept { return T(); }
+            virtual U final_suspend() noexcept { return U(); }
+
+            virtual void unhandled_exception() noexcept {}
+
+            virtual void return_void() noexcept {}
+
+            virtual void* address() noexcept { return this; }
+
+            virtual void destroy() noexcept {}
+
+            virtual void get_return_object() noexcept {}
+
+            virtual void rethrow_if_unhandled_exception() noexcept {}
+
+            virtual void set_exception(std::exception_ptr) noexcept {}
+
+            virtual void set_result() noexcept {}
+
+            virtual void set_value() noexcept {}
+    };
+    
+    /**
+     * @brief A class representing a restartable finite generator (implemented as a coroutine)
+     * @tparam T The return type of the restartable "function"
+     * @tparam Args The arguments types of the restartable "function"
+     * @details This will be useful to implement a parsing function which can be restarted after generating / producing potential errors
+     * 
+     * @todo Implement this
+     */
+    template <typename T, typename... Args>
+    class FiniteGenerator
+    {
         private:
-            int argc;
-            char** argv;
+            std::coroutine_handle<> coroutine;
+        public:
+            FiniteGenerator() = default;
+            FiniteGenerator(std::coroutine_handle<> coroutine) : coroutine(coroutine) {}
+            ~FiniteGenerator() = default;
+
+            FiniteGenerator& operator=(std::coroutine_handle<> coroutine)
+            {
+                this->coroutine = coroutine;
+                return *this;
+            }
+
+            T operator()(Args... args)
+            {
+                return this->coroutine.resume(args...);
+            }
     };
 
     class TmpFile
@@ -707,6 +728,7 @@ namespace SupDef
      * @class Pragma
      * @brief A class representing a SupDef pragma definition
      * @tparam T The character type of the pragma (char, wchar_t, char8_t, char16_t, char32_t)
+     * @todo Change raw pointers to smart pointers
      */
     template <typename T>
         requires CharacterType<T>
@@ -766,26 +788,69 @@ namespace SupDef
             std::basic_string<parsed_char_t>* slurp_file();
             Parser& strip_comments(void);
             Parser& process_file(void);
-            std::vector<std::vector<std::basic_string<parsed_char_t>::size_type>> locate_pragmas(void);
+            std::vector<std::vector<std::basic_string<parsed_char_t>::size_type>> locate_supdefs(void);
         private:
             typedef std::basic_ifstream<parsed_char_t>::pos_type pos_type;
             typedef std::basic_string<parsed_char_t>::size_type location_type;
 
-            std::basic_ifstream<parsed_char_t>* file;
+            std::unique_ptr<std::basic_ifstream<parsed_char_t>> file;
             pos_type last_error_pos;
             /* std::map<pragma_loc_t, Pragma<parsed_char_t>, PragmaLocCompare<parsed_char_t>> pragmas; */
     };
 
     class Engine
     {
+        public:
+            template <typename T>
+            struct File
+            {
+                public:
+                    std::filesystem::path path;
+                    std::optional<std::unique_ptr<T>> stream;
+
+                    File() : path(std::filesystem::path()), stream(std::nullopt) {}
+                    File(std::filesystem::path path) : path(path), stream(std::make_unique<T>()) {}
+                    File(std::filesystem::path path, std::unique_ptr<T> stream) : path(path), stream(std::move(stream)) {}
+                    File(const File& other) : path(other.path), stream(std::make_unique<T>(*other.stream)) {}
+                    File(File&& other) noexcept = default;
+                    ~File() noexcept = default;
+
+                    inline auto operator=(const File& other)
+                    {
+                        this->path = other.path;
+                        this->stream = std::make_unique<T>(*other.stream);
+                        return *this;
+                    }
+                    inline auto operator=(File&& other) noexcept
+                    {
+                        this->path = other.path;
+                        this->stream = std::move(other.stream);
+                        return *this;
+                    }
+                    inline auto operator<<(const std::basic_string<T>& str)
+                    {
+                        return *this->stream << str;
+                    }
+                    template <typename U>
+                        requires (CharacterType<U> || TermControl<U>) && std::same_as<std::remove_cvref_t<T>, std::ofstream>
+                    inline auto operator<<(const U& obj)
+                    {
+                        std::string str = "";
+                        if constexpr (TermControl<U>)
+                            str += obj;
+                        else
+                            str = std::to_string(obj);
+                        return *this->stream << str;
+                    }
+            };
         private:
-            std::pair<std::filesystem::path, std::ofstream*> tmp_file;
-            class Parser* parser;
+            File<std::ofstream> tmp_file;
+            std::unique_ptr<Parser> parser;
 
         public:
             static std::vector<std::filesystem::path> include_paths;
-            std::pair<std::filesystem::path, std::ifstream*> src_file;
-            std::pair<std::filesystem::path, std::ofstream*> dst_file;
+            std::vector<File<std::ifstream>> src_files;
+            File<std::ofstream> dst_file;
             
             Engine();
             template <typename T, typename U>
@@ -817,6 +882,11 @@ namespace SupDef
             static void clear_include_paths(void)
             {
                 include_paths.clear();
+            }
+
+            static auto get_include_paths(void)
+            {
+                return include_paths;
             }
 
             void restart();
@@ -880,7 +950,7 @@ namespace SupDef
 
     inline std::optional<std::filesystem::path> get_included_fpath(std::filesystem::path file_path)
     {
-        for (auto& include_path : Engine::include_paths)
+        for (auto& include_path : Engine::get_include_paths())
         {
             auto include_file_path = get_normalized_path(include_path) / file_path;
             if (std::filesystem::exists(include_file_path))

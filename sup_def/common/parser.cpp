@@ -39,7 +39,7 @@ namespace SupDef
     {
         try
         {
-            this->file = new std::basic_ifstream<parsed_char_t>();
+            this->file = std::make_unique<std::basic_ifstream<parsed_char_t>>();
             this->file_content = new std::basic_string<parsed_char_t>();
             this->lines = nullptr;
             this->last_error_pos = 0;
@@ -54,7 +54,7 @@ namespace SupDef
     {
         try
         {
-            this->file = new std::basic_ifstream<parsed_char_t>(file_path);
+            this->file = std::make_unique<std::basic_ifstream<parsed_char_t>>(file_path);
             this->file_content = new std::basic_string<parsed_char_t>();
             this->lines = nullptr;
             this->last_error_pos = 0;
@@ -67,8 +67,6 @@ namespace SupDef
 
     Parser::~Parser() noexcept
     {
-        if (this->file)
-            delete this->file;
         if (this->file_content)
             delete this->file_content;
         if (this->lines)
@@ -176,7 +174,7 @@ namespace SupDef
     }
 
     // Locates pragmas' start line and pragmas' end line in this->file_content string
-    std::vector<std::vector<string_size_type<Parser::parsed_char_t>>> Parser::locate_pragmas(void)
+    std::vector<std::vector<string_size_type<Parser::parsed_char_t>>> Parser::locate_supdefs(void)
     {
         if (!this->file_content)
             throw std::runtime_error("File content is null");
@@ -254,13 +252,14 @@ namespace SupDef
 
     Parser& Parser::process_file(void)
     {
+#if 0
         try
         {
             this->slurp_file();
             this->strip_comments();
             /* this->pragmas.clear(); */
             // TODO: Locate pragmas and feed this->pragmas with them
-            auto pragma_locs = this->locate_pragmas();
+            auto pragma_locs = this->locate_supdefs();
             for (SupDef::Parser::pragma_loc_t loc : pragma_locs)
             {
                 std::basic_string<Parser::parsed_char_t> pragma_content;
@@ -277,6 +276,9 @@ namespace SupDef
             throw std::runtime_error("Failed to process file: " + std::string(e.what()) + "\n");
         }
         // Next, locate supdefs instantiations and replace them with their content
+#else
+        return *this;
+#endif
     }
 }
 

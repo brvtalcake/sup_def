@@ -28,14 +28,7 @@ namespace SupDef
 {
     std::vector<std::filesystem::path> Engine::include_paths;
 
-    Engine::Engine()
-    {
-        set_app_locale();
-        this->src_file = std::pair<std::filesystem::path, std::ifstream*>(std::filesystem::path(), nullptr);
-        this->dst_file = std::pair<std::filesystem::path, std::ofstream*>(std::filesystem::path(), nullptr);
-        this->tmp_file = std::pair<std::filesystem::path, std::ofstream*>(std::filesystem::path(), nullptr);
-        this->parser = new Parser();
-    }
+    Engine::Engine() : tmp_file(), src_files(), dst_file(), parser() { set_app_locale(); }
 
     template <typename T, typename U>
         requires FilePath<T> && FilePath<U>
@@ -51,59 +44,47 @@ namespace SupDef
         if (std::filesystem::exists(dst_file_path))
             std::filesystem::remove(dst_file_path);
 
-        auto* src_ifstream = new std::ifstream(src_file_path);
-        auto* dst_ofstream = new std::ofstream(dst_file_path);
-        auto* tmp_ofstream = new std::ofstream(tmp_file_path);
-        if (src_ifstream == nullptr || dst_ofstream == nullptr || tmp_ofstream == nullptr)
-            throw std::runtime_error("Failed to allocate memory for file streams");
-        this->src_file = std::pair<std::filesystem::path, std::ifstream*>(src_file_path, src_ifstream);
-        this->dst_file = std::pair<std::filesystem::path, std::ofstream*>(dst_file_path, dst_ofstream);
-        this->tmp_file = std::pair<std::filesystem::path, std::ofstream*>(tmp_file_path, tmp_ofstream);
+        this->src_files.push_back({src_file_path, std::make_unique<std::ifstream>(src_file_path)});
+        this->dst_file = { dst_file_path, std::make_unique<std::ofstream>(dst_file_path) };
+        this->tmp_file = { tmp_file_path, std::make_unique<std::ofstream>(tmp_file_path) };
 
-        this->parser = new Parser(this->src_file.first);
+        this->parser = std::make_unique<Parser>(this->src_files[0].path);
     }
 
     Engine::~Engine() noexcept 
     {
-        delete this->parser;
-        if (this->src_file.second != nullptr)
-            delete this->src_file.second;
-        if (this->dst_file.second != nullptr)
-            delete this->dst_file.second;
-        if (this->tmp_file.second != nullptr)
-            delete this->tmp_file.second;
-        this->src_file = std::pair<std::filesystem::path, std::ifstream*>(std::filesystem::path(), nullptr);
-        this->dst_file = std::pair<std::filesystem::path, std::ofstream*>(std::filesystem::path(), nullptr);
-        this->tmp_file = std::pair<std::filesystem::path, std::ofstream*>(std::filesystem::path(), nullptr);
+        if (this->src_files.size() > 0)
+        for (auto& src_file : this->src_files)
+            if (src_file.stream.has_value())
+                src_file.stream.value()->close();
+        this->src_files.clear();
+        if (this->dst_file.stream.has_value())
+            this->dst_file.stream.value()->close();
+        if (this->tmp_file.stream.has_value())
+            this->tmp_file.stream.value()->close();
     }
 
     void Engine::restart()
     {
-        delete this->parser;
-        if (this->src_file.second != nullptr)
-            delete this->src_file.second;
-        if (this->dst_file.second != nullptr)
-            delete this->dst_file.second;
-        if (this->tmp_file.second != nullptr)
-            delete this->tmp_file.second;
-        this->src_file = std::pair<std::filesystem::path, std::ifstream*>(std::filesystem::path(), nullptr);
-        this->dst_file = std::pair<std::filesystem::path, std::ofstream*>(std::filesystem::path(), nullptr);
-        this->tmp_file = std::pair<std::filesystem::path, std::ofstream*>(std::filesystem::path(), nullptr);
-        this->parser = new Parser();
+        set_app_locale();
+        if (this->src_files.size() > 0)
+        for (auto& src_file : this->src_files)
+            if (src_file.stream.has_value())
+                { src_file.stream.value()->close(); src_file.stream->reset(); src_file.stream.reset(); }
+        this->src_files.clear();
+        if (this->dst_file.stream.has_value())
+            { this->dst_file.stream.value()->close(); this->dst_file.stream->reset(); this->dst_file.stream.reset(); }
+        if (this->tmp_file.stream.has_value())
+            { this->tmp_file.stream.value()->close(); this->tmp_file.stream->reset(); this->tmp_file.stream.reset(); }
+        this->parser.reset();
     }
+
     template <typename T, typename U>
         requires FilePath<T> && FilePath<U>
     void Engine::restart(T src_file_name, U dst_file_name)
     {
-        delete this->parser;
-        if (this->src_file.second != nullptr)
-            delete this->src_file.second;
-        if (this->dst_file.second != nullptr)
-            delete this->dst_file.second;
-        if (this->tmp_file.second != nullptr)
-            delete this->tmp_file.second;
+        this->restart();
         
-        set_app_locale();
         auto src_file_path = std::filesystem::path(src_file_name);
         auto dst_file_path = std::filesystem::path(dst_file_name);
         auto tmp_file_path = TmpFile::get_tmp_file();
@@ -113,15 +94,10 @@ namespace SupDef
         if (std::filesystem::exists(dst_file_path))
             std::filesystem::remove(dst_file_path);
 
-        auto* src_ifstream = new std::ifstream(src_file_path);
-        auto* dst_ofstream = new std::ofstream(dst_file_path);
-        auto* tmp_ofstream = new std::ofstream(tmp_file_path);
-        if (src_ifstream == nullptr || dst_ofstream == nullptr || tmp_ofstream == nullptr)
-            throw std::runtime_error("Failed to allocate memory for file streams");
-        this->src_file = std::pair<std::filesystem::path, std::ifstream*>(src_file_path, src_ifstream);
-        this->dst_file = std::pair<std::filesystem::path, std::ofstream*>(dst_file_path, dst_ofstream);
-        this->tmp_file = std::pair<std::filesystem::path, std::ofstream*>(tmp_file_path, tmp_ofstream);
+        this->src_files.push_back({src_file_path, std::make_unique<std::ifstream>(src_file_path)});
+        this->dst_file = { dst_file_path, std::make_unique<std::ofstream>(dst_file_path) };
+        this->tmp_file = { tmp_file_path, std::make_unique<std::ofstream>(tmp_file_path) };
 
-        this->parser = new Parser(this->src_file.first);
+        this->parser = std::make_unique<Parser>(this->src_files[0].path);
     }
 }
