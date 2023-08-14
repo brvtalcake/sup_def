@@ -26,13 +26,19 @@
 
 namespace SupDef
 {
-    std::vector<std::filesystem::path> Engine::include_paths;
+    template <typename P1, typename P2>
+        requires CharacterType<P1> && FilePath<P2>
+    std::vector<std::filesystem::path> Engine<P1, P2>::include_paths;
 
-    Engine::Engine() : tmp_file(), src_files(), dst_file(), parser() { set_app_locale(); }
+    template <typename P1, typename P2>
+        requires CharacterType<P1> && FilePath<P2>
+    Engine<P1, P2>::Engine() : tmp_file(), src_file(), dst_file() { set_app_locale(); }
 
+    template <typename P1, typename P2>
+        requires CharacterType<P1> && FilePath<P2>
     template <typename T, typename U>
         requires FilePath<T> && FilePath<U>
-    Engine::Engine(T src_file_name, U dst_file_name)
+    Engine<P1, P2>::Engine(T src_file_name, U dst_file_name)
     {
         set_app_locale();
         auto src_file_path = std::filesystem::path(src_file_name);
@@ -44,44 +50,31 @@ namespace SupDef
         if (std::filesystem::exists(dst_file_path))
             std::filesystem::remove(dst_file_path);
 
-        this->src_files.push_back({src_file_path, std::make_unique<std::ifstream>(src_file_path)});
-        this->dst_file = { dst_file_path, std::make_unique<std::ofstream>(dst_file_path) };
-        this->tmp_file = { tmp_file_path, std::make_unique<std::ofstream>(tmp_file_path) };
-
-        this->parser = std::make_unique<Parser>(this->src_files[0].path);
+        this->src_file = SrcFile<P1, P2>(src_file_path);
+        this->dst_file = { dst_file_path, std::make_unique<std::basic_ofstream<P1>>(dst_file_path) };
+        this->tmp_file = { tmp_file_path, std::make_unique<std::basic_ofstream<P1>>(tmp_file_path) };
     }
 
-    Engine::~Engine() noexcept 
-    {
-        if (this->src_files.size() > 0)
-        for (auto& src_file : this->src_files)
-            if (src_file.stream.has_value())
-                src_file.stream.value()->close();
-        this->src_files.clear();
-        if (this->dst_file.stream.has_value())
-            this->dst_file.stream.value()->close();
-        if (this->tmp_file.stream.has_value())
-            this->tmp_file.stream.value()->close();
-    }
+    template <typename P1, typename P2>
+        requires CharacterType<P1> && FilePath<P2>
+    Engine<P1, P2>::~Engine() noexcept 
+    { }
 
-    void Engine::restart()
+    template <typename P1, typename P2>
+        requires CharacterType<P1> && FilePath<P2>
+    void Engine<P1, P2>::restart()
     {
         set_app_locale();
-        if (this->src_files.size() > 0)
-        for (auto& src_file : this->src_files)
-            if (src_file.stream.has_value())
-                { src_file.stream.value()->close(); src_file.stream->reset(); src_file.stream.reset(); }
-        this->src_files.clear();
-        if (this->dst_file.stream.has_value())
-            { this->dst_file.stream.value()->close(); this->dst_file.stream->reset(); this->dst_file.stream.reset(); }
-        if (this->tmp_file.stream.has_value())
-            { this->tmp_file.stream.value()->close(); this->tmp_file.stream->reset(); this->tmp_file.stream.reset(); }
-        this->parser.reset();
+        this->src_file.restart();
+        this->dst_file.restart();
+        this->tmp_file.restart();
     }
 
+    template <typename P1, typename P2>
+        requires CharacterType<P1> && FilePath<P2>
     template <typename T, typename U>
         requires FilePath<T> && FilePath<U>
-    void Engine::restart(T src_file_name, U dst_file_name)
+    void Engine<P1, P2>::restart(T src_file_name, U dst_file_name)
     {
         this->restart();
         
@@ -94,10 +87,8 @@ namespace SupDef
         if (std::filesystem::exists(dst_file_path))
             std::filesystem::remove(dst_file_path);
 
-        this->src_files.push_back({src_file_path, std::make_unique<std::ifstream>(src_file_path)});
-        this->dst_file = { dst_file_path, std::make_unique<std::ofstream>(dst_file_path) };
-        this->tmp_file = { tmp_file_path, std::make_unique<std::ofstream>(tmp_file_path) };
-
-        this->parser = std::make_unique<Parser>(this->src_files[0].path);
+        this->src_file = SrcFile<P1, P2>(src_file_path);
+        this->dst_file = { dst_file_path, std::make_unique<std::basic_ofstream<P1>>(dst_file_path) };
+        this->tmp_file = { tmp_file_path, std::make_unique<std::basic_ofstream<P1>>(tmp_file_path) };
     }
 }

@@ -22,6 +22,11 @@
  * SOFTWARE.
  */
 
+#include <sup_def/common/config.h>
+
+#if NEED_TPP_INC(Parser) == 0
+#include <sup_def/common/sup_def.hpp>
+
 #include <cassert>
 #include <cstring>
 #include <locale>
@@ -31,148 +36,20 @@
 #include <vector>
 #include <map>
 
-#include <sup_def/common/sup_def.hpp>
-
 namespace SupDef
 {
-    Parser::Parser()
-    {
-        try
-        {
-            this->file = std::make_unique<std::basic_ifstream<parsed_char_t>>();
-            this->file_content = new std::basic_string<parsed_char_t>();
-            this->lines = nullptr;
-            this->last_error_pos = 0;
-        }
-        catch (const std::exception& e)
-        {
-            throw std::runtime_error("Failed to initialize parser: " + std::string(e.what()) + "\n");
-        }
-    }
+#if 0
+    template <typename T>
+        requires CharacterType<T>
+    Parser<T>::~Parser() noexcept
+    { }
+#endif
 
-    Parser::Parser(std::filesystem::path file_path)
-    {
-        try
-        {
-            this->file = std::make_unique<std::basic_ifstream<parsed_char_t>>(file_path);
-            this->file_content = new std::basic_string<parsed_char_t>();
-            this->lines = nullptr;
-            this->last_error_pos = 0;
-        }
-        catch (const std::exception& e)
-        {
-            throw std::runtime_error("Failed to initialize parser: " + std::string(e.what()) + "\n");
-        }
-    }
 
-    Parser::~Parser() noexcept
-    {
-        if (this->file_content)
-            delete this->file_content;
-        if (this->lines)
-            delete this->lines;
-    }
 
-    std::basic_string<Parser::parsed_char_t>* Parser::slurp_file()
-    {
-        if (!this->file_content)
-            throw std::runtime_error("File content is null");
-        if (!this->file->is_open())
-            throw std::runtime_error("File is not open");
+    
 
-        this->file->seekg(0, std::basic_ios<parsed_char_t>::end);
-        try
-        {
-            this->file_content->reserve(this->file->tellg());
-        }
-        catch (const std::exception& e)
-        {
-            throw std::runtime_error("Failed to reserve file content: " + std::string(e.what()) + "\n");
-        }
-        this->file->seekg(0, std::basic_ios<parsed_char_t>::beg);
-
-        try
-        {
-            this->file_content->clear();
-            std::basic_ostringstream<parsed_char_t> sstr;
-            sstr << this->file->rdbuf();
-            this->file_content->assign(sstr.str());
-        }
-        catch (const std::exception& e)
-        {
-            throw std::runtime_error("Failed to slurp file content: " + std::string(e.what()) + "\n");
-        }
-        this->lines = new std::vector<std::basic_string<parsed_char_t>>(split_string(*this->file_content, '\n'));
-        return this->file_content;
-    }
-
-    // Strip C and C++ style comments from this->file_content string.
-    Parser& Parser::strip_comments(void)
-    {
-        if (!this->file_content)
-            throw std::runtime_error("File content is null");
-        if (this->file_content->empty())
-            throw std::runtime_error("File content is empty");
-        
-        bool in_str_lit = false; // Are we in a string literal ?
-
-        for (size_t i = 0; i < this->file_content->size(); i++)
-        {
-            if (this->file_content->at(i) == '"')
-            {
-                if (i > 0 && this->file_content->at(i - 1) != '\\')
-                    in_str_lit = !in_str_lit;
-            }
-            else if (!in_str_lit)
-            {
-                if (this->file_content->at(i) == '/')
-                {
-                    if (i + 1 < this->file_content->size())
-                    {
-                        if (this->file_content->at(i + 1) == '/')
-                        {
-                            // Check for `\\` and erase the following line if present
-                            size_t next_nl_pos = this->file_content->find('\n', i);
-                            size_t next_bsl_pos = this->file_content->find('\\', i);
-                            while ((next_bsl_pos != std::basic_string<Parser::parsed_char_t>::npos  || 
-                                    next_nl_pos  != std::basic_string<Parser::parsed_char_t>::npos) &&
-                                    next_bsl_pos < next_nl_pos)
-                            {
-                                next_nl_pos = this->file_content->find('\n', next_nl_pos + 1);
-                                next_bsl_pos = this->file_content->find('\\', next_bsl_pos + 1);
-                            }
-                            if (next_nl_pos != std::basic_string<Parser::parsed_char_t>::npos)
-                            {
-                                this->file_content->erase(i, next_nl_pos - i + 1);
-                                // Erase the possible '\t' or ' ' before the erased content
-                                while (i > 0 && (this->file_content->at(i - 1) == '\t' || this->file_content->at(i - 1) == ' '))
-                                {
-                                    this->file_content->erase(i - 1, 1);
-                                    i--;
-                                }                                
-                            }
-                            else // erase until the end of the file
-                                this->file_content->erase(i, this->file_content->size() - i);
-
-                            i--;
-                        }
-                        else if (this->file_content->at(i + 1) == '*')
-                        {
-                            size_t end_comment_pos = this->file_content->find("*/", i);
-                            if (end_comment_pos == std::basic_string<Parser::parsed_char_t>::npos)
-                            {
-                                this->last_error_pos = i;
-                                throw std::runtime_error("Unterminated comment");
-                            }
-                            this->file_content->erase(i, end_comment_pos - i + 2);
-                        }
-                    }
-                }
-            }
-        }
-        return *this;
-    }
-
+#if 0
     // Locates pragmas' start line and pragmas' end line in this->file_content string
     std::vector<std::vector<string_size_type<Parser::parsed_char_t>>> Parser::locate_supdefs(void)
     {
@@ -249,10 +126,11 @@ namespace SupDef
         }
         return pragma_locations;
     }
+#endif
 
+#if 0
     Parser& Parser::process_file(void)
     {
-#if 0
         try
         {
             this->slurp_file();
@@ -276,9 +154,24 @@ namespace SupDef
             throw std::runtime_error("Failed to process file: " + std::string(e.what()) + "\n");
         }
         // Next, locate supdefs instantiations and replace them with their content
-#else
+
         return *this;
-#endif
     }
+#endif
+
+    // Explicitely instantiate Parser class for all needed character types
+    //EXP_INST_CLASS(Parser, (char), (wchar_t), (char8_t), (char16_t), (char32_t))
+#if defined(SUPDEF_DEBUG)
+    /* EXP_INST_FUNC(Parser<char>::print_content, (void, (std::ostream&))); */
+    // Explicitely instantiate print_content 
+    template void Parser<char>::print_content<std::ostream>(std::ostream&) const;
+#endif
 }
 
+#else
+
+#define INCLUDED_FROM_SUPDEF_SOURCE 1
+#include <sup_def/common/parser.tpp>
+#undef INCLUDED_FROM_SUPDEF_SOURCE
+
+#endif

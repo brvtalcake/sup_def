@@ -22,8 +22,14 @@
  * SOFTWARE.
  */
 
+#include <sup_def/common/start_header.h>
+
 #ifndef SUP_DEF_HPP
 #define SUP_DEF_HPP
+
+// TODO: Use MAP_LIST macro instead of BOOST_PP_SEQ_FOR_EACH if possible
+// TODO: Move class declarations to different headers as with a one-class-per-header organization
+// TODO: Create a Util namespace and move all the utility / helper functions there
 
 #if !defined(_GNU_SOURCE)
     #define _GNU_SOURCE 1
@@ -32,6 +38,9 @@
 #if defined(_WIN32)
     #include <windows.h>
 #endif
+
+#include <sup_def/third_party/map/map.h>
+#include <boost/preprocessor.hpp>
 
 #include <cstdint>
 
@@ -46,29 +55,81 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
-#include <map>
+#include <array>
 #include <algorithm>
 #include <iostream>
 #include <locale>
 #include <memory>
 
-#if defined(SUPDEF_PRAGMA_NAME)
-    #undef SUPDEF_PRAGMA_NAME
-#endif
-#define SUPDEF_PRAGMA_NAME "supdef"
-
-#if defined(SUPDEF_PRAGMA_START)
-    #undef SUPDEF_PRAGMA_START
-#endif
-#define SUPDEF_PRAGMA_START "start"
-
-#if defined(SUPDEF_PRAGMA_END)
-    #undef SUPDEF_PRAGMA_END
-#endif
-#define SUPDEF_PRAGMA_END "end"
-
 namespace SupDef
 {
+
+#include <sup_def/common/config.h>
+
+    template <size_t N, typename... types>
+    struct GetNthTypeImpl
+    { };
+
+    template <typename T, typename... types>
+    struct GetNthTypeImpl<0, T, types...>
+    {
+        using type = T;
+    };
+
+    template <size_t N, typename T, typename... types>
+        requires (N > 0)
+    struct GetNthTypeImpl<N, T, types...>
+    {
+        using type = typename GetNthTypeImpl<N - 1, types...>::type;
+    };
+
+    template <size_t N, typename... types>
+    using GetNthType = typename GetNthTypeImpl<N, types...>::type;
+
+    static_assert(std::same_as<GetNthType<0, int, char, float>, int>);
+    static_assert(std::same_as<GetNthType<1, int, char, float>, char>);
+    static_assert(std::same_as<GetNthType<2, int, char, float>, float>);
+    static_assert(std::same_as<GetNthType<0, int>, int>);
+    static_assert(std::same_as<GetNthType<10, int, int, int, int, int, int, int, int, int, int, float>, float>);
+
+    template <size_t N, typename... types>
+    struct GetNthArgImpl
+    { };
+
+    template <typename T, typename... types>
+    struct GetNthArgImpl<0, T, types...>
+    {
+        static consteval T get(T arg, types...)
+        {
+            return arg;
+        }
+    };
+
+    template <size_t N, typename T, typename... types>
+        requires (N > 0)
+    struct GetNthArgImpl<N, T, types...>
+    {
+        static consteval auto get(T, types... args)
+        {
+            return GetNthArgImpl<N - 1, types...>::get(args...);
+        }
+    };
+
+    template <size_t N, typename... types>
+    consteval auto get_nth_arg(types... args)
+    {
+        return GetNthArgImpl<N, types...>::get(args...);
+    }
+
+#if defined(GetNthArg)
+    #undef GetNthArg
+#endif
+#define GetNthArg(N, ...) get_nth_arg<N>(__VA_ARGS__)
+
+    static_assert(GetNthArg(0, 1, 2, 3, 4, 5, 6, 7, 8, 9) == 1);
+    static_assert(GetNthArg(1, 1, 2, 3, 4, 5, 6, 7, 8, 9) == 2);
+    static_assert(GetNthArg(0, 1.5f, 2.5, 956L, 42ULL) == 1.5f);
+
     template <typename T>
     concept CharacterType = std::same_as<char, std::remove_cv_t<T>>       ||
                             std::same_as<wchar_t, std::remove_cv_t<T>>    ||
@@ -117,9 +178,11 @@ namespace SupDef
 
     enum class ExcType : uint8_t
     {
-        INTERNAL_ERROR = 0,
-        INVALID_FILE_PATH_ERROR = 1,
-        NO_INPUT_FILE_ERROR = 2,
+        NO_ERROR = 0,
+        INTERNAL_ERROR = 1,
+        INVALID_FILE_PATH_ERROR = 2,
+        NO_INPUT_FILE_ERROR = 3,
+        SYNTAX_ERROR = 4,
         UNSPECIFIED_ERROR = 255
     };
 
@@ -451,6 +514,7 @@ namespace SupDef
      * @fn std::string format_error(const std::string& error_msg, std::optional<std::string> error_type, std::optional<string_size_type<char>> line, std::optional<string_size_type<char>> col, std::optional<std::string> context)
      * @brief Format an error message
      * 
+     * @param type The type of the error
      * @param error_msg The main error message
      * @param error_type Additional error type information
      * @param line Line number where the error occured, if any
@@ -465,14 +529,19 @@ namespace SupDef
     std::string 
     format_error
     (
+        ExcType type,
         const std::string& error_msg,
         std::optional<std::string> error_type,
         std::optional<string_size_type<T>> line,
         std::optional<string_size_type<T>> col,
         std::optional<std::basic_string<T>> context
-    )
+    ) noexcept
     {
-        std::string result = FG(BRIGHT_RED) + TXT(BOLD) + "[ ERROR ]" + FG(DEFAULT) + (error_type.has_value() ? "  (error type: " + error_type.value() + ")" : "") + "  " + TXT(RESET) + error_msg + "\n";
+        std::string result;
+        if (type != ExcType::NO_ERROR)
+            result = FG(BRIGHT_RED) + TXT(BOLD) + "[ ERROR ]" + FG(DEFAULT) + (error_type.has_value() ? "  (error type: " + error_type.value() + ")" : "") + "  " + TXT(RESET) + error_msg + "\n";
+        else
+            result = FG(BRIGHT_YELLOW) + TXT(BOLD) + "[ WARNING ]" + FG(DEFAULT) + "  " + TXT(RESET) + error_msg + "\n";
         if (line.has_value())
             result += "Line: " + std::to_string(line.value()) + "\n";
         if (col.has_value())
@@ -522,7 +591,7 @@ namespace SupDef
                 for (string_size_type<T> i = end / 2 + 1; i < end; ++i)
                     result += '~';
                 result += FG(DEFAULT) + TXT(RESET);
-                result += "\n";
+                result += '\n';
             }
             else
                 result += "Context: " + context.value() + "\n";
@@ -551,6 +620,13 @@ namespace SupDef
                         return std::string("Invalid file path");
                     case ExcType::NO_INPUT_FILE_ERROR:
                         return std::string("No input file");
+                    case ExcType::SYNTAX_ERROR:
+                        return std::string("Syntax error");
+
+                    case ExcType::UNSPECIFIED_ERROR:
+                        [[fallthrough]];
+                    case ExcType::NO_ERROR:
+                        [[fallthrough]];
                     default:
                         return std::nullopt;
                 }
@@ -573,13 +649,50 @@ namespace SupDef
             constexpr inline Exception& set_type(ExcType type) noexcept { this->type = type; return *this; }
             inline void report(std::ostream& os = std::cerr) const noexcept
             {
-                os << format_error<T>(this->msg, this->get_type_str(), this->line, this->col, this->context);
+                os << format_error<T>(this->type, this->msg, this->get_type_str(), this->line, this->col, this->context);
             }
     };
 
     template <typename T>
         requires CharacterType<T>
     using Error = Exception<T>;
+
+    inline void set_app_locale(void)
+    {
+        #if defined(_WIN32)
+            LCID lcid = GetThreadLocale();
+            wchar_t name[LOCALE_NAME_MAX_LENGTH];
+            if (LCIDToLocaleName(lcid, name, LOCALE_NAME_MAX_LENGTH, 0) == 0)
+                { std::cerr << "Failed to set locale to current system-locale: error code: " << GetLastError() << std::endl; }
+            std::locale::global(name);
+        #else
+            std::locale::global(std::locale(""));
+        #endif
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T> str, T delimiter) noexcept
+    {
+        std::vector<std::basic_string<T>> result{};
+        std::basic_stringstream<T> ss(str);
+        std::basic_string<T> token;
+        while (std::getline(ss, token, delimiter))
+            result.push_back(token);
+        return result;
+    }
+
+    template <typename C, size_t S>
+        requires CharacterType<C>
+    inline constexpr auto any_string(const char (&literal)[S]) -> std::array<C, S>
+    {
+        std::array<C, S> r = {};
+
+        for (size_t i = 0; i < S; i++)
+                r[i] = static_cast<C>(literal[i]);
+
+        return r;
+    }
 
     template <typename T>
     concept Suspendable = requires(T t)
@@ -590,100 +703,80 @@ namespace SupDef
     template <typename T>
     concept StdSuspend = std::same_as<std::suspend_always, T> || std::same_as<std::suspend_never, T>;
 
-    template <typename T, typename U, typename V>
-        requires StdSuspend<T> && StdSuspend<U>
-    class PromiseBase
-    {
-        public:
-            PromiseBase() = default;
-            ~PromiseBase() = default;
-
-            virtual T initial_suspend() noexcept { return T(); }
-            virtual U final_suspend() noexcept { return U(); }
-
-            virtual void unhandled_exception() noexcept {}
-
-            virtual V return_value() noexcept {}
-
-            virtual void* address() noexcept { return this; }
-
-            virtual void destroy() noexcept {}
-
-            virtual void get_return_object() noexcept {}
-
-            virtual void rethrow_if_unhandled_exception() noexcept {}
-
-            virtual void set_exception(std::exception_ptr) noexcept {}
-
-            virtual void set_result() noexcept {}
-
-            virtual void set_value() noexcept {}
-    };
-
-    template <typename T, typename U>
-        requires StdSuspend<T> && StdSuspend<U>
-    class PromiseBase<T, U, void>
-    {
-        public:
-            PromiseBase() = default;
-            ~PromiseBase() = default;
-
-            virtual T initial_suspend() noexcept { return T(); }
-            virtual U final_suspend() noexcept { return U(); }
-
-            virtual void unhandled_exception() noexcept {}
-
-            virtual void return_void() noexcept {}
-
-            virtual void* address() noexcept { return this; }
-
-            virtual void destroy() noexcept {}
-
-            virtual void get_return_object() noexcept {}
-
-            virtual void rethrow_if_unhandled_exception() noexcept {}
-
-            virtual void set_exception(std::exception_ptr) noexcept {}
-
-            virtual void set_result() noexcept {}
-
-            virtual void set_value() noexcept {}
-    };
-    
     /**
-     * @brief A class representing a restartable finite generator (implemented as a coroutine)
-     * @tparam T The return type of the restartable "function"
-     * @tparam Args The arguments types of the restartable "function"
-     * @details This will be useful to implement a parsing function which can be restarted after generating / producing potential errors
-     * 
-     * @todo Implement this
+     * @brief This class is meant to be the type of parsing coroutines so they can suspend themselves while indicating potential errors to the "master" function calling them.
      */
-    template <typename T, typename... Args>
-    class FiniteGenerator
+    template <typename T>
+    class Coro
     {
-        private:
-            std::coroutine_handle<> coroutine;
         public:
-            FiniteGenerator() = default;
-            FiniteGenerator(std::coroutine_handle<> coroutine) : coroutine(coroutine) {}
-            ~FiniteGenerator() = default;
-
-            FiniteGenerator& operator=(std::coroutine_handle<> coroutine)
+            class Promise
             {
-                this->coroutine = coroutine;
+                public:
+                    using promise_type = Promise;
+                    using handle_type = std::coroutine_handle<promise_type>;
+                private:
+                    T value;
+                    bool done;
+                public:
+                    inline Coro<T> get_return_object()
+                    {
+                        return Coro<T>(handle_type::from_promise(*this));
+                    }
+                    constexpr inline std::suspend_always initial_suspend() noexcept { return {}; }
+                    constexpr inline std::suspend_always final_suspend() noexcept { return {}; }
+                    [[noreturn]] inline void unhandled_exception() { std::terminate(); }
+                    inline void return_value(T value) 
+                    {
+                        this->value = value;
+                        this->done = true;
+                    }
+                    inline T get_value() { return this->value; }
+                    inline std::suspend_always yield_value(T value)
+                    {
+                        this->value = value;
+                        return {};
+                    }                    
+            };
+            using promise_type = Promise;
+            using handle_type = std::coroutine_handle<promise_type>;
+            Coro(handle_type handle) : handle(handle), done(false) {}
+            Coro(Coro&& other) : handle(other.handle), done(other.done) { other.handle = nullptr; }
+            Coro(const Coro&) = delete;
+            ~Coro() 
+            {
+                if (this->handle)
+                    this->handle.destroy();
+            }
+            Coro& operator=(Coro&& other) 
+            {
+                this->handle = other.handle;
+                this->done = other.done;
+                other.handle = nullptr;
                 return *this;
             }
-
-            T operator()(Args... args)
+            Coro& operator=(const Coro&) = delete;
+            inline bool resume() 
             {
-                return this->coroutine.resume(args...);
+                if (this->done)
+                    return false;
+                this->handle.resume();
+                this->done = this->handle.done();
+                return true;
             }
+            inline T get_value() { return this->handle.promise().get_value(); }
+            inline bool is_done() { return this->done; }
+
+            inline operator bool() { return this->resume(); }
+        private:
+            handle_type handle;
+            bool done;
     };
 
     class TmpFile
     {
         private:
-            static inline size_t get_counter(void)
+            static size_t get_counter(void)
             {
                 static size_t counter = 0;
                 return counter++;
@@ -702,13 +795,12 @@ namespace SupDef
     /*
      * A SupDef pragma has the form:
      *
-     * #pragma supdef start <super_define_name>(<super_define_args>)
+     * #pragma supdef start <super_define_name>
      * <super_define_body>
      * #pragma supdef end
      * 
      * Where:
      * - <super_define_name> is the name of the super define (it is a classic C(++) identifier / macro name)
-     * - <super_define_args> is a comma separated list of arguments (it is a classic C(++) macro argument list)
      * - <super_define_body> is the body of the super define, and has the form:
      *  <super_define_body> ::= <super_define_body_line>*
      * <super_define_body_line> ::= ["] <super_define_body_line_content> ["] [\n]
@@ -716,38 +808,275 @@ namespace SupDef
      * <super_define_body_line_content_char> ::= [anything except " (which has to be escaped with \") and \n]
      * 
      * Example:
-     * #pragma supdef start MY_SUPER_DEFINE(arg1, arg2)
-     * "#define TEST \"This is the body of my super define which takes 2 arguments: arg1 and arg2\""
+     * #pragma supdef start MY_SUPER_DEFINE
+     * "#define TEST \"This is the body of my super define named $0 which takes 2 arguments: $1 and $2\""
      * #pragma supdef end
      * 
-     * Result:
-     * #define TEST "This is the body of my super define which takes 2 arguments: arg1 and arg2"
+     * Result of invocation of MY_SUPER_DEFINE(arg1, arg2):
+     * #define TEST "This is the body of my super define named MY_SUPER_DEFINE which takes 2 arguments: arg1 and arg2"
      */
 
     /**
-     * @class Pragma
+     * @class PragmaDef
      * @brief A class representing a SupDef pragma definition
      * @tparam T The character type of the pragma (char, wchar_t, char8_t, char16_t, char32_t)
-     * @todo Change raw pointers to smart pointers
      */
     template <typename T>
         requires CharacterType<T>
-    class Pragma
+    struct PragmaDef
     {
         private:
-            std::basic_string<T>* name;
-            std::vector<std::basic_string<T>>* body_lines;
-            std::vector<std::basic_string<T>>* args;
+            std::shared_ptr<std::basic_string<T>> name;
+            std::vector<std::shared_ptr<std::basic_string<T>>> body_lines;
+            std::vector<std::shared_ptr<std::basic_string<T>>> args;
 
         public:
-            Pragma();
-            Pragma(const std::vector<std::basic_string<T>>& full_pragma);
-            ~Pragma() noexcept;
+            PragmaDef();
+            PragmaDef(const std::vector<std::basic_string<T>>& full_pragma);
+            ~PragmaDef() noexcept;
 
             std::basic_string<T> get_name() const noexcept;
             std::basic_string<T> get_body() const noexcept;
             std::vector<std::basic_string<T>> get_args() const noexcept;
             std::vector<std::basic_string<T>>::size_type get_argc() const noexcept;
+            std::basic_string<T> substitute() const noexcept;
+            std::basic_string<T> substitute(std::basic_string<T> arg1, ...) noexcept(__cpp_lib_unreachable >= 202202L);
+    };
+
+    template <typename T, typename U>
+        requires CharacterType<T> && FilePath<U>
+    class SrcFile;
+
+    template <typename T, typename U>
+        requires CharacterType<T> && FilePath<U>
+    struct PragmaInc
+    {
+        private:
+            std::shared_ptr<SrcFile<T, U>> included;
+
+        public:
+            PragmaInc() = default;
+            PragmaInc(U path) : included(std::make_shared<SrcFile<T, U>>(path)) {}
+            ~PragmaInc() noexcept = default;
+
+            inline std::shared_ptr<SrcFile<T, U>> get_included() const noexcept
+            {
+                return this->included;
+            }
+
+            inline auto get_path() const noexcept
+            {
+                return this->included->get_path();
+            }
+    };
+
+    template <typename T>
+        requires CharacterType<T>
+    class Parser;
+
+    template <typename T>
+    concept OutputFileStream = std::same_as<std::remove_cvref_t<T>, std::ofstream>                  ||
+                               std::same_as<std::remove_cvref_t<T>, std::wofstream>                 ||
+                               std::same_as<std::remove_cvref_t<T>, std::basic_ofstream<char8_t>>   ||
+                               std::same_as<std::remove_cvref_t<T>, std::basic_ofstream<char16_t>>  ||
+                               std::same_as<std::remove_cvref_t<T>, std::basic_ofstream<char32_t>>  ||
+                               std::same_as<std::remove_cvref_t<T>, std::basic_ofstream<std::byte>>;
+
+    template <typename T>
+    concept InputFileStream = std::same_as<std::remove_cvref_t<T>, std::ifstream>                  ||
+                              std::same_as<std::remove_cvref_t<T>, std::wifstream>                 ||
+                              std::same_as<std::remove_cvref_t<T>, std::basic_ifstream<char8_t>>   ||
+                              std::same_as<std::remove_cvref_t<T>, std::basic_ifstream<char16_t>>  ||
+                              std::same_as<std::remove_cvref_t<T>, std::basic_ifstream<char32_t>>  ||
+                              std::same_as<std::remove_cvref_t<T>, std::basic_ifstream<std::byte>>;
+
+    template <typename T>
+    concept FileStream = OutputFileStream<T> || InputFileStream<T>;
+
+    template <typename T>
+        requires FileStream<T>
+    struct File
+    {
+        public:
+            std::filesystem::path path;
+            std::optional<std::unique_ptr<T>> stream;
+
+            File() : path(std::filesystem::path()), stream(std::nullopt) {}
+            File(std::filesystem::path path) : path(path), stream(std::make_unique<T>(T(path.c_str()))) {}
+            File(std::filesystem::path path, T stream) : path(path), stream(std::unique_ptr<T>(stream)) {}
+            File(std::filesystem::path path, std::unique_ptr<T> stream) : path(path), stream(std::move(stream)) {}
+            File(const File& other) : path(other.path)
+            {
+                if (other->stream.has_value() && other->stream.value() != nullptr && other->stream.value()->is_open())
+                {
+                    auto tmp_stream = other->stream.value()->get();
+                    this->stream = std::make_unique<T>(*tmp_stream);
+                }
+                else
+                    this->stream = std::nullopt;
+            }
+            File(File&& other) noexcept
+            {
+                this->path = other.path;
+                this->stream = std::move(other.stream);
+            }
+            ~File() noexcept
+            {
+                if (this->stream.has_value() && this->stream.value() != nullptr && this->stream.value()->is_open())
+                    this->stream.value()->close();
+            }
+
+            inline auto operator=(const File& other)
+            {
+                this->path = other.path;
+                this->stream = std::make_unique<T>(*other.stream);
+                return *this;
+            }
+            inline auto operator=(File&& other) noexcept
+            {
+                this->path = other.path;
+                this->stream = std::move(other.stream);
+                return *this;
+            }
+            inline auto operator<<(const std::basic_string<T>& str)
+            {
+                return *this->stream << str;
+            }
+            template <typename U>
+                requires (CharacterType<U> || TermControl<U>) && OutputFileStream<T>
+            inline auto operator<<(const U& obj)
+            {
+                std::string str = "";
+                if constexpr (TermControl<U>)
+                    str += obj;
+                else
+                    str = std::to_string(obj);
+                return *this->stream << str;
+            }
+
+            inline void restart() noexcept
+            {
+                this->~File();
+                this->path = std::filesystem::path();
+                this->stream = std::nullopt;
+            }
+
+            inline void restart(std::filesystem::path path) noexcept
+            {
+                this->restart();
+                this->path = path;
+                this->stream = std::make_unique<T>(T(path.c_str()));
+            }
+
+            inline void restart(std::filesystem::path path, T stream) noexcept
+            {
+                this->restart();
+                this->path = path;
+                this->stream = std::make_unique<T>(stream);
+            }
+
+            inline void restart(std::filesystem::path path, std::unique_ptr<T> stream) noexcept
+            {
+                this->restart();
+                this->path = path;
+                this->stream = std::move(stream);
+            }
+
+            inline auto get_path() const noexcept
+            {
+                return this->path;
+            }
+
+            inline auto is_open() const noexcept
+            {
+                return this->stream.has_value() && this->stream.value() != nullptr && this->stream.value()->is_open();
+            }
+    };
+
+    template <typename T, typename U>
+        requires CharacterType<T> && FilePath<U>
+    class SrcFile
+    {
+        private:
+            std::shared_ptr<U> path;
+            std::vector<PragmaDef<T>> super_defines;
+            std::vector<PragmaInc<T, U>> includes;
+
+        public:
+            std::unique_ptr<Parser<T>> parser;
+            std::unique_ptr<File<std::basic_ifstream<T>>> file;
+
+            SrcFile() = default;
+            SrcFile(U path) : path(std::make_shared<U>(path)),
+                              parser(std::make_unique<Parser<T>>(path)),
+                              file(std::make_unique<File<std::basic_ifstream<T>>>(path))
+            { }
+            SrcFile(SrcFile&& other) noexcept = default;
+            SrcFile(SrcFile& other) : path(other->get_path),
+                                      super_defines(other->get_super_defines()),
+                                      includes(other->get_includes()),
+                                      parser(std::make_unique<Parser<T>>(*(other->get_path()))),
+                                      file(std::make_unique<File<std::basic_ifstream<T>>>(*(other->get_path())))
+            { }
+            ~SrcFile() noexcept
+            {
+                if (this->file->stream.has_value() && this->file->stream.value() != nullptr && this->file->stream.value()->is_open())
+                    this->file->stream.value()->close();
+            }
+
+            inline std::shared_ptr<U> get_path() const noexcept
+            {
+                return this->path;
+            }
+
+            inline std::vector<PragmaDef<T>> get_super_defines() const noexcept
+            {
+                return this->super_defines;
+            }
+
+            inline std::vector<PragmaInc<T, U>> get_includes() const noexcept
+            {
+                return this->includes;
+            }
+
+            inline void add_super_define(const PragmaDef<T>& super_define) noexcept
+            {
+                this->super_defines.push_back(super_define);
+            }
+
+            inline void add_include(const PragmaInc<T, U>& include) noexcept
+            {
+                this->includes.push_back(include);
+            }
+
+            inline void restart() noexcept
+            {
+                this->path.reset();
+                this->super_defines.clear();
+                this->includes.clear();
+                this->parser.reset();
+                this->file.reset();
+            }
+
+            inline void restart(U path) noexcept
+            {
+                this->restart();
+                this->path = std::make_shared<U>(path);
+                this->super_defines.clear();
+                this->includes.clear();
+                this->parser = std::make_unique<Parser<T>>(path);
+                this->file = std::make_unique<File<std::basic_ifstream<T>>>(path);
+            }
+
+            inline auto operator=(SrcFile&& other) noexcept
+            {
+                this->path = other.path;
+                this->super_defines = other.super_defines;
+                this->includes = other.includes;
+                this->parser = std::move(other.parser);
+                this->file = std::move(other.file);
+                return *this;
+            }
     };
 
     // Must have the same behavior as std::less
@@ -772,85 +1101,60 @@ namespace SupDef
      * @tparam T The character type of the parser (char, wchar_t, char8_t, char16_t, char32_t)
      * @details The @class Parser is used to parse a file and extract SupDef pragmas from it
      */
+    template <typename T>
+        requires CharacterType<T>
     class Parser
     {
         public:
-            typedef char parsed_char_t;
-            typedef std::vector<string_size_type<parsed_char_t>> pragma_loc_t;
+            /* typedef T parsed_char_t; */
+            /* typedef std::vector<string_size_type<parsed_char_t>> pragma_loc_t; */
 
-            std::basic_string<parsed_char_t>* file_content;
-            std::vector<std::basic_string<parsed_char_t>>* lines;
+            std::shared_ptr<std::basic_string<T>> file_content;
+            std::vector<std::basic_string<T>> lines;
 
             Parser();
             Parser(std::filesystem::path file_path);
-            ~Parser() noexcept;
+            ~Parser() noexcept = default;
             
-            std::basic_string<parsed_char_t>* slurp_file();
+            std::shared_ptr<std::basic_string<T>> slurp_file();
             Parser& strip_comments(void);
-            Parser& process_file(void);
-            std::vector<std::vector<std::basic_string<parsed_char_t>::size_type>> locate_supdefs(void);
+#if defined(SUPDEF_DEBUG)
+            template <typename Stream>
+            void print_content(Stream& s) const;
+#endif
+            /* Parser& process_file(void); */
+            /* std::vector<std::vector<string_size_type<parsed_char_t>> locate_supdefs(void); */
         private:
-            typedef std::basic_ifstream<parsed_char_t>::pos_type pos_type;
-            typedef std::basic_string<parsed_char_t>::size_type location_type;
+            typedef std::basic_ifstream<T>::pos_type pos_type;
+            typedef std::basic_string<T>::size_type location_type;
 
-            std::unique_ptr<std::basic_ifstream<parsed_char_t>> file;
-            pos_type last_error_pos;
-            /* std::map<pragma_loc_t, Pragma<parsed_char_t>, PragmaLocCompare<parsed_char_t>> pragmas; */
+            std::unique_ptr<std::basic_ifstream<T>> file;
+            /* pos_type last_error_pos; */
+            /* std::map<pragma_loc_t, PragmaDef<parsed_char_t>, PragmaLocCompare<parsed_char_t>> pragmas; */
     };
 
+#define Parser_FUNCTIONS 1
+#include <sup_def/common/parser.cpp>
+
+    /**
+     * @brief A class representing a SupDef engine
+     * 
+     * @tparam P1 The character type of the manipulated files (char, wchar_t, char8_t, char16_t, char32_t)
+     * @tparam P2 The type of the path of the manipulated files (std::filesystem::path, std::basic_string<char>, std::basic_string<wchar_t>, std::basic_string<char8_t>, std::basic_string<char16_t>, std::basic_string<char32_t>)
+     */
+    template <typename P1, typename P2>
+        requires CharacterType<P1> && FilePath<P2>
     class Engine
     {
         public:
-            template <typename T>
-            struct File
-            {
-                public:
-                    std::filesystem::path path;
-                    std::optional<std::unique_ptr<T>> stream;
-
-                    File() : path(std::filesystem::path()), stream(std::nullopt) {}
-                    File(std::filesystem::path path) : path(path), stream(std::make_unique<T>()) {}
-                    File(std::filesystem::path path, std::unique_ptr<T> stream) : path(path), stream(std::move(stream)) {}
-                    File(const File& other) : path(other.path), stream(std::make_unique<T>(*other.stream)) {}
-                    File(File&& other) noexcept = default;
-                    ~File() noexcept = default;
-
-                    inline auto operator=(const File& other)
-                    {
-                        this->path = other.path;
-                        this->stream = std::make_unique<T>(*other.stream);
-                        return *this;
-                    }
-                    inline auto operator=(File&& other) noexcept
-                    {
-                        this->path = other.path;
-                        this->stream = std::move(other.stream);
-                        return *this;
-                    }
-                    inline auto operator<<(const std::basic_string<T>& str)
-                    {
-                        return *this->stream << str;
-                    }
-                    template <typename U>
-                        requires (CharacterType<U> || TermControl<U>) && std::same_as<std::remove_cvref_t<T>, std::ofstream>
-                    inline auto operator<<(const U& obj)
-                    {
-                        std::string str = "";
-                        if constexpr (TermControl<U>)
-                            str += obj;
-                        else
-                            str = std::to_string(obj);
-                        return *this->stream << str;
-                    }
-            };
+            
         private:
-            File<std::ofstream> tmp_file;
-            std::unique_ptr<Parser> parser;
+            File<std::basic_ofstream<P1>> tmp_file;
 
         public:
             static std::vector<std::filesystem::path> include_paths;
-            std::vector<File<std::ifstream>> src_files;
-            File<std::ofstream> dst_file;
+            SrcFile<P1, P2> src_file;
+            File<std::basic_ofstream<P1>> dst_file;
             
             Engine();
             template <typename T, typename U>
@@ -912,31 +1216,6 @@ namespace SupDef
         return cursor_pos;
     }
 
-    inline void set_app_locale(void)
-    {
-        #if defined(_WIN32)
-            LCID lcid = GetThreadLocale();
-            wchar_t name[LOCALE_NAME_MAX_LENGTH];
-            if (LCIDToLocaleName(lcid, name, LOCALE_NAME_MAX_LENGTH, 0) == 0)
-                { std::cerr << "Failed to set locale to current system-locale: error code: " << GetLastError() << std::endl; }
-            std::locale::global(name);
-        #else
-            std::locale::global(std::locale(""));
-        #endif
-    }
-
-    template <typename T>
-        requires CharacterType<T>
-    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T> str, T delimiter) noexcept
-    {
-        std::vector<std::basic_string<T>> result = {};
-        std::basic_stringstream<T> ss(str);
-        std::basic_string<T> token;
-        while (std::getline(ss, token, delimiter))
-            result.push_back(token);
-        return result;
-    }
-
     /**
      * @brief Get the normalized path object
      * @details This function returns the normalized path of a file, i.e. the canonical path of the file if it exists, or an empty path otherwise
@@ -948,9 +1227,11 @@ namespace SupDef
         return std::filesystem::canonical(file_path);
     }
 
+    template <typename P1, typename P2>
+        requires CharacterType<P1> && FilePath<P2>
     inline std::optional<std::filesystem::path> get_included_fpath(std::filesystem::path file_path)
     {
-        for (auto& include_path : Engine::get_include_paths())
+        for (auto& include_path : Engine<P1, P2>::get_include_paths())
         {
             auto include_file_path = get_normalized_path(include_path) / file_path;
             if (std::filesystem::exists(include_file_path))
@@ -958,6 +1239,14 @@ namespace SupDef
         }
         return std::nullopt;
     }
+
 }
 
+#if !defined(ENGINE)
+    #define ENGINE SupDef::Engine<char, std::filesystem::path>
 #endif
+
+#endif
+
+
+#include <sup_def/common/end_header.h>

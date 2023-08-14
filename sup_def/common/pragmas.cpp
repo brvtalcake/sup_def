@@ -22,23 +22,133 @@
  * SOFTWARE.
  */
 
+#include <cstdarg>
+#include <regex>
+#include <utility>
+
 #include <sup_def/common/sup_def.hpp>
 
 namespace SupDef
 {
     template <typename T>
         requires CharacterType<T>
-    Pragma<T>::Pragma()
+    PragmaDef<T>::PragmaDef()
     {
-        this->body = new std::basic_string<T>();
-        this->name = new std::basic_string<T>();
-        this->args = new std::vector<std::basic_string<T>>();
+        this->name = nullptr;
+        this->body_lines.clear();
+        this->args.clear();
     }
 
     template <typename T>
         requires CharacterType<T>
-    Pragma<T>::Pragma(const std::vector<std::basic_string<T>>& full_pragma)
+    PragmaDef<T>::PragmaDef(const std::vector<std::basic_string<T>>& full_pragma)
     {
+        this->name = nullptr;
+        this->body_lines.clear();
+        this->args.clear();
+
+        if (full_pragma.size() < 2)
+            throw Exception<char>("Invalid pragma definition being parsed in PragmaDef constructor");
+
+        this->name = full_pragma[0];
+        for (auto it = full_pragma.begin() + 1; it != full_pragma.end(); ++it)
+            this->body_lines.push_back(std::make_shared<std::basic_string<T>>(*it));
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    PragmaDef<T>::~PragmaDef() noexcept
+    {
+        this->name = nullptr;
+        this->body_lines.clear();
+        this->args.clear();
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    std::basic_string<T> PragmaDef<T>::get_name() const noexcept
+    {
+        return this->name;
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    std::basic_string<T> PragmaDef<T>::get_body() const noexcept
+    {
+        std::basic_string<T> body = static_cast<T>('\n');
+        for (auto& line : this->body_lines)
+            body += line + static_cast<T>('\n');
+        return body;
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    std::vector<std::basic_string<T>> PragmaDef<T>::get_args() const noexcept
+    {
+        return this->args;
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    std::vector<std::basic_string<T>>::size_type PragmaDef<T>::get_argc() const noexcept
+    {
+        return this->args.size();
+    }
+
+    /**
+     * @brief Substitute the arguments in the body of the pragma
+     * @details The pragma variables appear in the body as $0, $1, $2, etc.
+     * @tparam T 
+     * @return std::basic_string<T> 
+     */
+    template <typename T>
+        requires CharacterType<T>
+    std::basic_string<T> PragmaDef<T>::substitute() const noexcept
+    {
+        return this->get_body();
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    std::basic_string<T> PragmaDef<T>::substitute(std::basic_string<T> arg1, ...) noexcept(__cpp_lib_unreachable >= 202202L)
+    {
+        auto argc = this->get_argc();
+        if (argc == 0)
+        {
+            // Check if std::unreachable is available
+#if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
+            std::unreachable();
+#else
+            throw Exception<char>("An unreachable statement has been reached");
+#endif
+            return this->get_body();
+        }
+        auto cut_whitespaces = [](std::basic_string<T>& str) -> std::basic_string<T>&
+        {
+            auto pos = str.find(static_cast<T>(' '));
+            while (pos != std::basic_string<T>::npos)
+            {
+                str.erase(pos, 1);
+                pos = str.find(static_cast<T>(' '));
+            }
+            return str;
+        };
+        std::vector<std::basic_string<T>> args(argc + 1);
+        args[0] = cut_whitespaces(this->get_name());
+        args[1] = std::move(arg1);
+        va_list ap;
+        va_start(ap, arg1);
+        for (auto i = 2; i < argc + 1; ++i)
+            args[i] = std::move(va_arg(ap, std::basic_string<T>));
+        va_end(ap);
         
+        std::basic_string<T> body = this->get_body();
+        for (auto i = 0; i < argc + 1; ++i)
+        {
+            std::basic_string<T> arg = static_cast<T>('$') + std::to_string(i);
+            std::basic_regex<T> arg_regex(arg);
+            body = std::regex_replace(body, arg_regex, args[i]);
+        }
+        return body;
     }
 }
