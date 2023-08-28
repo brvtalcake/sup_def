@@ -21,9 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include <sup_def/common/start_header.h>
 
-#ifdef NEED_TPP_INC
-    #undef NEED_TPP_INC
+#ifndef UTIL_ENGINE_HPP
+#define UTIL_ENGINE_HPP
+
+#include <sup_def/common/util/util.hpp>
+
+#include <optional>
+
+namespace SupDef 
+{
+    namespace Util
+    {
+
+#include <sup_def/common/config.h>
+
+        template <typename P1, typename P2>
+            requires CharacterType<P1> && FilePath<P2>
+        class Engine;
+
+        template <typename P1, typename P2>
+            requires CharacterType<P1> && FilePath<P2>
+        inline std::optional<std::filesystem::path> get_included_fpath(std::filesystem::path file_path)
+        {
+            for (auto& include_path : Engine<P1, P2>::get_include_paths())
+            {
+                auto include_file_path = get_normalized_path(include_path) / file_path;
+                if (std::filesystem::exists(include_file_path))
+                    return include_file_path;        
+            }
+            return std::nullopt;
+        }
+    }
+}
 #endif
-#define NEED_TPP_INC(CLASS_NAME) NEED_ ## CLASS_NAME ## _TEMPLATES
 
+#include <sup_def/common/end_header.h>

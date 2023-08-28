@@ -152,3 +152,5 @@ namespace SupDef
         return body;
     }
 }
+
+EXP_INST_CLASS(PragmaDef, (char), (wchar_t), (char8_t), (char16_t), (char32_t))

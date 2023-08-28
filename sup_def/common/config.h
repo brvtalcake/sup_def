@@ -22,9 +22,19 @@
  * SOFTWARE.
  */
 
+#ifndef _GNU_SOURCE
+    #define _GNU_SOURCE 1
+#endif
+
+#ifndef _FORTIFY_SOURCE
+    #define _FORTIFY_SOURCE 2
+#endif
+
 #ifndef NEED_TPP_INC
     #define NEED_TPP_INC(...) 0
 #endif
+
+#include <sup_def/common/util/platform.hpp>
 
 #if defined(ID)
     #undef ID
@@ -215,10 +225,10 @@
 #endif
 #define SUPDEF_PRAGMA_NAME "supdef"
 
-#if defined(SUPDEF_PRAGMA_DEFINE_START)
-    #undef SUPDEF_PRAGMA_DEFINE_START
+#if defined(SUPDEF_PRAGMA_DEFINE_BEGIN)
+    #undef SUPDEF_PRAGMA_DEFINE_BEGIN
 #endif
-#define SUPDEF_PRAGMA_DEFINE_START "start"
+#define SUPDEF_PRAGMA_DEFINE_BEGIN "begin"
 
 #if defined(SUPDEF_PRAGMA_DEFINE_END)
     #undef SUPDEF_PRAGMA_DEFINE_END
@@ -231,24 +241,24 @@
 // Any valid C identifier
 #define SUPDEF_MACRO_ID_REGEX "\\w+"
 
-#if defined(SUPDEF_PRAGMA_DEFSTART_REGEX)
-    #undef SUPDEF_PRAGMA_DEFSTART_REGEX
+#if defined(SUPDEF_PRAGMA_DEF_BEG_REGEX)
+    #undef SUPDEF_PRAGMA_DEF_BEG_REGEX
 #endif
 // '#' at the beginning of the line, followed by any number of spaces >= 0
 // then 'pragma' followed by any number of spaces > 0
 // then 'supdef' followed by any number of spaces > 0
 // then 'start' followed by any number of spaces > 0
 // then the name of the define followed by any number of spaces >= 0
-#define SUPDEF_PRAGMA_DEFSTART_REGEX "^#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_START "\\s+" SUPDEF_MACRO_ID_REGEX "\\s*$"
+#define SUPDEF_PRAGMA_DEF_BEG_REGEX "^#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_BEGIN "\\s+" SUPDEF_MACRO_ID_REGEX "\\s*$"
 
-#if defined(SUPDEF_PRAGMA_DEFEND_REGEX)
-    #undef SUPDEF_PRAGMA_DEFEND_REGEX
+#if defined(SUPDEF_PRAGMA_DEF_END_REGEX)
+    #undef SUPDEF_PRAGMA_DEF_END_REGEX
 #endif
 // '#' at the beginning of the line, followed by any number of spaces >= 0
 // then 'pragma' followed by any number of spaces > 0
 // then 'supdef' followed by any number of spaces > 0
 // then 'end' followed by any number of spaces >= 0
-#define SUPDEF_PRAGMA_DEFEND_REGEX "^#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_END "\\s*$"
+#define SUPDEF_PRAGMA_DEF_END_REGEX "^#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_END "\\s*$"
 
 #if defined(SUPDEF_PRAGMA_INCLUDE)
     #undef SUPDEF_PRAGMA_INCLUDE
@@ -265,3 +275,14 @@
 // then a C string literal followed by any number of spaces >= 0
 #define SUPDEF_PRAGMA_INCLUDE_REGEX "^#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+\"([^\"]*)\"\\s*$"
 
+#include <version>
+#if !defined( __cpp_lib_coroutine) || __cpp_lib_coroutine  != 201902L || \
+    !defined(__cpp_impl_coroutine) || __cpp_impl_coroutine != 201902L
+    #error "This library requires C++20 coroutines"
+#endif
+
+
+#if __cplusplus < 202002L// 202302L
+    //#error "This library requires C++23"
+    #error "This library requires at least C++20"
+#endif

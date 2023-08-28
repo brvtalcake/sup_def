@@ -40,7 +40,7 @@
         }
         catch (const std::exception& e)
         {
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "Failed to initialize parser: " + std::string(e.what()) + "\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to initialize parser: " + std::string(e.what()) + "\n");
         }
     }
 
@@ -53,10 +53,11 @@
             this->file = std::make_unique<std::basic_ifstream<T>>(file_path);
             this->file_content = std::make_shared<std::basic_string<T>>();
             this->lines.clear();
+            this->file_path = file_path;
         }
         catch (const std::exception& e)
         {
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "Failed to initialize parser: " + std::string(e.what()) + "\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to initialize parser: " + std::string(e.what()) + "\n");
         }
     }
 
@@ -67,9 +68,9 @@
     void Parser<T>::print_content(Stream& s) const
     {
         if (this->file_content == nullptr)
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "File content is null\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is null\n");
         if (this->file_content.get()->empty())
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "File content is empty\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty\n");
         s << *(this->file_content.get()) << std::endl;
     }
 #endif
@@ -79,9 +80,9 @@
     std::shared_ptr<std::basic_string<T>> Parser<T>::slurp_file()
     {
         if (this->file_content == nullptr)
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "File content is null\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is null\n");
         if (!this->file.get()->is_open())
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "File is not open\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File is not open\n");
 
         this->file.get()->seekg(0, std::basic_ios<T>::end);
         try
@@ -90,7 +91,7 @@
         }
         catch (const std::exception& e)
         {
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "Failed to reserve file content: " + std::string(e.what()) + "\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to reserve file content: " + std::string(e.what()) + "\n");
         }
         this->file.get()->seekg(0, std::basic_ios<T>::beg);
 
@@ -103,10 +104,10 @@
         }
         catch (const std::exception& e)
         {
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "Failed to read file content: " + std::string(e.what()) + "\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to read file content: " + std::string(e.what()) + "\n");
         }
         this->lines.clear();
-#if defined(__cpp_lib_containers_ranges) && __cpp_lib_containers_ranges >= 202202L
+#if defined(__cpp_lib_containers_ranges) && __cpp_lib_containers_ranges >= 202202L && 0 // For now, disable this
         // Not even sure this works
         this->lines.assign_range(split_string(*(this->file_content.get()), '\n'));
 #else
@@ -116,14 +117,15 @@
     }
 
     // Strip C and C++ style comments from this->file_content string.
+    // TODO: Also remove `#if 0` blocks
     template <typename T>
         requires CharacterType<T>
     Parser<T>& Parser<T>::strip_comments(void)
     {
         if (this->file_content == nullptr)
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "File content is null\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is null\n");
         if (this->file_content.get()->empty())
-            throw Exception<char>(ExcType::INTERNAL_ERROR, "File content is empty\n");
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty\n");
         
         bool in_str_lit = false; // Are we in a string literal ?
 
@@ -186,7 +188,7 @@
                                     else
                                         column++;
                                 }
-                                throw Exception<T>(ExcType::SYNTAX_ERROR, "Unterminated comment\n", line, column, this->lines.at(line - 1));
+                                throw Exception<T, std::filesystem::path>(ExcType::SYNTAX_ERROR, "Unterminated comment\n", this->file_path, line, column, this->lines.at(line - 1));
                             }
                             this->file_content.get()->erase(i, end_comment_pos - i + 2);
                         }

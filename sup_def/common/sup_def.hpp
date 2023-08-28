@@ -39,10 +39,9 @@
     #include <windows.h>
 #endif
 
-#include <sup_def/third_party/map/map.h>
-#include <boost/preprocessor.hpp>
 
 #include <cstdint>
+#include <cassert>
 
 #include <coroutine>
 #include <utility>
@@ -60,121 +59,29 @@
 #include <iostream>
 #include <locale>
 #include <memory>
+#include <cstdlib>
+
+
+#include <sup_def/third_party/map/map.h>
+#include <boost/preprocessor.hpp>
+
+#include <sup_def/common/util/util.hpp>
+#include <sup_def/common/util/engine.hpp>
+
+#ifdef COMPILING_EXTERNAL
+    #include <sup_def/external/external.hpp>
+#endif
 
 namespace SupDef
 {
-
-#include <sup_def/common/config.h>
-
-    template <size_t N, typename... types>
-    struct GetNthTypeImpl
-    { };
-
-    template <typename T, typename... types>
-    struct GetNthTypeImpl<0, T, types...>
-    {
-        using type = T;
-    };
-
-    template <size_t N, typename T, typename... types>
-        requires (N > 0)
-    struct GetNthTypeImpl<N, T, types...>
-    {
-        using type = typename GetNthTypeImpl<N - 1, types...>::type;
-    };
-
-    template <size_t N, typename... types>
-    using GetNthType = typename GetNthTypeImpl<N, types...>::type;
-
-    static_assert(std::same_as<GetNthType<0, int, char, float>, int>);
-    static_assert(std::same_as<GetNthType<1, int, char, float>, char>);
-    static_assert(std::same_as<GetNthType<2, int, char, float>, float>);
-    static_assert(std::same_as<GetNthType<0, int>, int>);
-    static_assert(std::same_as<GetNthType<10, int, int, int, int, int, int, int, int, int, int, float>, float>);
-
-    template <size_t N, typename... types>
-    struct GetNthArgImpl
-    { };
-
-    template <typename T, typename... types>
-    struct GetNthArgImpl<0, T, types...>
-    {
-        static consteval T get(T arg, types...)
-        {
-            return arg;
-        }
-    };
-
-    template <size_t N, typename T, typename... types>
-        requires (N > 0)
-    struct GetNthArgImpl<N, T, types...>
-    {
-        static consteval auto get(T, types... args)
-        {
-            return GetNthArgImpl<N - 1, types...>::get(args...);
-        }
-    };
-
-    template <size_t N, typename... types>
-    consteval auto get_nth_arg(types... args)
-    {
-        return GetNthArgImpl<N, types...>::get(args...);
-    }
-
-#if defined(GetNthArg)
-    #undef GetNthArg
-#endif
-#define GetNthArg(N, ...) get_nth_arg<N>(__VA_ARGS__)
-
-    static_assert(GetNthArg(0, 1, 2, 3, 4, 5, 6, 7, 8, 9) == 1);
-    static_assert(GetNthArg(1, 1, 2, 3, 4, 5, 6, 7, 8, 9) == 2);
-    static_assert(GetNthArg(0, 1.5f, 2.5, 956L, 42ULL) == 1.5f);
-
-    template <typename T>
-    concept CharacterType = std::same_as<char, std::remove_cv_t<T>>       ||
-                            std::same_as<wchar_t, std::remove_cv_t<T>>    ||
-                            std::same_as<char8_t, std::remove_cv_t<T>>    ||
-                            std::same_as<char16_t, std::remove_cv_t<T>>   ||
-                            std::same_as<char32_t, std::remove_cv_t<T>>;
-    
-    template <typename T>
-    concept StdStringType = requires(T)
-    {
-        typename T::value_type;
-        typename T::size_type;
-        typename T::traits_type;
-        typename T::allocator_type;
-    };
-
-    template <typename T>
-    concept StringType = ( std::is_pointer_v<T>                                                         &&
-                         CharacterType<std::remove_cv_t<std::remove_pointer_t<std::remove_cv_t<T>>>> )  ||
-                         ( StdStringType<std::remove_cv_t<T>>                                           &&
-                         CharacterType<typename std::remove_cv_t<T>::value_type> );
-
-    template <typename T>
-    concept FilePath = std::same_as<std::filesystem::path, T>   || 
-                       StringType<T>;
-
-    template <typename T>
-        requires CharacterType<T>
-    using string_size_type = std::basic_string<T>::size_type;
-
-    typedef uint64_t parser_state_underlying_type;
-
-    inline void exit_program(int exit_code)
-    {
-        std::cerr << "Program exited with code " << exit_code << std::endl;
-        std::exit(exit_code);
-    }
     // To be deleted
-    enum ParserState : parser_state_underlying_type
+    /* enum ParserState : parser_state_underlying_type
     {
         OK = 0,
         INTERNAL_ERROR = 1 << 0,
         INVALID_PRAGMA_ERROR = 1 << 1,
         INVALID_MACRO_ARGC_ERROR = 1 << 2
-    };
+    }; */
 
     enum class ExcType : uint8_t
     {
@@ -523,8 +430,8 @@ namespace SupDef
      * @tparam T The character type of the parsed file
      * @return The formatted error message
      */
-    template <typename T>
-        requires CharacterType<T>
+    template <typename T, typename U>
+        requires CharacterType<T> && FilePath<U>
     inline 
     std::string 
     format_error
@@ -532,6 +439,7 @@ namespace SupDef
         ExcType type,
         const std::string& error_msg,
         std::optional<std::string> error_type,
+        std::optional<U> filepath,
         std::optional<string_size_type<T>> line,
         std::optional<string_size_type<T>> col,
         std::optional<std::basic_string<T>> context
@@ -539,13 +447,20 @@ namespace SupDef
     {
         std::string result;
         if (type != ExcType::NO_ERROR)
-            result = FG(BRIGHT_RED) + TXT(BOLD) + "[ ERROR ]" + FG(DEFAULT) + (error_type.has_value() ? "  (error type: " + error_type.value() + ")" : "") + "  " + TXT(RESET) + error_msg + "\n";
+            result = FG(BRIGHT_RED) + TXT(BOLD) + "[ ERROR n°" + std::to_string(SupDef::Util::get_errcount()) + " ]" + FG(DEFAULT) + (error_type.has_value() ? "  (error type: " + error_type.value() + ")" : "") + "  " + TXT(RESET) + error_msg + "\n";
         else
-            result = FG(BRIGHT_YELLOW) + TXT(BOLD) + "[ WARNING ]" + FG(DEFAULT) + "  " + TXT(RESET) + error_msg + "\n";
-        if (line.has_value())
-            result += "Line: " + std::to_string(line.value()) + "\n";
-        if (col.has_value())
-            result += "Column: " + std::to_string(col.value()) + "\n";
+            result = FG(BRIGHT_YELLOW) + TXT(BOLD) + "[ WARNING n°" + std::to_string(SupDef::Util::get_warncount()) + " ]" + FG(DEFAULT) + "  " + TXT(RESET) + error_msg + "\n";
+        if (filepath.has_value())
+        {
+            result += std::string("In file ") + TXT(BOLD) + std::string(filepath.value());
+            if (!line.has_value() || !col.has_value())
+                result += ":\n";
+            else
+                result += ":" + std::to_string(line.value()) + ":" + std::to_string(col.value()) + ":\n";
+            result += TXT(RESET);
+        }
+        else if (line.has_value() && col.has_value())
+            result += "At line: " + std::to_string(line.value()) + ", column: " + std::to_string(col.value()) + ":\n";
         if (context.has_value())
         {
             if (col.has_value())
@@ -555,24 +470,28 @@ namespace SupDef
                 string_size_type<T> end = context.value().size();
                 for (string_size_type<T> i = col.value(); i > 0; --i)
                 {
-                    if (context.value()[i] == ' ' || context.value()[i] == '\t')
+                    if (context.value().at(i) == ' ' || context.value().at(i) == '\t')
                     {
                         start = i + 1;
                         break;
                     }
                 }
-                for (string_size_type<T> i = col.value(); i < context.value().size(); ++i)
+                for (string_size_type<T> i = col.value() + 1; i < context.value().size(); ++i)
                 {
-                    if (context.value()[i] == ' ' || context.value()[i] == '\t')
+                    if (context.value().at(i) == ' ' || context.value().at(i) == '\t')
                     {
                         end = i;
                         break;
                     }
                 }
-                result += "Context: " + context.value().substr(0, start);
+                result += "  | " + context.value().substr(0, start);
+                assert(static_cast<long long>(end) - static_cast<long long>(start) >= 0LL);
                 result += FG(BRIGHT_RED) + TXT(BOLD) + context.value().substr(start, end - start) + FG(DEFAULT) + TXT(RESET);
-                result += context.value().substr(end, context.value().size() - end) + "\n";
-                uint16_t start_term_col = std::string("Context: ").size();
+                if (static_cast<long long>(context.value().size()) - static_cast<long long>(end) > 0LL)
+                    result += context.value().substr(end, context.value().size() - end) + "\n";
+                else
+                    result += "\n";
+                uint16_t start_term_col = std::string("  | ").size();
                 for (string_size_type<T> i = 0; i < start; ++i)
                 {
                     if (context.value()[i] == '\t')
@@ -583,29 +502,28 @@ namespace SupDef
                 result += TXT(RESET);
                 // Move cursor position just under the error position (i.e. relative to the start of the line)
                 result += CURSOR_MOVE(start_term_col, 0);
-                // Add some '~' to underline the error position, and a '^' to point to the middle of the """word"""
+                // Add some '~' to underline the error position, and a '^' to point to the start of the """word"""
                 result += FG(BRIGHT_RED) + TXT(BOLD);
-                for (string_size_type<T> i = start; i < end / 2; ++i)
-                    result += '~';
                 result += '^';
-                for (string_size_type<T> i = end / 2 + 1; i < end; ++i)
+                for (string_size_type<T> i = start + 1; i < end; ++i)
                     result += '~';
                 result += FG(DEFAULT) + TXT(RESET);
                 result += '\n';
             }
             else
-                result += "Context: " + context.value() + "\n";
+                result += "  | " + context.value() + "\n";
         }
         return result;
     }
 
-    template <typename T>
-        requires CharacterType<T>
+    template <typename T, typename U>
+        requires CharacterType<T> && FilePath<U>
     class Exception : public std::exception
     {
         private:
             ExcType type;
             std::string msg;
+            std::optional<U> filepath;
             std::optional<string_size_type<T>> line;
             std::optional<string_size_type<T>> col;
             std::optional<std::basic_string<T>> context;
@@ -633,14 +551,16 @@ namespace SupDef
             }
         public:
             Exception() = default;
-            Exception(ExcType type) : type(type), line(std::nullopt), col(std::nullopt), context(std::nullopt) 
-                { this->msg = "An error occured"; }
-            Exception(std::string msg) : msg(msg), line(std::nullopt), col(std::nullopt), context(std::nullopt)
-                { this->type = ExcType::UNSPECIFIED_ERROR; }
-            Exception(ExcType type, std::string msg) : type(type), msg(msg), line(std::nullopt), col(std::nullopt), context(std::nullopt)
-            {}
-            Exception(ExcType type, std::string msg, string_size_type<T> line, string_size_type<T> col, std::basic_string<T> context) : type(type), msg(msg), line(line), col(col), context(context)
-            {}
+            Exception(ExcType type) : type(type), filepath(std::nullopt), line(std::nullopt), col(std::nullopt), context(std::nullopt)
+            { this->msg = "An error occured"; }
+            Exception(std::string msg) : msg(msg), filepath(std::nullopt), line(std::nullopt), col(std::nullopt), context(std::nullopt)
+            { this->type = ExcType::UNSPECIFIED_ERROR; }
+            Exception(ExcType type, std::string msg) : type(type), msg(msg), filepath(std::nullopt), line(std::nullopt), col(std::nullopt), context(std::nullopt)
+            { }
+            Exception(ExcType type, std::string msg, string_size_type<T> line, string_size_type<T> col, std::basic_string<T> context) : type(type), msg(msg), filepath(std::nullopt), line(line), col(col), context(context)
+            { }
+            Exception(ExcType type, std::string msg, U filepath, string_size_type<T> line, string_size_type<T> col, std::basic_string<T> context) : type(type), msg(msg), filepath(filepath), line(line), col(col), context(context)
+            { }
 
             ~Exception() = default;
 
@@ -649,13 +569,17 @@ namespace SupDef
             constexpr inline Exception& set_type(ExcType type) noexcept { this->type = type; return *this; }
             inline void report(std::ostream& os = std::cerr) const noexcept
             {
-                os << format_error<T>(this->type, this->msg, this->get_type_str(), this->line, this->col, this->context);
+                if (this->type != ExcType::NO_ERROR)
+                    SupDef::Util::reg_error();
+                else
+                    SupDef::Util::reg_warning();
+                os << format_error<T, U>(this->type, this->msg, this->get_type_str(), this->filepath, this->line, this->col, this->context);
             }
     };
 
-    template <typename T>
-        requires CharacterType<T>
-    using Error = Exception<T>;
+    template <typename T, typename U>
+        requires CharacterType<T> && FilePath<U>
+    using Error = Exception<T, U>;
 
     inline void set_app_locale(void)
     {
@@ -670,14 +594,41 @@ namespace SupDef
         #endif
     }
 
-    template <typename T>
-        requires CharacterType<T>
-    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T> str, T delimiter) noexcept
+    template <typename T, typename U>
+        requires CharacterType<T> && std::convertible_to<U, T>
+    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T> str, U delimiter) noexcept(std::is_nothrow_convertible_v<U, T>)
     {
         std::vector<std::basic_string<T>> result{};
         std::basic_stringstream<T> ss(str);
         std::basic_string<T> token;
-        while (std::getline(ss, token, delimiter))
+        T converted_delim;
+        if constexpr (std::is_nothrow_convertible_v<U, T>)
+            converted_delim = static_cast<T>(delimiter);
+        else
+        {
+            try
+            {
+                converted_delim = static_cast<T>(delimiter);
+            }
+            catch (const std::bad_cast& e)
+            {
+#if defined(__GNUC__)
+                throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to convert delimiter to string character type in function " + std::string(__PRETTY_FUNCTION__) + " (caught exception: " + e.what() + ")");
+#else
+                throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to convert delimiter to string character type in function " + std::string(__func__) + " (caught exception: " + e.what() + ")");
+#endif
+#if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
+                std::unreachable();
+#elif defined(__GNUC__)
+                __builtin_unreachable();
+#else
+                std::abort();
+#endif
+                return result;
+            }
+        
+        }
+        while (std::getline(ss, token, converted_delim))
             result.push_back(token);
         return result;
     }
@@ -795,7 +746,7 @@ namespace SupDef
     /*
      * A SupDef pragma has the form:
      *
-     * #pragma supdef start <super_define_name>
+     * #pragma supdef begin <super_define_name>
      * <super_define_body>
      * #pragma supdef end
      * 
@@ -808,7 +759,7 @@ namespace SupDef
      * <super_define_body_line_content_char> ::= [anything except " (which has to be escaped with \") and \n]
      * 
      * Example:
-     * #pragma supdef start MY_SUPER_DEFINE
+     * #pragma supdef begin MY_SUPER_DEFINE
      * "#define TEST \"This is the body of my super define named $0 which takes 2 arguments: $1 and $2\""
      * #pragma supdef end
      * 
@@ -1129,11 +1080,13 @@ namespace SupDef
             typedef std::basic_string<T>::size_type location_type;
 
             std::unique_ptr<std::basic_ifstream<T>> file;
+            std::filesystem::path file_path;
             /* pos_type last_error_pos; */
             /* std::map<pragma_loc_t, PragmaDef<parsed_char_t>, PragmaLocCompare<parsed_char_t>> pragmas; */
     };
 
-#define Parser_FUNCTIONS 1
+#undef NEED_Parser_TEMPLATES
+#define NEED_Parser_TEMPLATES 1
 #include <sup_def/common/parser.cpp>
 
     /**
@@ -1200,6 +1153,10 @@ namespace SupDef
             void restart(T src_file_name, U dst_file_name);
     };
 
+#undef NEED_Engine_TEMPLATES
+#define NEED_Engine_TEMPLATES 1
+#include <sup_def/common/engine.cpp>
+
     template <typename T>
         requires CharacterType<T>
     inline bool is_ident_char(T c, bool authorize_numbers = true) noexcept
@@ -1214,30 +1171,6 @@ namespace SupDef
         while (cursor_pos < str.size() && std::isspace(str[cursor_pos], std::locale()))
             ++cursor_pos;
         return cursor_pos;
-    }
-
-    /**
-     * @brief Get the normalized path object
-     * @details This function returns the normalized path of a file, i.e. the canonical path of the file if it exists, or an empty path otherwise
-     */
-    inline std::filesystem::path get_normalized_path(std::filesystem::path file_path)
-    {
-        if (!std::filesystem::exists(file_path))
-            return std::filesystem::path();
-        return std::filesystem::canonical(file_path);
-    }
-
-    template <typename P1, typename P2>
-        requires CharacterType<P1> && FilePath<P2>
-    inline std::optional<std::filesystem::path> get_included_fpath(std::filesystem::path file_path)
-    {
-        for (auto& include_path : Engine<P1, P2>::get_include_paths())
-        {
-            auto include_file_path = get_normalized_path(include_path) / file_path;
-            if (std::filesystem::exists(include_file_path))
-                return include_file_path;        
-        }
-        return std::nullopt;
     }
 
 }

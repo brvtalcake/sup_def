@@ -1,6 +1,34 @@
+/* 
+ * MIT License
+ * 
+ * Copyright (c) 2023 Axel PASCON
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include <sup_def/common/start_header.h>
+
+
 #ifndef EXTERNAL_HPP
 #define EXTERNAL_HPP
 
+#include <sup_def/common/config.h>
 #include <sup_def/common/sup_def.hpp>
 
 namespace SupDef
@@ -19,7 +47,7 @@ namespace SupDef
          * Example:
          * @code sup_def -I "$HOME/my/project/path/include:../../other/project/include" -o ./output_file.c ./input_file.c @endcode
          */
-        class CmdLine
+        class SD_EXTERNAL_API CmdLine
         {
             public:
                 std::vector<std::filesystem::path> include_paths;
@@ -37,7 +65,48 @@ namespace SupDef
                 int argc;
                 char** argv;
         };
+
+        SD_EXTERNAL_API
+        void init(int argc, char** argv);
+
+        SD_EXTERNAL_API
+        void init(int argc, const char** argv);
+
+        SD_EXTERNAL_API
+        const std::string& get_program_name(void);
+
+        SD_EXTERNAL_API
+        int get_program_argc(void);
+
+        SD_EXTERNAL_API
+        const std::vector<std::string>& get_program_argv();
+
+        SD_EXTERNAL_API
+        const std::string& get_program_arg(int index);
+
+        SD_EXTERNAL_API
+        const std::string& get_program_arg(unsigned int index);
+
+        SD_EXTERNAL_API
+        const std::string& get_program_arg(size_t index);
+
+        SD_EXTERNAL_API
+        const std::string& get_program_arg(const std::string& arg);
+
+        SD_EXTERNAL_API
+        bool has_program_arg(const std::string& arg);
+
+        SD_EXTERNAL_API
+        bool has_program_arg(int index);
+
+        SD_EXTERNAL_API
+        bool has_program_arg(const char* arg);
+
+        SD_EXTERNAL_API
+        int main_ret(void);
     }
 }
 
 #endif
+
+#include <sup_def/common/end_header.h>
