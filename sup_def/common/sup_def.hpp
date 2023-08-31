@@ -786,10 +786,10 @@ namespace SupDef
             PragmaDef(const std::vector<std::basic_string<T>>& full_pragma);
             ~PragmaDef() noexcept;
 
-            std::basic_string<T> get_name() const noexcept;
+            std::shared_ptr<std::basic_string<T>> get_name() const noexcept;
             std::basic_string<T> get_body() const noexcept;
-            std::vector<std::basic_string<T>> get_args() const noexcept;
-            std::vector<std::basic_string<T>>::size_type get_argc() const noexcept;
+            std::vector<std::shared_ptr<std::basic_string<T>>> get_args() const noexcept;
+            std::vector<std::shared_ptr<std::basic_string<T>>>::size_type get_argc() const noexcept;
             std::basic_string<T> substitute() const noexcept;
             std::basic_string<T> substitute(std::basic_string<T> arg1, ...) noexcept(__cpp_lib_unreachable >= 202202L);
     };

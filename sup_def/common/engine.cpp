@@ -24,7 +24,7 @@
 
 #include <sup_def/common/config.h>
 
-#if NEED_TPP_INC(Parser) == 0
+#if NEED_TPP_INC(Engine) == 0
 #include <sup_def/common/sup_def.hpp>
 
 namespace SupDef
