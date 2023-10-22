@@ -160,7 +160,7 @@ namespace SupDef
 #endif
 
     // Explicitely instantiate Parser class for all needed character types
-    //EXP_INST_CLASS(Parser, (char), (wchar_t), (char8_t), (char16_t), (char32_t))
+    EXP_INST_CLASS(Parser, (char), (wchar_t), (char8_t), (char16_t), (char32_t))
 #if defined(SUPDEF_DEBUG)
     /* EXP_INST_FUNC(Parser<char>::print_content, (void, (std::ostream&))); */
     // Explicitely instantiate print_content 

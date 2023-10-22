@@ -60,3 +60,5 @@ test
 test.cpp
 test_copied.cpp
 test_coro.cpp
+build/*
+!**CMakeLists.txt

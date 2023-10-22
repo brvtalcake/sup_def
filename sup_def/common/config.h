@@ -36,6 +36,9 @@
 
 #include <sup_def/common/util/platform.hpp>
 
+#include <sup_def/third_party/map/map.h>
+#include <sup_def/third_party/empty_macro/detect.h>
+
 #if defined(ID)
     #undef ID
 #endif
@@ -50,6 +53,69 @@
     #undef ID__
 #endif
 #define ID__(...) __VA_ARGS__
+
+#if defined(PP_EAT)
+    #undef PP_EAT
+#endif
+#define PP_EAT(...)
+
+#if defined(PP_CAT)
+    #undef PP_CAT
+#endif
+#define PP_CAT(a, b) PP_CAT_(a, b)
+
+#if defined(PP_CAT_)
+    #undef PP_CAT_
+#endif
+#define PP_CAT_(a, b) a ## b
+
+#if defined(PP_IF)
+    #undef PP_IF
+#endif
+#define PP_IF(cond) PP_IF_(cond)
+
+#if defined(PP_IF_)
+    #undef PP_IF_
+#endif
+#define PP_IF_(cond) ID(PP_CAT(PP_IF_, cond))
+
+#if defined(PP_IF_0)
+    #undef PP_IF_0
+#endif
+#define PP_IF_0(...) ID
+
+#if defined(PP_IF_1)
+    #undef PP_IF_1
+#endif
+#define PP_IF_1(...) __VA_ARGS__ PP_EAT
+
+#if defined(VA_COUNT)
+    #undef VA_COUNT
+#endif
+#define VA_COUNT(...) VA_COUNT_(__VA_ARGS__)
+
+#if defined(VA_COUNT_)
+    #undef VA_COUNT_
+#endif
+#define VA_COUNT_(...)                                                      \
+    ID(                                                                     \
+        PP_IF                                                               \
+        (                                                                   \
+            ISEMPTY(__VA_ARGS__)                                            \
+        )                                                                   \
+        (0)                                                                 \
+        (                                                                   \
+            VA_COUNT__(                                                     \
+                __VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11,        \
+                10, 9, 8, 7, 6, 5, 4, 3, 2, 1                               \
+            )                                                               \
+        )                                                                   \
+    )
+
+#if defined(VA_COUNT__)
+    #undef VA_COUNT__
+#endif
+#define VA_COUNT__(a20, a19, a18, a17, a16, a15, a14, a13, a12, a11, a10, a9, a8, a7, a6, a5, a4, a3, a2, a1, count, ...) count
 
 #if defined(EXPAND_ONE_TUPLE)
     #undef EXPAND_ONE_TUPLE
@@ -249,7 +315,7 @@
 // then 'supdef' followed by any number of spaces > 0
 // then 'start' followed by any number of spaces > 0
 // then the name of the define followed by any number of spaces >= 0
-#define SUPDEF_PRAGMA_DEF_BEG_REGEX "^#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_BEGIN "\\s+" SUPDEF_MACRO_ID_REGEX "\\s*$"
+#define SUPDEF_PRAGMA_DEF_BEG_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_BEGIN "\\s+" SUPDEF_MACRO_ID_REGEX "\\s*$"
 
 #if defined(SUPDEF_PRAGMA_DEF_END_REGEX)
     #undef SUPDEF_PRAGMA_DEF_END_REGEX
@@ -258,7 +324,7 @@
 // then 'pragma' followed by any number of spaces > 0
 // then 'supdef' followed by any number of spaces > 0
 // then 'end' followed by any number of spaces >= 0
-#define SUPDEF_PRAGMA_DEF_END_REGEX "^#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_END "\\s*$"
+#define SUPDEF_PRAGMA_DEF_END_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_END "\\s*$"
 
 #if defined(SUPDEF_PRAGMA_INCLUDE)
     #undef SUPDEF_PRAGMA_INCLUDE
@@ -273,7 +339,21 @@
 // then 'supdef' followed by any number of spaces > 0
 // then 'include' followed by any number of spaces > 0
 // then a C string literal followed by any number of spaces >= 0
-#define SUPDEF_PRAGMA_INCLUDE_REGEX "^#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+\"([^\"]*)\"\\s*$"
+#define SUPDEF_PRAGMA_INCLUDE_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+[<>]*\"([^\"]*)\"[<>]*\\s*$"
+#ifdef SUPDEF_PRAGMA_INCLUDE_REGEX_ANGLE_BRACKETS
+    #undef SUPDEF_PRAGMA_INCLUDE_REGEX_ANGLE_BRACKETS
+#endif
+#define SUPDEF_PRAGMA_INCLUDE_REGEX_ANGLE_BRACKETS "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+[\"]*<([^>]*)>[\"]*\\s*$"
+#ifdef SUPDEF_PRAGMA_INCLUDE_REGEX_NO_QUOTES
+    #undef SUPDEF_PRAGMA_INCLUDE_REGEX_NO_QUOTES
+#endif
+// This one is without `""` nor `<>`
+#define SUPDEF_PRAGMA_INCLUDE_REGEX_NO_QUOTES "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+([^\\s]+)\\s*$"
+#ifdef SUPDEF_PRAGMA_INCLUDE_REGEX_NO_PATH
+    #undef SUPDEF_PRAGMA_INCLUDE_REGEX_NO_PATH
+#endif
+// This one is just invalid
+#define SUPDEF_PRAGMA_INCLUDE_REGEX_NO_PATH "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+([^\\s]*)\\s*$"
 
 #include <version>
 #if !defined( __cpp_lib_coroutine) || __cpp_lib_coroutine  != 201902L || \
@@ -285,4 +365,12 @@
 #if __cplusplus < 202002L// 202302L
     //#error "This library requires C++23"
     #error "This library requires at least C++20"
+#endif
+
+#ifndef __cpp_lib_unreachable
+    #define __cpp_lib_unreachable 0L
+#endif
+
+#if SUPDEF_COMPILER == 1
+    #include <bits/stdc++.h>
 #endif

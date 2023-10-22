@@ -7,18 +7,16 @@
 
 // C runnable supdef (unimplemented)
 #pragma supdef runnable C begin test2
-
-int main(int argc, char const *argv[])
-{
     SUPDEF_RETURN($1);
-}
-
 #pragma supdef end
 
 // includes
 #pragma supdef include "supdefinitions.sd"
 
 #pragma supdef include "supdefinitions2.sd"
+
+// Dump some code passed to `supdef`
+#pragma supdef dump 0
 
 // conditionals (unimplemented)
 #pragma supdef if test2(0) != 0
@@ -32,12 +30,10 @@ test2(1) // (Expand to `1`)
 
 // C++ runnable supdef (unimplemented)
 #pragma supdef runnable CXX begin test3
-#include <string>
-int main(int argc, char const *argv[])
-{
-    std::string returned_str = "constant string";
-    SUPDEF_RETURN(returned_str + " returned from a runnable");
-}
+SUPDEF_INCLUDE(<string>)
+SUPDEF_INCLUDE("/my/cool/header/with/absolute/path.hpp")
+std::string returned_str = "constant string";
+SUPDEF_RETURN(returned_str + " returned from a runnable");
 #pragma supdef end
 
 #warning test3()

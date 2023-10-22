@@ -117,12 +117,7 @@ namespace SupDef
         auto argc = this->get_argc();
         if (argc == 0)
         {
-            // Check if std::unreachable is available
-#if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
-            std::unreachable();
-#else
-            throw Exception<char>("An unreachable statement has been reached");
-#endif
+            UNREACHABLE();
             return this->get_body();
         }
 

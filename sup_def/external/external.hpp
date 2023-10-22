@@ -31,10 +31,22 @@
 #include <sup_def/common/config.h>
 #include <sup_def/common/sup_def.hpp>
 
+#include <filesystem>
+#include <string>
+#include <vector>
+#include <array>
+#include <cstring>
+/* #include <unistd.h> */
+
 namespace SupDef
 {
     namespace External
     {
+        template <typename T>
+        concept CStrFilePath = FilePath<T> && CStrType<T>;
+
+        template <typename T>
+        concept StdStrFilePath = FilePath<T> && StdStringType<T>;
         /**
          * @class CmdLine
          * @brief A class representing the command line arguments, and used to parse them
@@ -47,12 +59,37 @@ namespace SupDef
          * Example:
          * @code sup_def -I "$HOME/my/project/path/include:../../other/project/include" -o ./output_file.c ./input_file.c @endcode
          */
+        template <typename T>
+            requires FilePath<T>
         class SD_EXTERNAL_API CmdLine
         {
             public:
-                std::vector<std::filesystem::path> include_paths;
-                std::filesystem::path input_file;
-                std::filesystem::path output_file;
+                typedef std::conditional_t<CStrType<T>, std::array<std::remove_all_extents_t<std::remove_pointer_t<std::remove_cvref_t<T>>>, 2048>, T> path_type;
+                std::vector<path_type> include_paths;
+                path_type input_file;
+                path_type output_file;
+
+                CmdLine(int argc, char** argv);
+                CmdLine(int argc, const char* argv[]);
+                ~CmdLine() = default;
+
+                inline constexpr void parse(void);
+                inline constexpr void update_engine(void);
+
+            private:
+                int argc;
+                char** argv;
+        };
+#if 0
+
+        template <typename T>
+            requires CStrFilePath<T>
+        class SD_EXTERNAL_API CmdLine<T>
+        {
+            public:
+                std::vector<T> include_paths;
+                const T input_file;
+                const T output_file;
 
                 CmdLine(int argc, char** argv);
                 CmdLine(int argc, const char* argv[]);
@@ -65,6 +102,33 @@ namespace SupDef
                 int argc;
                 char** argv;
         };
+
+        template <typename T>
+            requires StdStrFilePath<T>
+        class SD_EXTERNAL_API CmdLine<T>
+        {
+            public:
+                std::vector<T> include_paths;
+                T input_file;
+                T output_file;
+
+                CmdLine(int argc, char** argv);
+                CmdLine(int argc, const char* argv[]);
+                ~CmdLine() = default;
+
+                void parse(void);
+                void update_engine(void);
+
+            private:
+                int argc;
+                char** argv;
+        };
+
+#endif
+
+#undef NEED_CmdLine_TEMPLATES
+#define NEED_CmdLine_TEMPLATES 1
+#include <sup_def/external/cmdline.cpp>
 
         SD_EXTERNAL_API
         void init(int argc, char** argv);

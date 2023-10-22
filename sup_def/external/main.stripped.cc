@@ -1,11 +1,7 @@
 
-/*
- * main.cpp
- * 
- * 
- */
+ 
 
-// #pragma supdef include // error */
+
 
 #include <sup_def/common/sup_def.hpp>
 #include <sup_def/external/external.hpp>
@@ -19,31 +15,24 @@
 #include <map>
 #include <regex>
 
-#include <iomanip> // 
+#include <iomanip>
 
-#pragma supdef include <blabla.sd>
-#pragma supdef include blabla2.sd
 
-#pragma supdef include "test.sd"
 
-#pragma supdef include "test2.sd"
 
-#pragma supdef include test3.sd
 
-/* #pragma supdef include "test4.sd"> // error */
+ 
 
-/* #pragma supdef include <te"st"5.sd> // error */
+ 
 
-//#pragma supdef include "<test5.sd>" // error
 
-/* test             
-    
-    */
 
-//
-// #pragma supdef include // error */
+ 
 
-int main/**/(int argc, char/**/const *argv[/*])*/])
+
+
+
+int main (int argc, char const *argv[ ])
 {
     SupDef::External::init(argc, argv);
 #if 0
@@ -109,6 +98,7 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     std::cout << SupDef::is_ident_char<char32_t, true>(U'6') << std::endl << std::endl;
 #endif
 #endif
-    /* SupDef::Util::exit_program(0); */
+     
     return SupDef::External::main_ret();
 }
+
