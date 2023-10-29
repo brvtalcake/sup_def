@@ -29,7 +29,35 @@
 
 namespace SupDef
 {
+    EXP_INST_CLASS(Engine,
+        (char, std::filesystem::path),
+        (char, std::string),
+        (char, std::wstring),
+        (char, std::u8string),
+        (char, std::u16string),
+        (char, std::u32string),
 
+        (char8_t, std::filesystem::path),
+        (char8_t, std::string),
+        (char8_t, std::wstring),
+        (char8_t, std::u8string),
+        (char8_t, std::u16string),
+        (char8_t, std::u32string),
+
+        (char16_t, std::filesystem::path),
+        (char16_t, std::string),
+        (char16_t, std::wstring),
+        (char16_t, std::u8string),
+        (char16_t, std::u16string),
+        (char16_t, std::u32string),
+
+        (char32_t, std::filesystem::path),
+        (char32_t, std::string),
+        (char32_t, std::wstring),
+        (char32_t, std::u8string),
+        (char32_t, std::u16string),
+        (char32_t, std::u32string)
+    )
 }
 
 #else

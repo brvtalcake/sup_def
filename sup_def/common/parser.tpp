@@ -148,8 +148,7 @@ std::shared_ptr<std::basic_string<T>> Parser<T>::slurp_file()
     return this->file_content_raw;
 }
 
-    // Strip C and C++ style comments from this->file_content string.
-    // TODO: Also remove `#if 0` blocks
+// Strip C and C++ style comments from this->file_content string.
 template <typename T>
     requires CharacterType<T>
 Parser<T>& Parser<T>::strip_comments(void)
@@ -171,7 +170,6 @@ Parser<T>& Parser<T>::strip_comments(void)
     typedef T local_char_type;
     typedef std::basic_string<T> local_string_type;
     typedef typename local_string_type::size_type local_size_type;
-    typedef typename local_string_type::value_type local_value_type;
     
     for (local_size_type i = 0; i < this->file_content_raw.get()->size(); ++i)
     {
@@ -533,217 +531,14 @@ std::shared_ptr<std::basic_string<T>> Parser<T>::reassemble_lines(void)
 }
 
 
-#if 0
+#if SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR
+// Just do the same but as a friend function
 template <typename T>
     requires CharacterType<T>
-std::vector<std::shared_ptr<std::basic_string<T>>> Parser<T>::search_includes(void)
+Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> search_includes(Parser<T>& parser)
 {
-    if (this->file_content.empty() || this->lines.empty())
-        throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty or lines are empty\n");
-
-    typedef typename std::basic_regex<T> regex_t;
-    typedef std::match_results<typename std::basic_string<T>::const_iterator> match_res_t;
-    typedef typename std::vector<std::basic_string<T>>::size_type line_num_t;
-    typedef typename std::basic_string<T>::size_type pos_t;
-
-    std::vector<std::shared_ptr<std::basic_string<T>>> ret;
-
-    auto remove_whitespaces = [](const std::basic_string<T>& str) -> std::basic_string<T>
-    {
-        std::basic_string<T> res;
-        res.reserve(str.size());
-        for (auto& c : str)
-        {
-            if (c != static_cast<T>(' ') && c != static_cast<T>('\t'))
-                res += c;
-        }
-        return res;
-    };
-
-    for (line_num_t i = 0; i < this->lines.size(); ++i)
-    {
-        std::vector<std::tuple<string_size_type<T>,string_size_type<T>,T>> line_ = this->lines[i];
-        std::basic_string<T> line;
-        line.reserve(line_.size());
-        for (auto& c : line_)
-            line += std::get<2>(c);
-        regex_t inc_regex(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE_REGEX), std::regex_constants::ECMAScript);
-        regex_t inc_regex_angle_brackets(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE_REGEX_ANGLE_BRACKETS), std::regex_constants::ECMAScript);
-        regex_t inc_regex_no_quotes(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE_REGEX_NO_QUOTES), std::regex_constants::ECMAScript);
-        // This is invalid and must be reported as a syntax error
-        regex_t inc_regex_no_path(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE_REGEX_NO_PATH), std::regex_constants::ECMAScript);
-        // Invalid too
-        regex_t inc_regex_with_anything(ANY_STRING(T, "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE ".*$"), std::regex_constants::ECMAScript);
-        match_res_t match_res;
-        if (std::regex_match(line, match_res, inc_regex))
-        {
-            pos_t l_bracket_pos = line.find(static_cast<T>('<'));
-            pos_t r_bracket_pos = line.find(static_cast<T>('>'));
-            if (l_bracket_pos != std::basic_string<T>::npos || r_bracket_pos != std::basic_string<T>::npos)
-            {
-                pos_t err_line = std::get<0>(line_.at(0));
-                pos_t err_col = (l_bracket_pos != std::basic_string<T>::npos) ? std::get<1>(line_.at(l_bracket_pos)) : std::get<1>(line_.at(r_bracket_pos));
-                throw Exception<T, std::filesystem::path>(
-                    ExcType::SYNTAX_ERROR,
-                    "You cannot mix `<>` with `\"\"` in include pragmas",
-                    this->file_path,
-                    err_line + 1,
-                    err_col + 1,
-                    line
-                );
-            }
-#if SUPDEF_DEBUG
-            std::string converted = std::string(match_res[1].first, match_res[1].second);
-            std::cerr << "[ DEBUG LOG ]  Found include: " << converted.c_str() << std::endl;
-#endif
-            std::basic_string<T> inc_path = remove_whitespaces(match_res[1]);
-            if (inc_path.empty())
-            {
-                pos_t err_line = std::get<0>(line_.at(0));
-                pos_t err_col = std::get<1>(line_.at(line.find(static_cast<T>('"'))));
-                throw Exception<T, std::filesystem::path>(
-                    ExcType::SYNTAX_ERROR,
-                    "Empty include path",
-                    this->file_path,
-                    err_line + 1,
-                    err_col + 1,
-                    line
-                );
-            }
-            ret.push_back(std::make_shared<std::basic_string<T>>(inc_path));
-            // Delete the full line from this->lines (since the pragma is supposed to take the full line)
-            this->lines_raw.erase(this->lines_raw.begin() + i);
-            this->lines.erase(this->lines.begin() + i);
-            i--;
-        }
-        else if (std::regex_match(line, match_res, inc_regex_angle_brackets))
-        {
-            pos_t quote_pos = line.find(static_cast<T>('"'));
-            if (quote_pos != std::basic_string<T>::npos)
-            {
-                pos_t err_line = std::get<0>(line_.at(0));
-                pos_t err_col = std::get<1>(line_.at(quote_pos));
-                throw Exception<T, std::filesystem::path>(
-                    ExcType::SYNTAX_ERROR,
-                    "You cannot mix `\"\"` with `<>` in include pragmas",
-                    this->file_path,
-                    err_line + 1,
-                    err_col + 1,
-                    line
-                );
-            }
-#if SUPDEF_DEBUG
-            std::string converted = std::string(match_res[1].first, match_res[1].second);
-            std::cerr << "[ DEBUG LOG ]  Found include: " << converted.c_str() << std::endl;
-#endif
-            std::basic_string<T> inc_path = remove_whitespaces(match_res[1]);
-            if (inc_path.empty())
-            {
-                pos_t err_line = std::get<0>(line_.at(0));
-                pos_t err_col = std::get<1>(line_.at(line.find(static_cast<T>('"'))));
-                throw Exception<T, std::filesystem::path>(
-                    ExcType::SYNTAX_ERROR,
-                    "Empty include path",
-                    this->file_path,
-                    err_line + 1,
-                    err_col + 1,
-                    line
-                );
-            }
-            ret.push_back(std::make_shared<std::basic_string<T>>(inc_path));
-            // Delete the full line from this->lines (since the pragma is supposed to take the full line)
-            this->lines_raw.erase(this->lines_raw.begin() + i);
-            this->lines.erase(this->lines.begin() + i);
-            i--;
-        }
-        else if (std::regex_match(line, match_res, inc_regex_no_quotes))
-        {
-            // Error if there are some `<>"` in the line
-            if (line.find(static_cast<T>('"')) != std::basic_string<T>::npos ||
-                line.find(static_cast<T>('<')) != std::basic_string<T>::npos ||
-                line.find(static_cast<T>('>')) != std::basic_string<T>::npos)
-            {
-                pos_t err_line = std::get<0>(line_.at(0));
-                pos_t err_col = std::get<1>(line_.at(
-                    (line.find(static_cast<T>('"')) != std::basic_string<T>::npos) ? line.find(static_cast<T>('"')) :
-                    (line.find(static_cast<T>('<')) != std::basic_string<T>::npos) ? line.find(static_cast<T>('<')) :
-                    line.find(static_cast<T>('>'))
-                ));
-                throw Exception<T, std::filesystem::path>(
-                    ExcType::SYNTAX_ERROR,
-                    "Invalid include path",
-                    this->file_path,
-                    err_line + 1,
-                    err_col + 1,
-                    line
-                );
-            }
-#if SUPDEF_DEBUG
-            std::string converted = std::string(match_res[1].first, match_res[1].second);
-            std::cerr << "[ DEBUG LOG ]  Found include: " << converted.c_str() << std::endl;
-#endif
-            std::basic_string<T> inc_path = remove_whitespaces(match_res[1]);
-            if (inc_path.empty())
-                SupDef::Util::unreachable();
-            ret.push_back(std::make_shared<std::basic_string<T>>(inc_path));
-            // Delete the full line from this->lines (since the pragma is supposed to take the full line)
-            this->lines_raw.erase(this->lines_raw.begin() + i);
-            this->lines.erase(this->lines.begin() + i);
-            i--;
-        }
-        else if (std::regex_match(line, match_res, inc_regex_no_path))
-        {
-            auto include_keyword_pos = line.find(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE));
-            if (include_keyword_pos == std::basic_string<T>::npos)
-                SupDef::Util::unreachable();
-            pos_t err_line = std::get<0>(line_.at(0));
-            pos_t err_col = std::get<1>(line_.at(include_keyword_pos));
-            throw Exception<T, std::filesystem::path>(
-                ExcType::SYNTAX_ERROR,
-                "Include pragmas must have a path",
-                this->file_path,
-                err_line + 1,
-                err_col + 1,
-                line
-            );
-        }
-        else if (std::regex_match(line, match_res, inc_regex_with_anything))
-        {
-            auto include_keyword_pos = line.find(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE));
-            if (include_keyword_pos == std::basic_string<T>::npos)
-                SupDef::Util::unreachable();
-            pos_t err_line = std::get<0>(line_.at(0));
-            pos_t err_col = std::get<1>(line_.at(include_keyword_pos));
-            throw Exception<T, std::filesystem::path>(
-                ExcType::SYNTAX_ERROR,
-                "Include pragmas must have a path",
-                this->file_path,
-                err_line + 1,
-                err_col + 1,
-                line
-            );
-        }
-    }
-    this->file_content_raw = this->reassemble_lines();
-    // Do the same for this->file_content
-    this->file_content.clear();
-    this->file_content.push_back(MK_CHAR(0, 0, static_cast<T>('\n'))); // dummy line
-    for (size_t counter = 0; counter < this->lines.size(); ++counter)
-    {
-        auto& line = this->lines[counter];
-        for (auto& c : line)
-            this->file_content.push_back(c);
-        this->file_content.push_back(MK_CHAR(std::get<0>(this->file_content.at(this->file_content.size() - 1)), std::get<1>(this->file_content.at(this->file_content.size() - 1)), static_cast<T>('\n')));
-    }
-    return ret;
-}
-
-#else
-template <typename T>
-    requires CharacterType<T>
-Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> Parser<T>::search_includes(void)
-{
-    if (this->file_content.empty() || this->lines.empty())
+    auto this_ = &parser;
+    if (this_->file_content.empty() || this_->lines.empty())
         co_return { Error<T, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty or lines are empty\n") };
 
     typedef typename std::basic_regex<T> regex_t;
@@ -751,21 +546,9 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
     typedef typename std::vector<std::basic_string<T>>::size_type line_num_t;
     typedef typename std::basic_string<T>::size_type pos_t;
 
-    auto remove_whitespaces = [](const std::basic_string<T>& str) -> std::basic_string<T>
+    for (line_num_t i = 0; i < this_->lines.size(); ++i)
     {
-        std::basic_string<T> res;
-        res.reserve(str.size());
-        for (auto& c : str)
-        {
-            if (c != static_cast<T>(' ') && c != static_cast<T>('\t'))
-                res += c;
-        }
-        return res;
-    };
-
-    for (line_num_t i = 0; i < this->lines.size(); ++i)
-    {
-        std::vector<std::tuple<string_size_type<T>,string_size_type<T>,T>> line_ = this->lines[i];
+        std::vector<std::tuple<string_size_type<T>,string_size_type<T>,T>> line_ = this_->lines[i];
         std::basic_string<T> line;
         line.reserve(line_.size());
         for (auto& c : line_)
@@ -786,10 +569,10 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
             {
                 pos_t err_line = std::get<0>(line_.at(0));
                 pos_t err_col = (l_bracket_pos != std::basic_string<T>::npos) ? std::get<1>(line_.at(l_bracket_pos)) : std::get<1>(line_.at(r_bracket_pos));
-                co_yield { Error<T, std::filesystem::path>(
+                co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
                     ExcType::SYNTAX_ERROR,
                     "You cannot mix `<>` with `\"\"` in include pragmas",
-                    this->file_path,
+                    this_->file_path,
                     err_line + 1,
                     err_col + 1,
                     line
@@ -800,25 +583,25 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
             std::string converted = std::string(match_res[1].first, match_res[1].second);
             std::cerr << "[ DEBUG LOG ]  Found include: " << converted.c_str() << std::endl;
 #endif
-            std::basic_string<T> inc_path = remove_whitespaces(match_res[1]);
+            std::basic_string<T> inc_path = remove_whitespaces(match_res[1].str());
             if (inc_path.empty())
             {
                 pos_t err_line = std::get<0>(line_.at(0));
                 pos_t err_col = std::get<1>(line_.at(line.find(static_cast<T>('"'))));
-                co_yield { Error<T, std::filesystem::path>(
+                co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
                     ExcType::SYNTAX_ERROR,
                     "Empty include path",
-                    this->file_path,
+                    this_->file_path,
                     err_line + 1,
                     err_col + 1,
                     line
                 ) };
                 continue;
             }
-            co_yield { std::make_shared<std::basic_string<T>>(inc_path) };
-            // Delete the full line from this->lines (since the pragma is supposed to take the full line)
-            this->lines_raw.erase(this->lines_raw.begin() + i);
-            this->lines.erase(this->lines.begin() + i);
+            co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ std::make_shared<std::basic_string<T>>(inc_path) };
+            // Delete the full line from this_->lines (since the pragma is supposed to take the full line)
+            this_->lines_raw.erase(this_->lines_raw.begin() + i);
+            this_->lines.erase(this_->lines.begin() + i);
             i--;
         }
         else if (std::regex_match(line, match_res, inc_regex_angle_brackets))
@@ -828,37 +611,39 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
             {
                 pos_t err_line = std::get<0>(line_.at(0));
                 pos_t err_col = std::get<1>(line_.at(quote_pos));
-                co_yield { Error<T, std::filesystem::path>(
+                co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
                     ExcType::SYNTAX_ERROR,
                     "You cannot mix `\"\"` with `<>` in include pragmas",
-                    this->file_path,
+                    this_->file_path,
                     err_line + 1,
                     err_col + 1,
                     line
                 ) };
+                continue;
             }
 #if SUPDEF_DEBUG
             std::string converted = std::string(match_res[1].first, match_res[1].second);
             std::cerr << "[ DEBUG LOG ]  Found include: " << converted.c_str() << std::endl;
 #endif
-            std::basic_string<T> inc_path = remove_whitespaces(match_res[1]);
+            std::basic_string<T> inc_path = remove_whitespaces(match_res[1].str());
             if (inc_path.empty())
             {
                 pos_t err_line = std::get<0>(line_.at(0));
                 pos_t err_col = std::get<1>(line_.at(line.find(static_cast<T>('"'))));
-                co_yield { Error<T, std::filesystem::path>(
+                co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
                     ExcType::SYNTAX_ERROR,
                     "Empty include path",
-                    this->file_path,
+                    this_->file_path,
                     err_line + 1,
                     err_col + 1,
                     line
                 ) };
+                continue;
             }
-            co_yield { std::make_shared<std::basic_string<T>>(inc_path) };
-            // Delete the full line from this->lines (since the pragma is supposed to take the full line)
-            this->lines_raw.erase(this->lines_raw.begin() + i);
-            this->lines.erase(this->lines.begin() + i);
+            co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ std::make_shared<std::basic_string<T>>(inc_path) };
+            // Delete the full line from this_->lines (since the pragma is supposed to take the full line)
+            this_->lines_raw.erase(this_->lines_raw.begin() + i);
+            this_->lines.erase(this_->lines.begin() + i);
             i--;
         }
         else if (std::regex_match(line, match_res, inc_regex_no_quotes))
@@ -874,26 +659,27 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
                     (line.find(static_cast<T>('<')) != std::basic_string<T>::npos) ? line.find(static_cast<T>('<')) :
                     line.find(static_cast<T>('>'))
                 ));
-                co_yield { Error<T, std::filesystem::path>(
+                co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
                     ExcType::SYNTAX_ERROR,
                     "Invalid include path",
-                    this->file_path,
+                    this_->file_path,
                     err_line + 1,
                     err_col + 1,
                     line
                 ) };
+                continue;
             }
 #if SUPDEF_DEBUG
             std::string converted = std::string(match_res[1].first, match_res[1].second);
             std::cerr << "[ DEBUG LOG ]  Found include: " << converted.c_str() << std::endl;
 #endif
-            std::basic_string<T> inc_path = remove_whitespaces(match_res[1]);
+            std::basic_string<T> inc_path = remove_whitespaces(match_res[1].str());
             if (inc_path.empty())
                 SupDef::Util::unreachable();
-            co_yield { std::make_shared<std::basic_string<T>>(inc_path) };
-            // Delete the full line from this->lines (since the pragma is supposed to take the full line)
-            this->lines_raw.erase(this->lines_raw.begin() + i);
-            this->lines.erase(this->lines.begin() + i);
+            co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ std::make_shared<std::basic_string<T>>(inc_path) };
+            // Delete the full line from this_->lines (since the pragma is supposed to take the full line)
+            this_->lines_raw.erase(this_->lines_raw.begin() + i);
+            this_->lines.erase(this_->lines.begin() + i);
             i--;
         }
         else if (std::regex_match(line, match_res, inc_regex_no_path))
@@ -903,14 +689,15 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
                 SupDef::Util::unreachable();
             pos_t err_line = std::get<0>(line_.at(0));
             pos_t err_col = std::get<1>(line_.at(include_keyword_pos));
-            co_yield { Error<T, std::filesystem::path>(
+            co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
                 ExcType::SYNTAX_ERROR,
                 "Include pragmas must have a path",
-                this->file_path,
+                this_->file_path,
                 err_line + 1,
                 err_col + 1,
                 line
             ) };
+            continue;
         }
         else if (std::regex_match(line, match_res, inc_regex_with_anything))
         {
@@ -919,7 +706,217 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
                 SupDef::Util::unreachable();
             pos_t err_line = std::get<0>(line_.at(0));
             pos_t err_col = std::get<1>(line_.at(include_keyword_pos));
-            co_yield { Error<T, std::filesystem::path>(
+            co_yield Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                ExcType::SYNTAX_ERROR,
+                "Include pragmas must have a path",
+                this_->file_path,
+                err_line + 1,
+                err_col + 1,
+                line
+            ) };
+            continue;
+        }
+    }
+    this_->file_content_raw = this_->reassemble_lines();
+    // Do the same for this_->file_content
+    this_->file_content.clear();
+    this_->file_content.push_back(MK_CHAR(0, 0, static_cast<T>('\n'))); // dummy line
+    for (size_t counter = 0; counter < this_->lines.size(); ++counter)
+    {
+        auto& line = this_->lines[counter];
+        for (auto& c : line)
+            this_->file_content.push_back(c);
+        this_->file_content.push_back(MK_CHAR(std::get<0>(this_->file_content.at(this_->file_content.size() - 1)), std::get<1>(this_->file_content.at(this_->file_content.size() - 1)), static_cast<T>('\n')));
+    }
+    co_return Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>(nullptr);
+}
+#else
+// The same as above but as a member function
+template <typename T>
+    requires CharacterType<T>
+Coro<Result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> Parser<T>::search_includes(void)
+{
+    Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>> ret;
+    string_size_type<T> curr_line = 0;
+
+    auto mk_valid_pragmaloc = [ ](
+        const std::basic_string<T>& content, /* A path, in our case here */
+        const string_size_type<T>& line /* Start line and end line are the same here */
+    ) -> Parser<T>::pragma_loc_type
+    {
+        return std::make_tuple(content, line, line);
+    };
+
+    if (this->file_content.empty() || this->lines.empty())
+    {
+        ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty or lines are empty\n") };
+        co_return ret;
+    }
+
+    typedef typename std::basic_regex<T> regex_t;
+    typedef std::match_results<typename std::basic_string<T>::const_iterator> match_res_t;
+    typedef typename std::vector<std::basic_string<T>>::size_type line_num_t;
+    typedef typename std::basic_string<T>::size_type pos_t;
+
+    for (line_num_t i = 0; i < this->lines.size(); ++i)
+    {
+        std::vector<std::tuple<string_size_type<T>,string_size_type<T>,T>> line_ = this->lines[i];
+        std::basic_string<T> line;
+        line.reserve(line_.size());
+        if (line_.empty())
+            continue;
+        else
+            curr_line = std::get<0>(line_.at(0)) + 1;
+        for (auto& c : line_)
+            line += std::get<2>(c);
+        const regex_t inc_regex(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE_REGEX), std::regex_constants::ECMAScript);
+        const regex_t inc_regex_angle_brackets(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE_REGEX_ANGLE_BRACKETS), std::regex_constants::ECMAScript);
+        const regex_t inc_regex_no_quotes(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE_REGEX_NO_QUOTES), std::regex_constants::ECMAScript);
+        // This is invalid and must be reported as a syntax error
+        const regex_t inc_regex_no_path(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE_REGEX_NO_PATH), std::regex_constants::ECMAScript);
+        // Invalid too
+        const regex_t inc_regex_with_anything(ANY_STRING(T, "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE ".*$"), std::regex_constants::ECMAScript);
+        match_res_t match_res;
+        if (std::regex_match(line, match_res, inc_regex))
+        {
+            pos_t l_bracket_pos = line.find(static_cast<T>('<'));
+            pos_t r_bracket_pos = line.find(static_cast<T>('>'));
+            if (l_bracket_pos != std::basic_string<T>::npos || r_bracket_pos != std::basic_string<T>::npos)
+            {
+                pos_t err_line = std::get<0>(line_.at(0));
+                pos_t err_col = (l_bracket_pos != std::basic_string<T>::npos) ? std::get<1>(line_.at(l_bracket_pos)) : std::get<1>(line_.at(r_bracket_pos));
+                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ExcType::SYNTAX_ERROR,
+                    "You cannot mix `<>` with `\"\"` in include pragmas",
+                    this->file_path,
+                    err_line + 1,
+                    err_col + 1,
+                    line
+                ) };
+                co_yield ret;
+                continue;
+            }
+#if SUPDEF_DEBUG
+            std::string converted = std::string(match_res[1].first, match_res[1].second);
+            std::cerr << "[ DEBUG LOG ]  Found include: " << converted.c_str() << std::endl;
+#endif
+            std::basic_string<T> inc_path = remove_whitespaces(match_res[1].str());
+            if (inc_path.empty())
+            {
+                pos_t err_line = std::get<0>(line_.at(0));
+                pos_t err_col = std::get<1>(line_.at(line.find(static_cast<T>('"'))));
+                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ExcType::SYNTAX_ERROR,
+                    "Empty include path",
+                    this->file_path,
+                    err_line + 1,
+                    err_col + 1,
+                    line
+                ) };
+                co_yield ret;
+                continue;
+            }
+            ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ mk_valid_pragmaloc(inc_path, curr_line) };
+            // Delete the full line from this->lines (since the pragma is supposed to take the full line)
+            this->lines_raw.erase(this->lines_raw.begin() + i);
+            this->lines.erase(this->lines.begin() + i);
+            i--;
+            co_yield ret;
+            continue;
+        }
+        else if (std::regex_match(line, match_res, inc_regex_angle_brackets))
+        {
+            pos_t quote_pos = line.find(static_cast<T>('"'));
+            if (quote_pos != std::basic_string<T>::npos)
+            {
+                pos_t err_line = std::get<0>(line_.at(0));
+                pos_t err_col = std::get<1>(line_.at(quote_pos));
+                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ExcType::SYNTAX_ERROR,
+                    "You cannot mix `\"\"` with `<>` in include pragmas",
+                    this->file_path,
+                    err_line + 1,
+                    err_col + 1,
+                    line
+                ) };
+                co_yield ret;
+                continue;
+            }
+#if SUPDEF_DEBUG
+            std::string converted = std::string(match_res[1].first, match_res[1].second);
+            std::cerr << "[ DEBUG LOG ]  Found include: " << converted.c_str() << std::endl;
+#endif
+            std::basic_string<T> inc_path = remove_whitespaces(match_res[1].str());
+            if (inc_path.empty())
+            {
+                pos_t err_line = std::get<0>(line_.at(0));
+                pos_t err_col = std::get<1>(line_.at(line.find(static_cast<T>('"'))));
+                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ExcType::SYNTAX_ERROR,
+                    "Empty include path",
+                    this->file_path,
+                    err_line + 1,
+                    err_col + 1,
+                    line
+                ) };
+                co_yield ret;
+                continue;
+            }
+            ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ mk_valid_pragmaloc(inc_path, curr_line) };
+            // Delete the full line from this->lines (since the pragma is supposed to take the full line)
+            this->lines_raw.erase(this->lines_raw.begin() + i);
+            this->lines.erase(this->lines.begin() + i);
+            i--;
+            co_yield ret;
+            continue;
+        }
+        else if (std::regex_match(line, match_res, inc_regex_no_quotes))
+        {
+            // Error if there are some `<>"` in the line
+            if (line.find(static_cast<T>('"')) != std::basic_string<T>::npos ||
+                line.find(static_cast<T>('<')) != std::basic_string<T>::npos ||
+                line.find(static_cast<T>('>')) != std::basic_string<T>::npos)
+            {
+                pos_t err_line = std::get<0>(line_.at(0));
+                pos_t err_col = std::get<1>(line_.at(
+                    (line.find(static_cast<T>('"')) != std::basic_string<T>::npos) ? line.find(static_cast<T>('"')) :
+                    (line.find(static_cast<T>('<')) != std::basic_string<T>::npos) ? line.find(static_cast<T>('<')) :
+                    line.find(static_cast<T>('>'))
+                ));
+                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ExcType::SYNTAX_ERROR,
+                    "Invalid include path",
+                    this->file_path,
+                    err_line + 1,
+                    err_col + 1,
+                    line
+                ) };
+                co_yield ret;
+                continue;
+            }
+#if SUPDEF_DEBUG
+            std::string converted = std::string(match_res[1].first, match_res[1].second);
+            std::cerr << "[ DEBUG LOG ]  Found include: " << converted.c_str() << std::endl;
+#endif
+            std::basic_string<T> inc_path = remove_whitespaces(match_res[1].str());
+            if (inc_path.empty())
+                SupDef::Util::unreachable();
+            ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ mk_valid_pragmaloc(inc_path, curr_line) };
+            // Delete the full line from this->lines (since the pragma is supposed to take the full line)
+            this->lines_raw.erase(this->lines_raw.begin() + i);
+            this->lines.erase(this->lines.begin() + i);
+            i--;
+            co_yield ret;
+            continue;
+        }
+        else if (std::regex_match(line, match_res, inc_regex_no_path))
+        {
+            auto include_keyword_pos = line.find(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE));
+            if (include_keyword_pos == std::basic_string<T>::npos)
+                SupDef::Util::unreachable();
+            pos_t err_line = std::get<0>(line_.at(0));
+            pos_t err_col = std::get<1>(line_.at(include_keyword_pos));
+            ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
                 ExcType::SYNTAX_ERROR,
                 "Include pragmas must have a path",
                 this->file_path,
@@ -927,6 +924,26 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
                 err_col + 1,
                 line
             ) };
+            co_yield ret;
+            continue;
+        }
+        else if (std::regex_match(line, match_res, inc_regex_with_anything))
+        {
+            auto include_keyword_pos = line.find(ANY_STRING(T, SUPDEF_PRAGMA_INCLUDE));
+            if (include_keyword_pos == std::basic_string<T>::npos)
+                SupDef::Util::unreachable();
+            pos_t err_line = std::get<0>(line_.at(0));
+            pos_t err_col = std::get<1>(line_.at(include_keyword_pos));
+            ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                ExcType::SYNTAX_ERROR,
+                "Include pragmas must have a path",
+                this->file_path,
+                err_line + 1,
+                err_col + 1,
+                line
+            ) };
+            co_yield ret;
+            continue;
         }
     }
     this->file_content_raw = this->reassemble_lines();
@@ -940,7 +957,8 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
             this->file_content.push_back(c);
         this->file_content.push_back(MK_CHAR(std::get<0>(this->file_content.at(this->file_content.size() - 1)), std::get<1>(this->file_content.at(this->file_content.size() - 1)), static_cast<T>('\n')));
     }
-    co_return { nullptr };
+    ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>(nullptr);
+    co_return ret;
 }
 #endif
 

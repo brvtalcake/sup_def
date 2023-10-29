@@ -22,15 +22,20 @@
  * SOFTWARE.
  */
 
-#ifdef NEED_TPP_INC
-    #undef NEED_TPP_INC
-#endif
-#define NEED_TPP_INC(CLASS_NAME) NEED_ ## CLASS_NAME ## _TEMPLATES
+#include <sup_def/common/util/util.hpp>
 
-#ifdef DEFINED
-    #undef DEFINED
-#endif
-#define DEFINED(CLASS_NAME) CLASS_NAME ## _DEFINED
-
-#include <sup_def/common/config.h>
-#include <sup_def/common/util/fwd_decls.hpp>
+namespace SupDef
+{
+    namespace Util
+    {
+        std::string demangle(std::string s)
+        {
+            int status = -1;
+            std::unique_ptr<char, decltype(&std::free)> res{
+                abi::__cxa_demangle(s.c_str(), nullptr, nullptr, &status),
+                std::free
+            };
+            return (status == 0) ? res.get() : s;
+        }
+    }
+}

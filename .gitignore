@@ -62,3 +62,11 @@ test_copied.cpp
 test_coro.cpp
 build/*
 !**CMakeLists.txt
+
+coro_impl1
+coro_impl2
+
+bug.cc
+bug
+
+normal.log

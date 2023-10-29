@@ -48,7 +48,7 @@ namespace SupDef
         CmdLine<T>::CmdLine(int argc, const char* argv[])
         {
             this->argc = argc;
-            this->argv = const_cast<char**>(argv);
+            this->argv = const_cast<char**>(argv); // TODO: Find a better way to do this
         }
 
         EXP_INST_CLASS(CmdLine, (char*), (std::string), (std::filesystem::path))

@@ -28,8 +28,10 @@
 #ifndef EXTERNAL_HPP
 #define EXTERNAL_HPP
 
-#include <sup_def/common/config.h>
-#include <sup_def/common/sup_def.hpp>
+#if !SUPDEF_WANT_ONLY_DECLS
+    #include <sup_def/common/config.h>
+    #include <sup_def/common/sup_def.hpp>
+#endif
 
 #include <filesystem>
 #include <string>
@@ -126,9 +128,11 @@ namespace SupDef
 
 #endif
 
-#undef NEED_CmdLine_TEMPLATES
-#define NEED_CmdLine_TEMPLATES 1
-#include <sup_def/external/cmdline.cpp>
+#if !SUPDEF_WANT_ONLY_DECLS
+    #undef NEED_CmdLine_TEMPLATES
+    #define NEED_CmdLine_TEMPLATES 1
+    #include <sup_def/external/cmdline.cpp>
+#endif
 
         SD_EXTERNAL_API
         void init(int argc, char** argv);
@@ -137,7 +141,10 @@ namespace SupDef
         void init(int argc, const char** argv);
 
         SD_EXTERNAL_API
-        const std::string& get_program_name(void);
+        const std::string get_program_name(void);
+
+        SD_EXTERNAL_API
+        const std::string& get_full_program_name(void);
 
         SD_EXTERNAL_API
         int get_program_argc(void);

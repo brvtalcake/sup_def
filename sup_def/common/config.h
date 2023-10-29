@@ -54,6 +54,16 @@
 #endif
 #define ID__(...) __VA_ARGS__
 
+#ifdef PP_STRINGIZE
+    #undef PP_STRINGIZE
+#endif
+#define PP_STRINGIZE(...) PP_STRINGIZE_(__VA_ARGS__)
+
+#ifdef PP_STRINGIZE_
+    #undef PP_STRINGIZE_
+#endif
+#define PP_STRINGIZE_(...) #__VA_ARGS__
+
 #if defined(PP_EAT)
     #undef PP_EAT
 #endif
@@ -285,6 +295,16 @@
 // EXP_INST_FUNC(my_func, (ret_type, (arg1_type, arg2_type, ...)), (ret_type2, (arg1_type2, arg2_type2, ...)))
 // --> template ret_type my_func<arg1_type, arg2_type, ...>(arg1_type, arg2_type, ...); template ret_type2 my_func<arg1_type2, arg2_type2, ...>(arg1_type2, arg2_type2, ...);
 #define EXP_INST_FUNC(F, ...) MAP(EXP_INST_FUNC_ONE, EXP_INST_FUNC_MAKE_TUPLE(F, __VA_ARGS__))
+
+#ifdef SAVE_MACRO
+    #undef SAVE_MACRO
+#endif
+#define SAVE_MACRO(MACNAME) _Pragma(PP_STRINGIZE(push_macro(#MACNAME)))
+
+#ifdef RESTORE_MACRO
+    #undef RESTORE_MACRO
+#endif
+#define RESTORE_MACRO(MACNAME) _Pragma(PP_STRINGIZE(pop_macro(#MACNAME)))
 
 #if defined(SUPDEF_PRAGMA_NAME)
     #undef SUPDEF_PRAGMA_NAME

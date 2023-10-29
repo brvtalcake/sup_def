@@ -57,7 +57,15 @@ namespace SupDef
         }
 
         SD_EXTERNAL_API
-        const std::string& get_program_name(void)
+        const std::string get_program_name(void)
+        {
+            decltype(_prog_name.c_str()) base = basename(_prog_name.c_str());
+            std::string ret(base != nullptr && base != NULL ? base : _prog_name);
+            return ret;
+        }
+
+        SD_EXTERNAL_API
+        const std::string& get_full_program_name(void)
         {
             return _prog_name;
         }
@@ -130,7 +138,7 @@ namespace SupDef
         {
             std::cerr << "\033[97m";
 #if defined(COMPILING_EXTERNAL)
-            std::cerr << _prog_name << " exited with code " << SupDef::Util::get_errcount() << std::endl;
+            std::cerr << get_program_name() << " exited with code " << SupDef::Util::get_errcount() << std::endl;
 #else
             std::cerr << "Program exited with code " << SupDef::Util::get_errcount() << std::endl;
 #endif

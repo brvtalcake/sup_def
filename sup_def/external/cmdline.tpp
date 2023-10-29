@@ -128,28 +128,16 @@ template <typename T>
     requires FilePath<T>
 inline constexpr void CmdLine<T>::update_engine(void)
 {
-    SupDef::Engine<char, T>::clear_include_paths();
-    SupDef::Engine<wchar_t, T>::clear_include_paths();
-    SupDef::Engine<char8_t, T>::clear_include_paths();
-    SupDef::Engine<char16_t, T>::clear_include_paths();
-    SupDef::Engine<char32_t, T>::clear_include_paths();
+    CLR_INC_PATH(T);
     for (CmdLine<T>::path_type inc : this->include_paths)
     {
         if constexpr (CStrFilePath<T>)
         {
-            SupDef::Engine<char, T>::template add_include_path<T>(inc.data());
-            SupDef::Engine<wchar_t, T>::template add_include_path<T>(inc.data());
-            SupDef::Engine<char8_t, T>::template add_include_path<T>(inc.data());
-            SupDef::Engine<char16_t, T>::template add_include_path<T>(inc.data());
-            SupDef::Engine<char32_t, T>::template add_include_path<T>(inc.data());
+            ADD_INC_PATH(T, inc.c_str());
         }
         else
         {
-            SupDef::Engine<char, T>::template add_include_path<T>(inc);
-            SupDef::Engine<wchar_t, T>::template add_include_path<T>(inc);
-            SupDef::Engine<char8_t, T>::template add_include_path<T>(inc);
-            SupDef::Engine<char16_t, T>::template add_include_path<T>(inc);
-            SupDef::Engine<char32_t, T>::template add_include_path<T>(inc);
+            ADD_INC_PATH(T, inc);
         }
     }
 }

@@ -41,6 +41,7 @@
 #endif
 
 #include <coroutine>
+//#include <expected>
 
 #if SUPDEF_COMPILER != 1
 #include <cstdint>
@@ -83,24 +84,6 @@
 
 namespace SupDef
 {
-    // To be deleted
-    /* enum ParserState : parser_state_underlying_type
-    {
-        OK = 0,
-        INTERNAL_ERROR = 1 << 0,
-        INVALID_PRAGMA_ERROR = 1 << 1,
-        INVALID_MACRO_ARGC_ERROR = 1 << 2
-    }; */
-
-    enum class ExcType : uint8_t
-    {
-        NO_ERROR = 0,
-        INTERNAL_ERROR = 1,
-        INVALID_FILE_PATH_ERROR = 2,
-        NO_INPUT_FILE_ERROR = 3,
-        SYNTAX_ERROR = 4,
-        UNSPECIFIED_ERROR = 255
-    };
 
 #if defined(ESC)
     #undef ESC
@@ -479,7 +462,7 @@ namespace SupDef
                 string_size_type<T> end = context.value().size();
                 for (string_size_type<T> i = col.value() - 1; i >= 0; --i)
                 {
-                    if (context.value().at(i) == ' ' || context.value().at(i) == '\t')
+                    if (context.value().at(i) == static_cast<T>(' ') || context.value().at(i) == static_cast<T>('\t'))
                     {
                         start = i + 1;
                         break;
@@ -487,23 +470,23 @@ namespace SupDef
                 }
                 for (string_size_type<T> i = col.value() + 1; i < context.value().size(); ++i)
                 {
-                    if (context.value().at(i) == ' ' || context.value().at(i) == '\t')
+                    if (context.value().at(i) == static_cast<T>(' ') || context.value().at(i) == static_cast<T>('\t'))
                     {
                         end = i;
                         break;
                     }
                 }
-                result += " " + TXT(BOLD) + "|" + TXT(RESET) + "  " + context.value().substr(0, start);
+                result += " " + TXT(BOLD) + "|" + TXT(RESET) + "  " + Util::convert_string<char, T>(context.value().substr(0, start));
                 assert(static_cast<long long>(end) - static_cast<long long>(start) >= 0LL);
-                result += FG(BRIGHT_RED) + TXT(BOLD) + context.value().substr(start, end - start) + FG(DEFAULT) + TXT(RESET);
+                result += FG(BRIGHT_RED) + TXT(BOLD) + Util::convert_string<char, T>(context.value().substr(start, end - start)) + FG(DEFAULT) + TXT(RESET);
                 if (static_cast<long long>(context.value().size()) - static_cast<long long>(end) > 0LL)
-                    result += context.value().substr(end, context.value().size() - end) + "\n";
+                    result += Util::convert_string<char, T>(context.value().substr(end, context.value().size() - end)) + "\n";
                 else
                     result += "\n";
                 uint16_t start_term_col = std::string(" |  ").size();
                 for (string_size_type<T> i = 0; i < start; ++i)
                 {
-                    if (context.value()[i] == '\t')
+                    if (context.value()[i] == static_cast<T>('\t'))
                         start_term_col += 4;
                     else
                         ++start_term_col;
@@ -520,93 +503,69 @@ namespace SupDef
                 result += '\n';
             }
             else
-                result += "  | " + context.value() + "\n";
+                result += "  | " + Util::convert_string<char, T>(context.value()) + "\n";
         }
         return result;
     }
 
-    template <typename T, typename U>
-        requires CharacterType<T> && FilePath<U>
-    class Exception : public std::exception
-    {
-        private:
-            ExcType type;
-            std::string msg;
-            std::optional<U> filepath;
-            std::optional<string_size_type<T>> line;
-            std::optional<string_size_type<T>> col;
-            std::optional<std::basic_string<T>> context;
+    template <typename T, typename E, typename FuncType, typename... Args>
+    concept OrElseInvocable = std::conditional_t<
+                                    std::bool_constant<sizeof...(Args) == 0>::value,
+                                    std::bool_constant<std::invocable<FuncType, E>>,
+                                    std::bool_constant<std::invocable<FuncType, E, Args...>>
+                                >::value;
 
-            inline std::optional<std::string> get_type_str(void) const noexcept
-            {
-                switch (this->type)
-                {
-                    case ExcType::INTERNAL_ERROR:
-                        return std::string("Internal error");
-                    case ExcType::INVALID_FILE_PATH_ERROR:
-                        return std::string("Invalid file path");
-                    case ExcType::NO_INPUT_FILE_ERROR:
-                        return std::string("No input file");
-                    case ExcType::SYNTAX_ERROR:
-                        return std::string("Syntax error");
+    template <typename T, typename E, typename FuncType, typename... Args>
+    concept OrElseReturnT = std::conditional_t<
+                                    std::bool_constant<sizeof...(Args) == 0>::value,
+                                    std::bool_constant<std::same_as<
+                                            std::remove_cvref_t<std::invoke_result_t<FuncType, E>>, T>
+                                        >,
+                                    std::bool_constant<std::same_as<
+                                            std::remove_cvref_t<std::invoke_result_t<FuncType, E, Args...>>, T>
+                                        >
+                                >::value;
 
-                    case ExcType::UNSPECIFIED_ERROR:
-                        [[fallthrough]];
-                    case ExcType::NO_ERROR:
-                        [[fallthrough]];
-                    default:
-                        return std::nullopt;
-                }
-            }
-        public:
-            Exception() = default;
-            Exception(ExcType type) : type(type), filepath(std::nullopt), line(std::nullopt), col(std::nullopt), context(std::nullopt)
-            { this->msg = "An error occured"; }
-            Exception(std::string msg) : msg(msg), filepath(std::nullopt), line(std::nullopt), col(std::nullopt), context(std::nullopt)
-            { this->type = ExcType::UNSPECIFIED_ERROR; }
-            Exception(ExcType type, std::string msg) : type(type), msg(msg), filepath(std::nullopt), line(std::nullopt), col(std::nullopt), context(std::nullopt)
-            { }
-            Exception(ExcType type, std::string msg, string_size_type<T> line, string_size_type<T> col, std::basic_string<T> context) : type(type), msg(msg), filepath(std::nullopt), line(line), col(col), context(context)
-            { }
-            Exception(ExcType type, std::string msg, U filepath, string_size_type<T> line, string_size_type<T> col, std::basic_string<T> context) : type(type), msg(msg), filepath(filepath), line(line), col(col), context(context)
-            { }
-
-            ~Exception() = default;
-
-            constexpr inline const char* what() const noexcept override { return this->msg.c_str(); }
-            constexpr inline ExcType get_type() const noexcept { return this->type; }
-            constexpr inline Exception& set_type(ExcType type) noexcept { this->type = type; return *this; }
-            inline void report(std::ostream& os = std::cerr) const noexcept
-            {
-                if (this->type != ExcType::NO_ERROR)
-                    SupDef::Util::reg_error();
-                else
-                    SupDef::Util::reg_warning();
-                os << format_error<T, U>(this->type, this->msg, this->get_type_str(), this->filepath, this->line, this->col, this->context);
-            }
-    };
+    template <typename T, typename E, typename FuncType, typename... Args>
+    concept OrElseNoexcept = std::conditional_t<
+                                    std::bool_constant<sizeof...(Args) == 0>::value,
+                                    std::bool_constant<std::is_nothrow_invocable<FuncType, E>::value>,
+                                    std::bool_constant<std::is_nothrow_invocable<FuncType, E, Args...>::value>
+                                >::value;
 
     template <typename T, typename U>
         requires CharacterType<T> && FilePath<U>
     using Error = Exception<T, U>;
 
     template <typename T, typename E>
-        requires SPECIALIZATION_OF(E, SupDef::Error)
+        requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
     class Result : public std::variant<T, E>
     {
         private:
-            bool null;
+            bool null = false;
         public:
+            typedef T ok_type;
+            typedef E err_type;
+
             Result() : std::variant<T, E>(), null(true) {}
-            Result(nullptr_t) : std::variant<T, E>(), null(true) {}
+            Result(std::nullptr_t) : std::variant<T, E>(), null(true) {}
+            template <typename U>
+                requires std::convertible_to<U, std::nullptr_t>
+            Result(std::initializer_list<U> list) : std::variant<T, E>(), null(true) {}
             Result(const Result&) = default;
             Result(Result&&) = default;
             Result(T value) : std::variant<T, E>(value) {}
             Result(T& value) : std::variant<T, E>(value) {}
             Result(T&& value) : std::variant<T, E>(std::move(value)) {}
+            template <typename U>
+                requires std::convertible_to<U, T>
+            Result(std::initializer_list<U> list) : std::variant<T, E>(static_cast<T>(*std::data(list))) {}
             Result(E error) : std::variant<T, E>(error) {}
             Result(E& error) : std::variant<T, E>(error) {}
             Result(E&& error) : std::variant<T, E>(std::move(error)) {}
+            template <typename U>
+                requires std::convertible_to<U, E>
+            Result(std::initializer_list<U> list) : std::variant<T, E>(static_cast<E>(*std::data(list))) {}
 
             ~Result() = default;
 
@@ -619,12 +578,13 @@ namespace SupDef
             Result& operator=(E& error) { return *this = Result(error); }
             Result& operator=(E&& error) { return *this = Result(std::move(error)); }
 
-            inline bool is_ok(void) const noexcept { return std::holds_alternative<T>(*this); }
-            inline bool is_err(void) const noexcept { return std::holds_alternative<E>(*this); }
             inline bool is_null(void) const noexcept { return this->null; }
+            inline bool is_ok(void) const noexcept { return !this->is_null() && std::holds_alternative<T>(*this); }
+            inline bool is_err(void) const noexcept { return !this->is_null() && std::holds_alternative<E>(*this); }
 
+#if 0
             template <typename FuncType, typename... Args>
-                requires std::invocable<FuncType, E, Args...> && std::same_as<std::invoke_result_t<FuncType, E, Args...>, T>
+                requires std::invocable<FuncType, E, Args...> && std::convertible_to<std::invoke_result_t<FuncType, E, Args...>, T>
             constexpr inline T unwrap_or_else(FuncType&& func, Args&&... args) const noexcept(std::is_nothrow_invocable_v<FuncType, E, Args...>)
             {
                 if (this->is_ok())
@@ -632,29 +592,64 @@ namespace SupDef
                 else
                     return std::invoke(std::forward<FuncType>(func), std::get<E>(*this), std::forward<Args>(args)...);
             }
+#else
+            /**
+             * @brief Unwrap the value contained in the `Result<T, E>` if it is Ok, otherwise return the result of the function `func`
+             * applied to the error value.
+             * 
+             */
+            template <typename FuncType, typename... Args>
+                requires OrElseInvocable<ok_type, err_type, FuncType, Args...> && OrElseReturnT<ok_type, err_type, FuncType, Args...> && (sizeof...(Args) > 0)
+            constexpr inline ok_type unwrap_or_else(FuncType&& func, Args&&... args) const noexcept(OrElseNoexcept<ok_type, err_type, FuncType, Args...>)
+            {
+                if (this->is_null())
+                    return ok_type();
+                if (this->is_ok())
+                    return std::get<T>(*this);
+                return std::invoke(std::forward<FuncType>(func), std::get<E>(*this), std::forward<Args>(args)...);
+            }
+
+            template <typename FuncType>
+                requires OrElseInvocable<ok_type, err_type, FuncType> && OrElseReturnT<ok_type, err_type, FuncType>
+            constexpr inline ok_type unwrap_or_else(FuncType&& func) const noexcept(OrElseNoexcept<ok_type, err_type, FuncType>)
+            {
+                if (this->is_null())
+                    return ok_type();
+                if (this->is_ok())
+                    return std::get<T>(*this);
+                return std::invoke(std::forward<FuncType>(func), std::get<E>(*this));
+            }
+
+
+#endif
 
             constexpr inline T unwrap_or(T&& value) const noexcept
             {
                 if (this->is_ok())
-                    return std::get<T>(*this);
-                else
                     return std::move(value);
+                if (this->is_ok())
+                    return std::get<T>(*this);
+                return std::move(value);
             }
 
             constexpr inline T unwrap_or(T& value) const noexcept
             {
+                if (this->is_null())
+                    return value;
                 if (this->is_ok())
                     return std::get<T>(*this);
-                else
-                    return value;
+                return value;
             }
 
             constexpr inline T unwrap(void) const
             {
+                if (this->is_null())
+                    throw std::runtime_error("Attempt to unwrap a null Result");
                 if (this->is_ok())
                     return std::get<T>(*this);
-                else
+                if (this->is_err())
                     throw std::get<E>(*this);
+                Util::unreachable();
             }
 
             /**
@@ -670,10 +665,56 @@ namespace SupDef
                 requires std::invocable<FuncType, T, Args...> && std::same_as<std::invoke_result_t<FuncType, T, Args...>, T>
             constexpr inline Result<T, E> map(FuncType&& func, Args&&... args) const noexcept(std::is_nothrow_invocable_v<FuncType, T, Args...>)
             {
+                if (this->is_null())
+                    return Result<T, E>();
                 if (this->is_ok())
                     return Result(std::invoke(std::forward<FuncType>(func), std::get<T>(*this), std::forward<Args>(args)...));
-                else
-                    return Result(std::get<E>(*this));
+                return Result(std::get<E>(*this));
+            }
+    };
+
+    class ErrorPrinterBase
+    {
+        protected:
+            static std::mutex mtx;
+    };
+
+    template <typename E>
+        requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
+    class ErrorPrinter : private ErrorPrinterBase
+    {
+        private:
+            std::vector<E> errors;
+        public:
+            ErrorPrinter() = default;
+            ErrorPrinter(const ErrorPrinter&) = default;
+            ErrorPrinter(ErrorPrinter&&) = default;
+            ~ErrorPrinter() = default;
+
+            ErrorPrinter(std::initializer_list<E> list) : errors(list) {}
+            ErrorPrinter(std::vector<E>& errors) : errors(errors) {}
+            ErrorPrinter(E& error) : errors({error}) {}
+            ErrorPrinter(E&& error) : errors({std::move(error)}) {}
+
+            ErrorPrinter& operator=(const ErrorPrinter&) = default;
+            ErrorPrinter& operator=(ErrorPrinter&&) = default;
+            ErrorPrinter& operator=(std::initializer_list<E> list) { this->errors = list; return *this; }
+            ErrorPrinter& operator=(std::vector<E>& errors) { this->errors = errors; return *this; }
+            ErrorPrinter& operator=(E& error) { this->errors = {error}; return *this; }
+            ErrorPrinter& operator=(E&& error) { this->errors = {std::move(error)}; return *this; }
+
+            inline void add_error(E& error) { this->errors.push_back(error); }
+            inline void add_error(E&& error) { this->errors.push_back(std::move(error)); }
+
+            operator std::vector<E>() const { return this->errors; }
+            ErrorPrinter& operator+(E& error) { this->errors.push_back(error); return *this; }
+            ErrorPrinter& operator+(E&& error) { this->errors.push_back(std::move(error)); return *this; }
+
+            inline void print(std::ostream& os = std::cerr) const noexcept
+            {
+                std::lock_guard<std::mutex> lock(ErrorPrinterBase::mtx);
+                for (const E& error : this->errors)
+                    error.report(os);
             }
     };
 
@@ -796,7 +837,7 @@ namespace SupDef
                     }
                     constexpr inline std::suspend_always initial_suspend() noexcept { return {}; }
                     constexpr inline std::suspend_always final_suspend() noexcept { return {}; }
-                    [[noreturn]] inline void unhandled_exception() { std::rethrow_exception(std::move(std::current_exception())); }
+                    [[noreturn]] inline void unhandled_exception() { std::rethrow_exception(std::current_exception()); }
                     inline void return_value(T value) 
                     {
                         this->value = value;
@@ -869,7 +910,7 @@ namespace SupDef
                     Iterator& operator=(const Iterator&) = default;
                     Iterator& operator=(Iterator&&) = default;
 
-                    inline bool operator==(const end_iterator& other) const noexcept
+                    inline bool operator==([[maybe_unused]] const end_iterator& other) const noexcept
                     {
                         return this->coro ? this->coro->is_iter_end() : true;
                     }
@@ -987,9 +1028,11 @@ namespace SupDef
             std::shared_ptr<std::basic_string<T>> get_name() const noexcept;
             std::basic_string<T> get_body() const noexcept;
             std::vector<std::shared_ptr<std::basic_string<T>>> get_args() const noexcept;
-            std::vector<std::shared_ptr<std::basic_string<T>>>::size_type get_argc() const noexcept;
+            typename std::vector<std::shared_ptr<std::basic_string<T>>>::size_type get_argc() const noexcept;
             std::basic_string<T> substitute() const noexcept;
-            std::basic_string<T> substitute(std::basic_string<T> arg1, ...) noexcept(__cpp_lib_unreachable >= 202202L);
+            template <typename... Args>
+                requires (std::convertible_to<Args, std::basic_string<T>> && ...)
+            std::basic_string<T> substitute(Args&&... args_parm) noexcept(__cpp_lib_unreachable >= 202202L);
     };
 
     template <typename T, typename U>
@@ -1244,6 +1287,11 @@ namespace SupDef
             }
     };
 
+#if SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR
+    template <typename T>
+        requires CharacterType<T>
+    Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> search_includes(Parser<T>& parser);
+#endif
     /**
      * @class Parser
      * @brief A class representing a SupDef parser
@@ -1257,8 +1305,8 @@ namespace SupDef
     class Parser
     {
         public:
-            /* typedef T parsed_char_t; */
-            /* typedef std::vector<string_size_type<parsed_char_t>> pragma_loc_t; */
+            typedef typename std::basic_string<T> string_type;
+            typedef typename std::tuple<string_type, string_size_type<T>, string_size_type<T>> pragma_loc_type;
 
             std::shared_ptr<std::basic_string<T>> file_content_raw;
             std::vector<std::basic_string<T>> lines_raw;
@@ -1269,30 +1317,30 @@ namespace SupDef
 
             std::shared_ptr<std::basic_string<T>> slurp_file();
             Parser& strip_comments(void);
-#if 0
-            std::vector<std::shared_ptr<std::basic_string<T>>> search_includes(void);
+#if SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR
+        private:
+            friend Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> search_includes<T>(Parser& parser);
+        public:
 #else
-            Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> search_includes(void);
+            Coro<Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> search_includes(void);
 #endif
 #if defined(SUPDEF_DEBUG)
             template <typename Stream>
             void print_content(Stream& s) const;
 #endif
-            /* Parser& process_file(void); */
-            /* std::vector<std::vector<string_size_type<parsed_char_t>> locate_supdefs(void); */
         private:
-            typedef std::basic_ifstream<T>::pos_type pos_type;
-            typedef std::basic_string<T>::size_type location_type;
+            typedef typename std::basic_ifstream<T>::pos_type pos_type;
+            typedef typename std::basic_string<T>::size_type location_type;
 
             std::unique_ptr<std::basic_ifstream<T>> file;
+            
+            std::basic_string<T> remove_cstr_lit(void);
+#if SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR
+        public:
+#endif
             std::filesystem::path file_path;
             std::vector<std::tuple<string_size_type<T>, string_size_type<T>, T>> file_content;
             std::vector<std::vector<std::tuple<string_size_type<T>, string_size_type<T>, T>>> lines;
-            /* pos_type last_error_pos; */
-            /* std::map<pragma_loc_t, PragmaDef<parsed_char_t>, PragmaLocCompare<parsed_char_t>> pragmas; */
-            /***/
-            
-            std::basic_string<T> remove_cstr_lit(void);
             std::shared_ptr<std::basic_string<T>> reassemble_lines(void);
     };
 
@@ -1310,8 +1358,6 @@ namespace SupDef
         requires CharacterType<P1> && FilePath<P2>
     class Engine
     {
-        public:
-            
         private:
             File<std::basic_ofstream<P1>> tmp_file;
 
@@ -1338,12 +1384,12 @@ namespace SupDef
 #ifdef ADD_INC_PATH
     #undef ADD_INC_PATH
 #endif
-#define ADD_INC_PATH(PATH)                                                  \
-    SupDef::Engine<char, std::filesystem::path>::add_include_path(PATH);    \
-    SupDef::Engine<wchar_t, std::filesystem::path>::add_include_path(PATH); \
-    SupDef::Engine<char8_t, std::filesystem::path>::add_include_path(PATH); \
-    SupDef::Engine<char16_t, std::filesystem::path>::add_include_path(PATH);\
-    SupDef::Engine<char32_t, std::filesystem::path>::add_include_path(PATH);
+#define ADD_INC_PATH(TYPE, PATH)                                        \
+    SupDef::template Engine<char, TYPE>::add_include_path(PATH);        \
+    SupDef::template Engine<wchar_t, TYPE>::add_include_path(PATH);     \
+    SupDef::template Engine<char8_t, TYPE>::add_include_path(PATH);     \
+    SupDef::template Engine<char16_t, TYPE>::add_include_path(PATH);    \
+    SupDef::template Engine<char32_t, TYPE>::add_include_path(PATH)
 
             template <typename T>
                 requires FilePath<T>
@@ -1358,13 +1404,12 @@ namespace SupDef
 #ifdef DEL_INC_PATH
     #undef DEL_INC_PATH
 #endif
-#define DEL_INC_PATH(PATH)                                                      \
-    SupDef::Engine<char, std::filesystem::path>::remove_include_path(PATH);     \
-    SupDef::Engine<wchar_t, std::filesystem::path>::remove_include_path(PATH);  \
-    SupDef::Engine<char8_t, std::filesystem::path>::remove_include_path(PATH);  \
-    SupDef::Engine<char16_t, std::filesystem::path>::remove_include_path(PATH); \
-    SupDef::Engine<char32_t, std::filesystem::path>::remove_include_path(PATH);
-
+#define DEL_INC_PATH(TYPE, PATH)                                        \
+    SupDef::template Engine<char, TYPE>::remove_include_path(PATH);     \
+    SupDef::template Engine<wchar_t, TYPE>::remove_include_path(PATH);  \
+    SupDef::template Engine<char8_t, TYPE>::remove_include_path(PATH);  \
+    SupDef::template Engine<char16_t, TYPE>::remove_include_path(PATH); \
+    SupDef::template Engine<char32_t, TYPE>::remove_include_path(PATH)
 
             static void clear_include_paths(void)
             {
@@ -1373,12 +1418,12 @@ namespace SupDef
 #ifdef CLR_INC_PATH
     #undef CLR_INC_PATH
 #endif
-#define CLR_INC_PATH()                                                      \
-    SupDef::Engine<char, std::filesystem::path>::clear_include_paths();     \
-    SupDef::Engine<wchar_t, std::filesystem::path>::clear_include_paths();  \
-    SupDef::Engine<char8_t, std::filesystem::path>::clear_include_paths();  \
-    SupDef::Engine<char16_t, std::filesystem::path>::clear_include_paths(); \
-    SupDef::Engine<char32_t, std::filesystem::path>::clear_include_paths();
+#define CLR_INC_PATH(TYPE)                                          \
+    SupDef::template Engine<char, TYPE>::clear_include_paths();     \
+    SupDef::template Engine<wchar_t, TYPE>::clear_include_paths();  \
+    SupDef::template Engine<char8_t, TYPE>::clear_include_paths();  \
+    SupDef::template Engine<char16_t, TYPE>::clear_include_paths(); \
+    SupDef::template Engine<char32_t, TYPE>::clear_include_paths()
 
             static auto get_include_paths(void)
             {
@@ -1387,7 +1432,7 @@ namespace SupDef
 #ifdef GET_INC_PATH
     #undef GET_INC_PATH
 #endif
-#define GET_INC_PATH() SupDef::Engine<char, std::filesystem::path>::get_include_paths()
+#define GET_INC_PATH(TYPE1, TYPE2) SupDef::template Engine<TYPE1, TYPE2>::get_include_paths()
 
             void restart();
             
@@ -1400,9 +1445,14 @@ namespace SupDef
 #define NEED_Engine_TEMPLATES 1
 #include <sup_def/common/engine.cpp>
 
+#undef NEED_Pragmas_TEMPLATES
+#define NEED_Pragmas_TEMPLATES 1
+#include <sup_def/common/pragmas.cpp>
+
     template <typename T, bool authorize_numbers = true>
         requires CharacterType<T>
-    consteval inline bool is_ident_char(T c) noexcept [[gnu::const]]
+    [[gnu::const]]
+    constexpr inline bool is_ident_char(T c) noexcept
     {
         const std::array<char, 26> lowercase_alphabet = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
                                                           'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
