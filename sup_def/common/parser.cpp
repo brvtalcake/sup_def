@@ -24,7 +24,12 @@
 
 #include <sup_def/common/config.h>
 
-#if NEED_TPP_INC(Parser) == 0
+#if defined(__INTELLISENSE__)
+    #define TRUE_VAL 1
+#endif
+
+#if NEED_TPP_INC(Parser) == 0 || TRUE_VAL
+#undef TRUE_VAL
 #include <sup_def/common/sup_def.hpp>
 
 #include <cassert>
@@ -38,17 +43,6 @@
 
 namespace SupDef
 {
-#if 0
-    template <typename T>
-        requires CharacterType<T>
-    Parser<T>::~Parser() noexcept
-    { }
-#endif
-
-
-
-    
-
 #if 0
     // Locates pragmas' start line and pragmas' end line in this->file_content string
     std::vector<std::vector<string_size_type<Parser::parsed_char_t>>> Parser::locate_supdefs(void)
@@ -128,36 +122,68 @@ namespace SupDef
     }
 #endif
 
-#if 0
-    Parser& Parser::process_file(void)
+    template <typename T>
+        requires CharacterType<T>
+    Coro<Result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> Parser<T>::search_super_defines(void)
     {
-        try
+        typedef typename std::basic_regex<T> regex_t;
+        typedef std::match_results<typename std::basic_string<T>::const_iterator> match_res_t;
+        typedef typename decltype(this->lines)::size_type line_num_t;
+        typedef typename string_size_type<T> pos_t;
+
+        auto mk_valid_pragmaloc = [ ](
+            const std::basic_string<T>& content, /* A path, in our case here */
+            const string_size_type<T>& start_line, /* Start line */
+            const string_size_type<T>& end_line /* End line */
+        ) -> Parser<T>::pragma_loc_type {
+            return std::make_tuple(content, start_line, end_line); 
+        };
+
+        using RetType = Result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>;
+        RetType ret;
+
+        if (this->file_content.empty() || this->lines.empty())
         {
-            this->slurp_file();
-            this->strip_comments();
-            /* this->pragmas.clear(); */
-            // TODO: Locate pragmas and feed this->pragmas with them
-            auto pragma_locs = this->locate_supdefs();
-            for (SupDef::Parser::pragma_loc_t loc : pragma_locs)
+            ret = Error<T, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty");
+            co_return ret;
+        }
+        
+        bool in_supdef_body = false;
+        for (line_num_t i = 0; i < this->lines.size(); ++i)
+        {
+            const std::vector<std::tuple<string_size_type<T>, string_size_type<T>, T>>& line_ = this->lines.at(i);
+            std::basic_string<T> line;
+            line.reserve(line_.size());
+            if (line_.empty())
+                continue;
+            else
+                curr_line = std::get<0>(line_.at(0)) + 1;
+            for (auto& c : line_)
+                line += std::get<2>(c);
+            regex_t pragma_start_regex(SUPDEF_PRAGMA_DEF_BEG_REGEX, std::regex_constants::ECMAScript);
+            regex_t pragma_end_regex(SUPDEF_PRAGMA_DEF_END_REGEX, std::regex_constants::ECMAScript);
+            match_res_t match_res;
+            try
             {
-                std::basic_string<Parser::parsed_char_t> pragma_content;
-                for (size_t i = loc[0]; i < loc[1]; i++)
-                {
-                    pragma_content += (*this->lines)[i];
-                    pragma_content += '\n';
-                }
-                /* this->pragmas.emplace(std::make_pair(loc, pragma_content)); */
+                // TODO
+            }
+            catch (const std::exception& e)
+            {
+                ret = Error<T, std::filesystem::path>(
+                    ExcType::INTERNAL_ERROR,
+                    "Caught exception while parsing supdefinitions (in function `" + std::string(__PRETTY_FUNCTION__) + "`): " + std::string(e.what()) + "\n"
+                );
+                co_return ret;
+            }
+            catch (...)
+            {
+                ret = Error<T, std::filesystem::path>(
+                    ExcType::INTERNAL_ERROR,
+                    "Caught unknown exception while parsing supdefinitions (in function `" + std::string(__PRETTY_FUNCTION__) + "`)\n"
+                );
             }
         }
-        catch (const std::exception& e)
-        {
-            throw std::runtime_error("Failed to process file: " + std::string(e.what()) + "\n");
-        }
-        // Next, locate supdefs instantiations and replace them with their content
-
-        return *this;
     }
-#endif
 
     // Explicitely instantiate Parser class for all needed character types
     EXP_INST_CLASS(Parser, (char), (wchar_t), (char8_t), (char16_t), (char32_t))

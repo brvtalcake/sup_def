@@ -755,12 +755,12 @@ Coro<Result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>
 
     typedef typename std::basic_regex<T> regex_t;
     typedef std::match_results<typename std::basic_string<T>::const_iterator> match_res_t;
-    typedef typename std::vector<std::basic_string<T>>::size_type line_num_t;
-    typedef typename std::basic_string<T>::size_type pos_t;
+    typedef typename decltype(this->lines)::size_type line_num_t;
+    typedef typename string_size_type<T> pos_t;
 
     for (line_num_t i = 0; i < this->lines.size(); ++i)
     {
-        std::vector<std::tuple<string_size_type<T>,string_size_type<T>,T>> line_ = this->lines[i];
+        const std::vector<std::tuple<string_size_type<T>, string_size_type<T>, T>>& line_ = this->lines.at(i);
         std::basic_string<T> line;
         line.reserve(line_.size());
         if (line_.empty())

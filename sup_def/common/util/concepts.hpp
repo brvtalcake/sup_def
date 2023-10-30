@@ -38,9 +38,58 @@ concept CharacterType = std::same_as<char, std::remove_cv_t<T>>       ||
 
 #if !DEFINED(CStrType)
 template <typename T>
-concept CStrType = std::is_pointer_v<T>                                                         &&
-                   CharacterType<std::remove_cv_t<std::remove_pointer_t<std::remove_cv_t<T>>>>;
+concept CStrType = (std::is_pointer_v<T> || std::is_array_v<T>) &&
+                   CharacterType<
+                       std::remove_cv_t<std::remove_pointer_t<
+                           std::remove_cv_t<std::decay_t<
+                               T
+                            >>
+                        >>
+                    >;
 #define CStrType_DEFINED 1
+#endif
+
+#if !DEFINED(PtrCStr)
+template <typename T>
+concept PtrCStr = std::is_pointer_v<T>                        &&
+                  CharacterType<
+                      std::remove_cv_t<std::remove_pointer_t<
+                          std::remove_cv_t<T>
+                      >>
+                  >;
+#define PtrCStr_DEFINED 1
+#endif
+
+#if !DEFINED(UnboundedArrayCStr)
+template <typename T>
+concept UnboundedArrayCStr = std::is_unbounded_array_v<T>                &&
+                             CharacterType<
+                                 std::remove_cv_t<std::remove_pointer_t<
+                                     std::remove_cv_t<std::decay_t<
+                                         T
+                                     >>
+                                 >>
+                             >;
+#define UnboundedArrayCStr_DEFINED 1
+#endif
+
+#if !DEFINED(BoundedArrayCStr)
+template <typename T>
+concept BoundedArrayCStr = std::is_bounded_array_v<T>                    &&
+                           CharacterType<
+                               std::remove_cv_t<std::remove_pointer_t<
+                                   std::remove_cv_t<std::decay_t<
+                                       T
+                                   >>
+                               >>
+                           >;
+#define BoundedArrayCStr_DEFINED 1
+#endif
+
+#if !DEFINED(ArrayCStr)
+template <typename T>
+concept ArrayCStr = UnboundedArrayCStr<T> || BoundedArrayCStr<T>;
+#define ArrayCStr_DEFINED 1
 #endif
 
 #if !DEFINED(StdStringType)

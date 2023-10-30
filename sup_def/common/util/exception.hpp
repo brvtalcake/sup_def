@@ -47,7 +47,7 @@ class Exception : public std::exception
             {
                 case ExcType::INTERNAL_ERROR:
                     return std::string("internal error");
-                case ExcType::INVALID_FILE_PATH_ERROR:
+                case ExcType::INVALID_PATH_ERROR:
                     return std::string("invalid file path error");
                 case ExcType::NO_INPUT_FILE_ERROR:
                     return std::string("no input file error");

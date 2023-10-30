@@ -571,12 +571,12 @@ namespace SupDef
 
             Result& operator=(const Result&) = default;
             Result& operator=(Result&&) = default;
-            Result& operator=(T value) { return *this = Result(value); }
-            Result& operator=(T& value) { return *this = Result(value); }
-            Result& operator=(T&& value) { return *this = Result(std::move(value)); }
-            Result& operator=(E error) { return *this = Result(error); }
-            Result& operator=(E& error) { return *this = Result(error); }
-            Result& operator=(E&& error) { return *this = Result(std::move(error)); }
+            Result& operator=(T value) { return (*this = Result(value)); }
+            Result& operator=(T& value) { return (*this = Result(value)); }
+            Result& operator=(T&& value) { return (*this = Result(std::move(value))); }
+            Result& operator=(E error) { return (*this = Result(error)); }
+            Result& operator=(E& error) { return (*this = Result(error)); }
+            Result& operator=(E&& error) { return (*this = Result(std::move(error))); }
 
             inline bool is_null(void) const noexcept { return this->null; }
             inline bool is_ok(void) const noexcept { return !this->is_null() && std::holds_alternative<T>(*this); }
@@ -1174,12 +1174,12 @@ namespace SupDef
                 this->stream = std::move(stream);
             }
 
-            inline auto get_path() const noexcept
+            constexpr inline auto get_path() const noexcept
             {
                 return this->path;
             }
 
-            inline auto is_open() const noexcept
+            constexpr inline bool is_open() const noexcept
             {
                 return this->stream.has_value() && this->stream.value() != nullptr && this->stream.value()->is_open();
             }
@@ -1322,8 +1322,11 @@ namespace SupDef
             friend Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> search_includes<T>(Parser& parser);
         public:
 #else
+            // Search for `#pragma supdef include ...` pragmas
             Coro<Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> search_includes(void);
 #endif
+            // Search for `#pragma supdef begin ...` and its corresponding `#pragma supdef end` pragmas
+            Coro<Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> search_super_defines(void);
 #if defined(SUPDEF_DEBUG)
             template <typename Stream>
             void print_content(Stream& s) const;
@@ -1378,7 +1381,7 @@ namespace SupDef
             static void add_include_path(T path)
             {
                 if (!std::filesystem::exists(path))
-                    throw std::runtime_error("Include path does not exist");
+                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Include path does not exist");
                 include_paths.push_back(path);
             }
 #ifdef ADD_INC_PATH
@@ -1396,7 +1399,7 @@ namespace SupDef
             static void remove_include_path(T path)
             {
                 if (!std::filesystem::exists(path))
-                    throw std::runtime_error("Include path does not exist");
+                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Include path does not exist");
                 auto it = std::find(include_paths.begin(), include_paths.end(), path);
                 if (it != include_paths.end())
                     include_paths.erase(it);

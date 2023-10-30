@@ -38,7 +38,7 @@ inline void CmdLine<T>::parse(void)
         {
             case 'I':
                 if (!std::filesystem::exists(SupDef::Util::get_normalized_path(std::filesystem::path(optarg))))
-                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(optarg) + "\" does not exist");
+                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Path \"" + std::string(optarg) + "\" does not exist");
                 this->include_paths.push_back(SupDef::Util::get_normalized_path(std::filesystem::path(optarg)).string());
                 break;
             case 'o':
@@ -53,7 +53,7 @@ inline void CmdLine<T>::parse(void)
             && std::filesystem::exists(SupDef::Util::get_normalized_path(std::filesystem::path(this->argv[optind]))))
         this->input_file = SupDef::Util::get_normalized_path(std::filesystem::path(this->argv[optind])).string();
     else if (optind < this->argc && this->argv[optind] != nullptr)
-        throw Exception<char, std::filesystem::path>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(this->argv[optind]) + "\" does not exist");
+        throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Path \"" + std::string(this->argv[optind]) + "\" does not exist");
     else
         throw Exception<char, std::filesystem::path>(ExcType::NO_INPUT_FILE_ERROR, "Please specify an input file");
 }
@@ -70,7 +70,7 @@ inline void CmdLine<T>::parse(void)
         {
             case 'I':
                 if (!std::filesystem::exists(SupDef::Util::get_normalized_path(std::filesystem::path(optarg))))
-                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(optarg) + "\" does not exist");
+                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Path \"" + std::string(optarg) + "\" does not exist");
                 this->include_paths.push_back(SupDef::Util::get_normalized_path(std::filesystem::path(optarg)));
                 break;
             case 'o':
@@ -85,7 +85,7 @@ inline void CmdLine<T>::parse(void)
             && std::filesystem::exists(SupDef::Util::get_normalized_path(std::filesystem::path(this->argv[optind]))))
         this->input_file = SupDef::Util::get_normalized_path(std::filesystem::path(this->argv[optind]));
     else if (optind < this->argc && this->argv[optind] != nullptr)
-        throw Exception<char, std::filesystem::path>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(this->argv[optind]) + "\" does not exist");
+        throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Path \"" + std::string(this->argv[optind]) + "\" does not exist");
     else
         throw Exception<char, std::filesystem::path>(ExcType::NO_INPUT_FILE_ERROR, "Please specify an input file");
 }
@@ -101,7 +101,7 @@ inline void CmdLine<T>::parse(void)
         {
             case 'I':
                 if (!std::filesystem::exists(SupDef::Util::get_normalized_path(std::filesystem::path(optarg))))
-                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(optarg) + "\" does not exist");
+                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Path \"" + std::string(optarg) + "\" does not exist");
                 this->include_paths.push_back(SupDef::Util::get_normalized_path(std::filesystem::path(optarg)).c_str());
                 break;
             case 'o':
@@ -116,7 +116,7 @@ inline void CmdLine<T>::parse(void)
             && std::filesystem::exists(SupDef::Util::get_normalized_path(std::filesystem::path(this->argv[optind]))))
         this->input_file = SupDef::Util::get_normalized_path(std::filesystem::path(this->argv[optind])).c_str();
     else if (optind < this->argc && this->argv[optind] != nullptr)
-        throw Exception<char, std::filesystem::path>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(this->argv[optind]) + "\" does not exist");
+        throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Path \"" + std::string(this->argv[optind]) + "\" does not exist");
     else
         throw Exception<char, std::filesystem::path>(ExcType::NO_INPUT_FILE_ERROR, "Please specify an input file");
 }
@@ -153,7 +153,7 @@ inline constexpr void CmdLine<T>::parse(void)
         {
             case 'I':
                 if (!std::filesystem::exists(SupDef::Util::get_normalized_path(std::filesystem::path(optarg))))
-                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(optarg) + "\" does not exist");
+                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Path \"" + std::string(optarg) + "\" does not exist");
                 if constexpr (CStrFilePath<T>)
                 {
                     auto const_cstr_path = SupDef::Util::get_normalized_path(std::filesystem::path(optarg)).c_str();
@@ -195,7 +195,7 @@ inline constexpr void CmdLine<T>::parse(void)
             this->input_file = SupDef::Util::get_normalized_path(std::filesystem::path(this->argv[optind]));
     }
     else if (optind < this->argc && this->argv[optind] != nullptr)
-        throw Exception<char, std::filesystem::path>(ExcType::INVALID_FILE_PATH_ERROR, "Path \"" + std::string(this->argv[optind]) + "\" does not exist");
+        throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Path \"" + std::string(this->argv[optind]) + "\" does not exist");
     else
         throw Exception<char, std::filesystem::path>(ExcType::NO_INPUT_FILE_ERROR, "Please specify an input file");
 }

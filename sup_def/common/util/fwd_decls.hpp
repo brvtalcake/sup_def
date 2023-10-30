@@ -74,7 +74,7 @@ namespace SupDef
     {
         NO_ERROR = 0,
         INTERNAL_ERROR = 1,
-        INVALID_FILE_PATH_ERROR = 2,
+        INVALID_PATH_ERROR = 2,
         NO_INPUT_FILE_ERROR = 3,
         SYNTAX_ERROR = 4,
         UNSPECIFIED_ERROR = 255

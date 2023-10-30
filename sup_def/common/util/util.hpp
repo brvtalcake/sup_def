@@ -183,6 +183,27 @@ namespace SupDef
 #endif
 #define VARIADIC_COUNT(...) SupDef::Util::variadic_count(__VA_ARGS__)
 
+        template <typename T, size_t N>
+            requires CharacterType<T>
+        consteval size_t cstr_len(const T (&)[N])
+        { return N - 1; }
+
+        template <typename T>
+            requires CharacterType<T>
+        consteval size_t cstr_len(const T* str)
+        {
+            size_t len = 0;
+            while (str[len] != static_cast<T>('\0'))
+                ++len;
+            return len;
+        }
+
+        static_assert(cstr_len("Hello") == 5);
+        static_assert(cstr_len(L"Hello") == 5);
+        static_assert(cstr_len(u8"Hello") == 5);
+        static_assert(cstr_len(u"Hello") == 5);
+        static_assert(cstr_len(U"Hello") == 5);
+
         template <typename... Args>
         [[noreturn]] inline void unreachable(Args&&... args)
         {
@@ -202,6 +223,7 @@ namespace SupDef
             __assume(false); // https://learn.microsoft.com/ka-ge/cpp/intrinsics/assume?view=msvc-150
 #endif
             assert(false); // Fall-back
+            std::terminate();
         }
 
 #if defined(UNREACHABLE_EMPTY_TEST)
