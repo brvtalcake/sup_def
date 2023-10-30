@@ -554,13 +554,11 @@ namespace SupDef
             Result(std::initializer_list<U> list) : std::variant<T, E>(), null(true) {}
             Result(const Result&) = default;
             Result(Result&&) = default;
-            Result(T value) : std::variant<T, E>(value) {}
             Result(T& value) : std::variant<T, E>(value) {}
             Result(T&& value) : std::variant<T, E>(std::move(value)) {}
             template <typename U>
                 requires std::convertible_to<U, T>
             Result(std::initializer_list<U> list) : std::variant<T, E>(static_cast<T>(*std::data(list))) {}
-            Result(E error) : std::variant<T, E>(error) {}
             Result(E& error) : std::variant<T, E>(error) {}
             Result(E&& error) : std::variant<T, E>(std::move(error)) {}
             template <typename U>
@@ -569,14 +567,14 @@ namespace SupDef
 
             ~Result() = default;
 
+            [[__gnu__::__nonnull__]]
             Result& operator=(const Result&) = default;
             Result& operator=(Result&&) = default;
-            Result& operator=(T value) { return (*this = Result(value)); }
             Result& operator=(T& value) { return (*this = Result(value)); }
             Result& operator=(T&& value) { return (*this = Result(std::move(value))); }
-            Result& operator=(E error) { return (*this = Result(error)); }
             Result& operator=(E& error) { return (*this = Result(error)); }
             Result& operator=(E&& error) { return (*this = Result(std::move(error))); }
+            Result& operator=(std::nullptr_t) { return (*this = Result(nullptr)); }
 
             inline bool is_null(void) const noexcept { return this->null; }
             inline bool is_ok(void) const noexcept { return !this->is_null() && std::holds_alternative<T>(*this); }

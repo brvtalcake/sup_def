@@ -122,6 +122,7 @@ namespace SupDef
     }
 #endif
 
+    // TODO: Before returning pragma content, remove the " at the beginning and end of the pragma content lines
     template <typename T>
         requires CharacterType<T>
     Coro<Result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> Parser<T>::search_super_defines(void)
@@ -129,7 +130,7 @@ namespace SupDef
         typedef typename std::basic_regex<T> regex_t;
         typedef std::match_results<typename std::basic_string<T>::const_iterator> match_res_t;
         typedef typename decltype(this->lines)::size_type line_num_t;
-        typedef typename string_size_type<T> pos_t;
+        typedef string_size_type<T> pos_t;
 
         auto mk_valid_pragmaloc = [ ](
             const std::basic_string<T>& content, /* A path, in our case here */
@@ -148,6 +149,11 @@ namespace SupDef
             co_return ret;
         }
         
+        pos_t curr_line = 0;
+        pos_t pragma_start_pos = 0;
+        pos_t pragma_end_pos = 0;
+        std::basic_string<T> pragma_content; // Pragma name will be prepended as the first line of the pragma content
+        std::basic_string<T> pragma_name;
         bool in_supdef_body = false;
         for (line_num_t i = 0; i < this->lines.size(); ++i)
         {
@@ -160,12 +166,87 @@ namespace SupDef
                 curr_line = std::get<0>(line_.at(0)) + 1;
             for (auto& c : line_)
                 line += std::get<2>(c);
-            regex_t pragma_start_regex(SUPDEF_PRAGMA_DEF_BEG_REGEX, std::regex_constants::ECMAScript);
-            regex_t pragma_end_regex(SUPDEF_PRAGMA_DEF_END_REGEX, std::regex_constants::ECMAScript);
+            // With `SUPDEF_PRAGMA_DEF_BEG_REGEX` expanding to:
+            //    "^\\s*#\\s*pragma\\s+" "supdef" "\\s+" "begin" "\\s+" "\\w+" "\\s*$"
+            regex_t pragma_start_regex(ANY_STRING(T, SUPDEF_PRAGMA_DEF_BEG_REGEX), std::regex_constants::ECMAScript);
+            // With `SUPDEF_PRAGMA_DEF_END_REGEX` expanding to:
+            //    "^\\s*#\\s*pragma\\s+" "supdef" "\\s+" "end" "\\s+" "\\w+" "\\s*$"
+            regex_t pragma_end_regex(ANY_STRING(T, SUPDEF_PRAGMA_DEF_END_REGEX), std::regex_constants::ECMAScript);
             match_res_t match_res;
             try
             {
-                // TODO
+                if (std::regex_match(line, match_res, pragma_start_regex))
+                {
+                    if (in_supdef_body)
+                    {
+                        auto err_line = std::get<0>(line_.at(0));
+                        string_size_type<T> begin_kwd_pos = match_res[0].first - line.begin();
+                        auto err_col = std::get<1>(line_.at(begin_kwd_pos)); // TODO: err_col may be wrong if there was a command in the line (same for search_includes method)
+                        ret = Error<T, std::filesystem::path>(
+                            ExcType::SYNTAX_ERROR,
+                            "Pragma start found while already in a supdef block",
+                            this->file_path,
+                            err_line + 1,
+                            err_col + 1,
+                            line
+                        );
+                        // For now, straight up `co_return` as we don't want to parse anymore, since it would be useless
+                        // and probably cause more errors
+                        co_return ret;
+                    }
+                    pragma_start_pos = curr_line;
+                    in_supdef_body = true;
+                    pragma_name = match_res[5].str();
+                    pragma_content.clear();
+                    pragma_content += pragma_name;
+                    pragma_content += static_cast<T>('\n');
+                }
+                else if (std::regex_match(line, match_res, pragma_end_regex))
+                {
+                    if (!in_supdef_body)
+                    {
+                        auto err_line = std::get<0>(line_.at(0));
+                        string_size_type<T> end_kwd_pos = match_res[0].first - line.begin();
+                        auto err_col = std::get<1>(line_.at(end_kwd_pos));
+                        ret = Error<T, std::filesystem::path>(
+                            ExcType::SYNTAX_ERROR,
+                            "Pragma end found while not in a supdef block",
+                            this->file_path,
+                            err_line + 1,
+                            err_col + 1,
+                            line
+                        );
+                        co_return ret; // (same comment as above)
+                    }
+                    else if (match_res[0].first != line.begin())
+                    {
+                        auto err_line = std::get<0>(line_.at(0));
+                        auto err_col = std::get<1>(line_.at(0));
+                        ret = Error<T, std::filesystem::path>(
+                            ExcType::SYNTAX_ERROR,
+                            "Pragma end found not at start of line",
+                            this->file_path,
+                            err_line + 1,
+                            err_col + 1,
+                            line
+                        );
+                        // Here this is probably ok to continue parsing
+                        // Just ignore what's before the start of the pragma (on the line)
+                        co_yield ret;
+                        continue;
+                    }
+                    pragma_end_pos = curr_line;
+                    // Add pragma start and end to location vector
+                    ret = mk_valid_pragmaloc(pragma_content, pragma_start_pos, pragma_end_pos);
+                    co_yield ret;
+                    // TODO: Remove supdefinition from file content
+                    in_supdef_body = false;
+                }
+                else if (in_supdef_body)
+                {
+                    pragma_content += line;
+                    pragma_content += static_cast<T>('\n');
+                }
             }
             catch (const std::exception& e)
             {
@@ -183,6 +264,9 @@ namespace SupDef
                 );
             }
         }
+        // TODO: Reassemble full file content (and lines_raw (lines no tupled with line and col)) from lines
+        ret = nullptr; // Indicate the end
+        co_return ret;
     }
 
     // Explicitely instantiate Parser class for all needed character types

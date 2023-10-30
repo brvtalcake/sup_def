@@ -732,6 +732,7 @@ Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::pat
 }
 #else
 // The same as above but as a member function
+// TODO: When parsing, verify that there is nothing appearing after the include pragma
 template <typename T>
     requires CharacterType<T>
 Coro<Result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> Parser<T>::search_includes(void)
@@ -756,7 +757,7 @@ Coro<Result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>
     typedef typename std::basic_regex<T> regex_t;
     typedef std::match_results<typename std::basic_string<T>::const_iterator> match_res_t;
     typedef typename decltype(this->lines)::size_type line_num_t;
-    typedef typename string_size_type<T> pos_t;
+    typedef string_size_type<T> pos_t;
 
     for (line_num_t i = 0; i < this->lines.size(); ++i)
     {

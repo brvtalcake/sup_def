@@ -343,8 +343,8 @@
 // '#' at the beginning of the line, followed by any number of spaces >= 0
 // then 'pragma' followed by any number of spaces > 0
 // then 'supdef' followed by any number of spaces > 0
-// then 'end' followed by any number of spaces >= 0
-#define SUPDEF_PRAGMA_DEF_END_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_END "\\s*$"
+// then 'end' followed by any number of spaces > 0
+#define SUPDEF_PRAGMA_DEF_END_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_END "\\s+" SUPDEF_MACRO_ID_REGEX "\\s*$"
 
 #if defined(SUPDEF_PRAGMA_INCLUDE)
     #undef SUPDEF_PRAGMA_INCLUDE
