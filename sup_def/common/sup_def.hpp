@@ -84,6 +84,422 @@
 
 namespace SupDef
 {
+    template <typename T>
+        requires CharacterType<T>
+    class ParsedChar : public std::tuple<string_size_type<T>, string_size_type<T>, T>
+    {
+        public:
+            ParsedChar() = default;
+            ParsedChar(const ParsedChar&) = default;
+            ParsedChar(ParsedChar&&) = default;
+            ParsedChar& operator=(const ParsedChar&) = default;
+            ParsedChar& operator=(ParsedChar&&) = default;
+            ~ParsedChar() = default;
+
+            ParsedChar(const string_size_type<T>& line, const string_size_type<T>& col, const T& c) : std::tuple<string_size_type<T>, string_size_type<T>, T>(line, col, c)
+            { }
+            ParsedChar(string_size_type<T>&& line, string_size_type<T>&& col, T&& c) : std::tuple<string_size_type<T>, string_size_type<T>, T>(line, col, c)
+            { }
+            ParsedChar(const std::tuple<string_size_type<T>, string_size_type<T>, T>& t) : std::tuple<string_size_type<T>, string_size_type<T>, T>(t)
+            { }
+            ParsedChar(std::tuple<string_size_type<T>, string_size_type<T>, T>&& t) : std::tuple<string_size_type<T>, string_size_type<T>, T>(t)
+            { }
+
+            inline constexpr string_size_type<T> line(void) const noexcept { return std::get<0>(*this); }
+            inline constexpr string_size_type<T> col(void)  const noexcept { return std::get<1>(*this); }
+            inline constexpr T                   val(void)  const noexcept { return std::get<2>(*this); }
+
+            inline constexpr string_size_type<T>& line(void) noexcept { return std::get<0>(*this); }
+            inline constexpr string_size_type<T>& col(void)  noexcept { return std::get<1>(*this); }
+            inline constexpr T&                   val(void)  noexcept { return std::get<2>(*this); }
+
+            inline constexpr explicit operator T(void) const noexcept { return std::get<2>(*this); }
+    };
+
+    template <typename T, typename BaseTraits = std::char_traits<T>>
+        requires CharacterType<T>
+    class ParsedCharTraits
+    {
+        private:
+            typedef T base_char_type;
+            typedef BaseTraits base_traits_type;
+
+            static inline constexpr bool strings_overlap(const base_char_type* s1, const base_char_type* s2, std::size_t n) noexcept
+            {
+                return (s1 <= s2 && s2 < s1 + n) || (s2 <= s1 && s1 < s2 + n);
+            }
+
+        public:
+            typedef ParsedChar<T> char_type;
+            typedef typename std::tuple<string_size_type<T>, string_size_type<T>, typename base_traits_type::int_type> int_type;
+            typedef typename base_traits_type::pos_type pos_type;
+            typedef typename base_traits_type::off_type off_type;
+            typedef typename base_traits_type::state_type state_type;
+
+            static inline constexpr bool eq(const char_type& c1, const char_type& c2) noexcept
+            {
+                return std::get<0>(c1) == std::get<0>(c2) && std::get<1>(c1) == std::get<1>(c2) && base_traits_type::eq(std::get<2>(c1), std::get<2>(c2));
+            }
+
+            static inline constexpr bool lt(const char_type& c1, const char_type& c2) noexcept
+            {
+                return base_traits_type::lt(std::get<2>(c1), std::get<2>(c2));
+            }
+
+            static inline constexpr int compare(const char_type* s1, const char_type* s2, std::size_t n) noexcept
+            {
+                for (std::size_t i = 0; i < n; ++i)
+                {
+                    if (lt(s1[i], s2[i]))
+                        return -1;
+                    else if (lt(s2[i], s1[i]))
+                        return 1;
+                }
+                return 0;
+            }
+
+            static inline constexpr std::size_t length(const char_type* s) noexcept
+            {
+                std::size_t len = 0;
+                while (!base_traits_type::eq(std::get<2>(s[len]), base_char_type()))
+                    ++len;
+                return len;
+            }
+
+            static inline constexpr const char_type* find(const char_type* s, std::size_t n, const char_type& a) noexcept
+            {
+                for (std::size_t i = 0; i < n; ++i)
+                {
+                    if (eq(s[i], a))
+                        return s + i;
+                }
+                return nullptr;
+            }
+
+            static inline char_type* move(char_type* s1, const char_type* s2, std::size_t n) noexcept
+            {
+                if (strings_overlap(s1, s2, n))
+                {
+                    if (s1 < s2)
+                        copy(s1, s2, n); 
+                    else
+                    {
+                        for (std::size_t i = n; i > 0; --i)
+                            assign(s1[i - 1], s2[i - 1]);
+                    }
+                }
+                else
+                    copy(s1, s2, n);
+                return s1;
+            }
+
+            static inline char_type* copy(char_type* s1, const char_type* s2, std::size_t n) noexcept
+            {
+                assert(!strings_overlap(s1, s2, n));
+                for (std::size_t i = 0; i < n; ++i)
+                    assign(s1[i], s2[i]);
+                return s1;
+            }
+
+            static inline constexpr char_type* assign(char_type& c1, const char_type& c2) noexcept
+            {
+                std::get<0>(c1) = std::get<0>(c2);
+                std::get<1>(c1) = std::get<1>(c2);
+                std::get<2>(c1) = std::get<2>(c2);
+                return &c1;
+            }
+
+            static inline constexpr char_type* assign(char_type& c1, base_char_type c2) noexcept
+            {
+                std::get<0>(c1) = 0;
+                std::get<1>(c1) = 0;
+                std::get<2>(c1) = c2;
+                return &c1;
+            }
+
+            static inline constexpr base_char_type* assign(base_char_type& c1, const char_type& c2) noexcept
+            {
+                c1 = std::get<2>(c2);
+                return &c1;
+            }
+
+            static inline constexpr int_type not_eof(const int_type& c) noexcept
+            {
+                if (!eq_int_type(c, eof()))
+                    return c;
+                else
+                    return std::make_tuple(0, 0, base_traits_type::not_eof(base_traits_type::eof()));
+            }
+
+            static inline constexpr int_type eof() noexcept
+            {
+                return std::make_tuple(std::numeric_limits<string_size_type<T>>::max(), std::numeric_limits<string_size_type<T>>::max(), base_traits_type::eof());
+            }
+
+            static inline constexpr int_type to_int_type(const char_type& c) noexcept
+            {
+                return std::make_tuple(std::get<0>(c), std::get<1>(c), base_traits_type::to_int_type(std::get<2>(c)));
+            }
+
+            static inline constexpr char_type to_char_type(const int_type& c) noexcept
+            {
+                return std::make_tuple(std::get<0>(c), std::get<1>(c), base_traits_type::to_char_type(std::get<2>(c)));
+            }
+
+            static inline constexpr bool eq_int_type(const int_type& c1, const int_type& c2) noexcept
+            {
+                return std::get<0>(c1) == std::get<0>(c2) && std::get<1>(c1) == std::get<1>(c2) && base_traits_type::eq_int_type(std::get<2>(c1), std::get<2>(c2));
+            }
+    };
+
+    template <typename T>
+        requires CharacterType<T>
+    class ParsedCharString : public std::basic_string<ParsedChar<T>, ParsedCharTraits<T>>
+    {
+        private:
+            typedef std::basic_string<ParsedChar<T>, ParsedCharTraits<T>> base_type;
+        
+        public:
+            ParsedCharString() : base_type() {}
+            ParsedCharString(const ParsedCharString&) = default;
+            ParsedCharString(ParsedCharString&&) = default;
+            ParsedCharString& operator=(const ParsedCharString&) = default;
+            ParsedCharString& operator=(ParsedCharString&&) = default;
+            ~ParsedCharString() = default;
+
+            ParsedCharString(const base_type& str) : base_type(str) {}
+            ParsedCharString(base_type&& str) : base_type(str) {}
+            ParsedCharString& operator=(const base_type& str) { base_type::operator=(str); return *this; }
+            ParsedCharString& operator=(base_type&& str) { base_type::operator=(str); return *this; }
+
+            template <typename C>
+                requires CharacterType<C>
+            ParsedCharString(const std::basic_string<C>& str) : base_type()
+            {
+                size_t line, col, i;
+                for (i = 0, line = 0, col = 0; i < str.size(); ++i)
+                {
+                    if (str[i] == C('\n'))
+                    {
+                        ++line;
+                        col = 0;
+                        continue;
+                    }
+                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                }
+            }
+            template <typename C>
+                requires CharacterType<C>
+            ParsedCharString(std::basic_string<C>&& str) : base_type()
+            {
+                size_t line, col, i;
+                for (i = 0, line = 0, col = 0; i < str.size(); ++i)
+                {
+                    if (str[i] == C('\n'))
+                    {
+                        ++line;
+                        col = 0;
+                        continue;
+                    }
+                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                }
+            }
+            template <typename C>
+                requires CharacterType<C>
+            ParsedCharString& operator=(const std::basic_string<C>& str)
+            {
+                this->clear();
+                size_t line, col, i;
+                for (i = 0, line = 0, col = 0; i < str.size(); ++i)
+                {
+                    if (str[i] == C('\n'))
+                    {
+                        ++line;
+                        col = 0;
+                        continue;
+                    }
+                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                }
+                return *this;
+            }
+            template <typename C>
+                requires CharacterType<C>
+            ParsedCharString& operator=(std::basic_string<C>&& str)
+            {
+                this->clear();
+                size_t line, col, i;
+                for (i = 0, line = 0, col = 0; i < str.size(); ++i)
+                {
+                    if (str[i] == C('\n'))
+                    {
+                        ++line;
+                        col = 0;
+                        continue;
+                    }
+                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                }
+                return *this;
+            }
+
+            template <typename C>
+                requires CharacterType<C>
+            ParsedCharString(const C* str) : base_type()
+            {
+                size_t line, col, i;
+                for (i = 0, line = 0, col = 0; str[i] != C('\0'); ++i)
+                {
+                    if (str[i] == C('\n'))
+                    {
+                        ++line;
+                        col = 0;
+                        continue;
+                    }
+                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                }
+            }
+            template <typename C>
+                requires CharacterType<C>
+            ParsedCharString& operator=(const C* str)
+            {
+                this->clear();
+                size_t line, col, i;
+                for (i = 0, line = 0, col = 0; str[i] != C('\0'); ++i)
+                {
+                    if (str[i] == C('\n'))
+                    {
+                        ++line;
+                        col = 0;
+                        continue;
+                    }
+                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                }
+                return *this;
+            }
+
+            template <typename C>
+                requires CharacterType<C>
+            ParsedCharString(const C* str, size_t n) : base_type()
+            {
+                size_t line, col, i;
+                for (i = 0, line = 0, col = 0; i < n; ++i)
+                {
+                    if (str[i] == C('\n'))
+                    {
+                        ++line;
+                        col = 0;
+                        continue;
+                    }
+                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                }
+            }
+
+            template <typename C>
+                requires CharacterType<C>
+            ParsedCharString(std::initializer_list<C> il) : base_type()
+            {
+                size_t line, col, i;
+                for (i = 0, line = 0, col = 0; i < il.size(); ++i)
+                {
+                    if (il[i] == C('\n'))
+                    {
+                        ++line;
+                        col = 0;
+                        continue;
+                    }
+                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(il[i])));
+                }
+            }
+            template <typename C>
+                requires CharacterType<C>
+            ParsedCharString& operator=(std::initializer_list<C> il)
+            {
+                this->clear();
+                size_t line, col, i;
+                for (i = 0, line = 0, col = 0; i < il.size(); ++i)
+                {
+                    if (il[i] == C('\n'))
+                    {
+                        ++line;
+                        col = 0;
+                        continue;
+                    }
+                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(il[i])));
+                }
+                return *this;
+            }
+
+            // Override c_str() to return a unique_ptr to a C string
+            template <typename C = T>
+                requires CharacterType<C>
+            inline constexpr std::unique_ptr<C[]> c_str(void) const noexcept
+            {
+                std::unique_ptr<C[]> result(new C[
+                    this->size()          +
+                    newline_count(*this) +
+                    (this->size() > 0 ? (this->at(this->size() - 1).val() == C('\0') ? 0 : 1) : 1)
+                ]);
+                if (this->size() < 1)
+                {
+                    result[0] = C('\0');
+                    return result;
+                }
+                result[0] = this->at(0).val();
+                size_t offset = 0;
+                for (size_t i = 1; i < this->size(); ++i)
+                {
+                    auto prev = this->at(i - 1).line();
+                    auto curr = this->at(i).line();
+                    if (curr > prev)
+                    {
+                        for (size_t j = 0; j < curr - prev; ++j)
+                            result[i + offset + j] = C('\n');
+                        offset += curr - prev;
+                    }
+                    result[i + offset] = this->at(i).val();
+                }
+                if (this->at(this->size() - 1).val() != C('\0'))
+                    result[this->size() + newline_count(*this)] = C('\0');
+                return result;
+            }
+            // Override data() to return a unique_ptr to a C string
+            // (same as c_str() but without the null terminator, except if the string is empty where we add it)
+            template <typename C = T>
+                requires CharacterType<C>
+            inline constexpr std::unique_ptr<C[]> data(void) const noexcept
+            {
+                std::unique_ptr<C[]> result(new C[
+                    this->size()          +
+                    newline_count(*this) +
+                    (this->size() > 0 ? 0 : 1)
+                ]);
+                if (this->size() < 1)
+                {
+                    result[0] = C('\0');
+                    return result;
+                }
+                result[0] = this->at(0).val();
+                size_t offset = 0;
+                for (size_t i = 1; i < this->size(); ++i)
+                {
+                    auto prev = this->at(i - 1).line();
+                    auto curr = this->at(i).line();
+                    if (curr > prev)
+                    {
+                        for (size_t j = 0; j < curr - prev; ++j)
+                            result[i + offset + j] = C('\n');
+                        offset += curr - prev;
+                    }
+                    result[i + offset] = this->at(i).val();
+                }
+                return result;
+            }
+
+        private:
+            constexpr static inline size_t newline_count(const ParsedCharString& str) noexcept
+            {
+                return str.size() > 0 ? str.at(str.size() - 1).line() - str.at(0).line() : 0;
+            }
+    };
 
 #if defined(ESC)
     #undef ESC
@@ -763,39 +1179,6 @@ namespace SupDef
     }
 
     /**
-     * @fn inline constexpr std::array<C, S> any_string(const char (&literal)[S])
-     * @brief Utility function to ease manipulating strings.
-     * 
-     * @tparam C The character type of the returned array
-     * @tparam S The size of the returned array (deduced from the string literal)
-     * @param[in] literal The string literal to convert to an `std::array<C, S>`. Must be of the form: `char[S]` (possibly cv-qualified)
-     * @return Returns an `std::array<C, S>` (where `C` is a character type) from a string literal of character type `char`
-     * @todo Put it in `SupDef::Util` namespace
-     */
-    template <typename C, size_t S>
-        requires CharacterType<C>
-    inline constexpr auto any_string(const char (&literal)[S]) -> std::array<C, S>
-    {
-        std::array<C, S> r = {};
-
-        for (size_t i = 0; i < S; i++)
-                r[i] = static_cast<C>(literal[i]);
-
-        return r;
-    }
-
-#if defined(ANY_STRING)
-    #undef ANY_STRING
-#endif
-/**
- * @def ANY_STRING(TYPE, LIT)
- * @brief A wrapper equivalent to `std::basic_string<TYPE>(any_string<TYPE>(LIT).data())`
- * @param TYPE The character type of the string
- * @param LIT The string literal to convert to a `std::basic_string<TYPE>`
- */
-#define ANY_STRING(TYPE, LIT) (std::basic_string<TYPE>(any_string<TYPE>(LIT).data()))
-
-    /**
      * @brief Utility concept for coroutines
      * 
      * @tparam T The type to check if it is a coroutine
@@ -832,6 +1215,11 @@ namespace SupDef
                     inline Coro<T> get_return_object()
                     {
                         return Coro<T>(handle_type::from_promise(*this));
+                    }
+                    [[noreturn]]
+                    static inline Coro<T> get_return_object_on_allocation_failure()
+                    {
+                        throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to allocate memory for return object of coroutine");
                     }
                     constexpr inline std::suspend_always initial_suspend() noexcept { return {}; }
                     constexpr inline std::suspend_always final_suspend() noexcept { return {}; }
@@ -1340,9 +1728,9 @@ namespace SupDef
         public:
 #endif
             std::filesystem::path file_path;
-            std::vector<std::tuple<string_size_type<T>, string_size_type<T>, T>> file_content;
-            std::vector<std::vector<std::tuple<string_size_type<T>, string_size_type<T>, T>>> lines;
-            std::shared_ptr<std::basic_string<T>> reassemble_lines(void);
+            std::vector<ParsedChar<T>> file_content;
+            std::vector<std::vector<ParsedChar<T>>> lines;
+            //std::shared_ptr<std::basic_string<T>> reassemble_lines(void);
     };
 
 #undef NEED_Parser_TEMPLATES

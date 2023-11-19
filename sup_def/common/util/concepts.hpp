@@ -26,6 +26,24 @@
     #error "Don't include this yourself"
 #endif
 
+namespace Util
+{
+#if !DEFINED(SpecializationOf)
+    template <typename T, template <typename...> typename Template>
+    struct SpecializationOf : std::false_type { };
+
+    template <template <typename...> typename Template, typename... Args>
+    struct SpecializationOf<Template<Args...>, Template> : std::true_type { };
+
+    #if defined(SPECIALIZATION_OF)
+        #undef SPECIALIZATION_OF
+    #endif
+    // TODO: Maybe `std::remove_cvref_t<T>` instead of `T`?
+    #define SPECIALIZATION_OF(T, Template) SupDef::Util::SpecializationOf<T, Template>::value
+    #define SpecializationOf_DEFINED 1
+#endif
+}
+
 #if !DEFINED(CharacterType)
 template <typename T>
 concept CharacterType = std::same_as<char, std::remove_cv_t<T>>       ||
@@ -100,7 +118,10 @@ concept StdStringType = requires(T)
     typename std::remove_cvref_t<T>::size_type;
     typename std::remove_cvref_t<T>::traits_type;
     typename std::remove_cvref_t<T>::allocator_type;
-};
+    typename std::remove_cvref_t<T>::iterator;
+    typename std::remove_cvref_t<T>::const_iterator;
+    typename std::remove_cvref_t<T>::reverse_iterator;
+} && (SPECIALIZATION_OF(T, std::basic_string)); // TODO: Maybe `std::remove_cvref_t<T>` instead of `T`?
 #define StdStringType_DEFINED 1
 #endif
 

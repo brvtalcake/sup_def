@@ -30,7 +30,8 @@
 
 #pragma supdef include test3.sd
 
-/* #pragma supdef include "test4.sd"> // error */
+// Fixme
+//#pragma/* */ supdef include "test4.sd"> // error
 
 /* #pragma supdef include <te"st"5.sd> // error */
 
@@ -187,5 +188,15 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     std::cout << "\n";
 #endif
     /* SupDef::Util::exit_program(0); */
+#if 0
+    using SupDef::ParsedCharString;
+    ParsedCharString<char> test1("test1\nblah\n");
+    auto pos = test1.find("blah");
+    auto pch = test1.at(0);
+    std::cout << demangle(typeid(pch).name()) << std::endl;
+    std::cout << pch.val() << std::endl;
+    std::cout << test1.c_str().get() << std::endl;
+    std::cout << pos << std::endl;
+#endif
     return SupDef::External::main_ret();
 }

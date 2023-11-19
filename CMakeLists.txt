@@ -1,6 +1,7 @@
 # TODO: Use PCHs (`target_precompile_headers`).
 
 cmake_minimum_required(VERSION 3.24.0 FATAL_ERROR)
+cmake_policy(SET CMP0144 NEW)
 
 include(CMakeDependentOption)
 include(CheckIPOSupported)

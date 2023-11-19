@@ -1,11 +1,7 @@
 
-/*
- * main.cpp
- * 
- * 
- */
+ 
 
-// #pragma supdef include // error */
+
 
 #include <sup_def/common/sup_def.hpp>
 #include <sup_def/external/external.hpp>
@@ -19,30 +15,23 @@
 #include <map>
 #include <regex>
 
-#include <iomanip> // 
+#include <iomanip>
 
-#pragma supdef include <blabla.sd>
-#pragma supdef include blabla2.sd
 
-#pragma supdef include "test.sd"
 
-#pragma supdef include "test2.sd"
 
-#pragma supdef include test3.sd
 
-// Fixme
-//#pragma/* */ supdef include "test4.sd"> // error
 
-/* #pragma supdef include <te"st"5.sd> // error */
 
-//#pragma supdef include "<test5.sd>" // error
 
-/* test             
-    
-    */
+ 
 
-//
-// #pragma supdef include // error */
+
+
+ 
+
+
+
 
 template <typename T>
 auto identity(T&& t) -> decltype(t) 
@@ -50,7 +39,7 @@ auto identity(T&& t) -> decltype(t)
 
 using SupDef::Util::demangle;
 
-int main/**/(int argc, char/**/const *argv[/*])*/])
+int main (int argc, char const *argv[ ])
 {
     SupDef::External::init(argc, argv);
 #if 0
@@ -138,19 +127,17 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     std::cout << arr1[4] << "\n";
     for (size_t i = 0; i < arr1.size(); ++i)
     {
-        //std::cout << demangle(typeid(arr1[i]).name()) << "\n";
-#if 1
+
         arr1[i] = 0;
 #else
         decltype(arr1)::reference&& ref = identity(arr1[i]);
         identity(ref) = 0;
 #endif
     }
-    //int assign = 1;
-    //for (auto&& i : arr1)
-    //{
-    //    std::cout << demangle(typeid(i).name()) << "\n";
-    //}
+
+
+
+
     for (auto i : arr1)
         std::cout << i << "\n";
     std::cout << "\n";
@@ -169,16 +156,16 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
 
     const Array<int, 1> testarr1(1);
     for (auto i : testarr1)
-        std::cout << demangle(typeid(i).name()) << std::endl; // i
+        std::cout << demangle(typeid(i).name()) << std::endl;
     for (auto&& i : testarr1)
-        std::cout << demangle(typeid(i).name()) << std::endl; // i
+        std::cout << demangle(typeid(i).name()) << std::endl;
     Array<int, 1> testarr2(1);
     for (auto i : testarr2)
-        std::cout << demangle(typeid(i).name()) << std::endl; // Some complicated scheisse
+        std::cout << demangle(typeid(i).name()) << std::endl;
     for (auto&& i : testarr2)
-        std::cout << demangle(typeid(i).name()) << std::endl; // Some complicated scheisse again
-    //for (decltype(testarr2)::reference i : testarr2)
-    //    std::cout << demangle(typeid(i).name()) << std::endl; // Some complicated scheisse again
+        std::cout << demangle(typeid(i).name()) << std::endl;
+
+
     std::cout << demangle(typeid(arr1[0] = 1).name()) << std::endl;
     std::cout << demangle(typeid(arr1[0]).name()) << std::endl;
     std::cout << demangle(typeid(decltype(arr1)::reference).name()) << std::endl;
@@ -187,7 +174,7 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     std::cout << demangle(typeid(*(testarr2.begin())).name()) << std::endl;
     std::cout << "\n";
 #endif
-    /* SupDef::Util::exit_program(0); */
+     
 #if 0
     using SupDef::ParsedCharString;
     ParsedCharString<char> test1("test1\nblah\n");

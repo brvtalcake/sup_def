@@ -153,6 +153,7 @@ namespace SupDef
         struct Choose_num : std::conditional_t<B, std::integral_constant<C, T>, std::integral_constant<C, F>>
         { };
 
+#if !DEFINED(SpecializationOf)
         template <typename T, template <typename...> typename Template>
         struct SpecializationOf : std::false_type { };
 
@@ -163,11 +164,44 @@ namespace SupDef
     #undef SPECIALIZATION_OF
 #endif
 #define SPECIALIZATION_OF(T, Template) SupDef::Util::SpecializationOf<T, Template>::value
+#define SpecializationOf_DEFINED 1
+#endif
 
         static_assert(SPECIALIZATION_OF(std::vector<int>, std::vector));
         static_assert(SPECIALIZATION_OF(std::list<int>, std::list));
         static_assert(!SPECIALIZATION_OF(std::vector<int>, std::list));
         static_assert(!SPECIALIZATION_OF(std::list<int>, std::vector));
+
+        /**
+         * @fn inline constexpr std::array<C, S> any_string(const char (&literal)[S])
+         * @brief Utility function to ease manipulating strings.
+         * 
+         * @tparam C The character type of the returned array
+         * @tparam S The size of the returned array (deduced from the string literal)
+         * @param[in] literal The string literal to convert to an `std::array<C, S>`. Must be of the form: `char[S]` (possibly cv-qualified)
+         * @return Returns an `std::array<C, S>` (where `C` is a character type) from a string literal of character type `char`
+         * @todo Put it in `SupDef::Util` namespace
+         */
+        template <typename C, size_t S>
+            requires CharacterType<C>
+        inline constexpr auto any_string(const char (&literal)[S]) -> std::array<C, S>
+        {
+            std::array<C, S> r = {};
+            for (size_t i = 0; i < S; i++)
+                    r[i] = static_cast<C>(literal[i]);
+            return r;
+        }
+
+#if defined(ANY_STRING)
+    #undef ANY_STRING
+#endif
+/**
+ * @def ANY_STRING(TYPE, LIT)
+ * @brief A wrapper equivalent to `std::basic_string<TYPE>(any_string<TYPE>(LIT).data())`
+ * @param TYPE The character type of the string
+ * @param LIT The string literal to convert to a `std::basic_string<TYPE>`
+ */
+#define ANY_STRING(TYPE, LIT) (std::basic_string<TYPE>(SupDef::Util::any_string<TYPE>(LIT).data()))
 
         template <typename... Types>
         consteval size_t variadic_count(Types...)
@@ -591,6 +625,11 @@ namespace SupDef
         {
             return convert_string<C1>(path.string());
         }
+
+#ifdef CONVERT_STR
+    #undef CONVERT_STR
+#endif
+#define CONVERT_STR(TYPE, STR) SupDef::Util::convert_string<TYPE>(STR)
 
         template <typename T>
             requires CharacterType<T>

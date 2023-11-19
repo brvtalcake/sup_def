@@ -1,9 +1,19 @@
 // "classic" supdef
+#pragma supdef begin endifsupdef
+"#endif"
+#pragma supdef end
+
 #pragma supdef begin test
 "#if !defined($1)" 
     "#define $1 $2"
-"#endif"
+endifsupdef()
 #pragma supdef end
+
+test(HELLO, "hello world")
+// Expands to:
+// #if !defined(HELLO)
+//     #define HELLO "hello world"
+// #endif
 
 // C runnable supdef (unimplemented)
 #pragma supdef runnable C begin test2
