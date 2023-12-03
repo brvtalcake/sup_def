@@ -21,9 +21,9 @@ test(HELLO, "hello world")
 #pragma supdef end
 
 // includes
-#pragma supdef include "supdefinitions.sd"
+#pragma supdef import "supdefinitions.sd"
 
-#pragma supdef include "supdefinitions2.sd"
+#pragma supdef import "supdefinitions2.sd"
 
 // Dump some code passed to `supdef`
 #pragma supdef dump 0

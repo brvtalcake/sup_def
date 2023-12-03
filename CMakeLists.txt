@@ -16,6 +16,12 @@ else()
     set(MAINTAINER_MODE OFF)
 endif()
 
+if (DEFINED ENV{MAINTAINER})
+    set(MAINTAINER $ENV{MAINTAINER})
+else()
+    set(MAINTAINER "Unknown")
+endif()
+
 if (${MAINTAINER_MODE} STREQUAL "ON")
     message(STATUS "Maintainer mode enabled")
     set(COMP_TOOLCHAIN_DIR "/usr/local/bin/")

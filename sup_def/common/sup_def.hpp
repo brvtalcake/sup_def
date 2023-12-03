@@ -104,16 +104,40 @@ namespace SupDef
             { }
             ParsedChar(std::tuple<string_size_type<T>, string_size_type<T>, T>&& t) : std::tuple<string_size_type<T>, string_size_type<T>, T>(t)
             { }
+            ParsedChar(const T& c) : std::tuple<string_size_type<T>, string_size_type<T>, T>(0, 0, c)
+            { }
 
-            inline constexpr string_size_type<T> line(void) const noexcept { return std::get<0>(*this); }
-            inline constexpr string_size_type<T> col(void)  const noexcept { return std::get<1>(*this); }
-            inline constexpr T                   val(void)  const noexcept { return std::get<2>(*this); }
+#if __cpp_explicit_this_parameter >= 202110L // "Deducing this" feature from C++23
+        private:
+            template <typename Self, typename Arg>
+            using helper = std::conditional_t<std::is_const_v<std::remove_reference_t<Self>>, Arg, Arg&>;
+        public:
+            template <typename Self>
+            inline ParsedChar<T>::helper<Self, string_size_type<T>>  line(this Self&& self) noexcept { return std::get<0>(self); }
+            static_assert(std::same_as<decltype(std::declval<ParsedChar<T>>().line()), string_size_type<T>&>);
+            static_assert(std::same_as<decltype(std::declval<const ParsedChar<T>>().line()), string_size_type<T>>);
 
-            inline constexpr string_size_type<T>& line(void) noexcept { return std::get<0>(*this); }
-            inline constexpr string_size_type<T>& col(void)  noexcept { return std::get<1>(*this); }
-            inline constexpr T&                   val(void)  noexcept { return std::get<2>(*this); }
+            template <typename Self>
+            inline ParsedChar<T>::helper<Self, string_size_type<T>>  col (this Self&& self) noexcept { return std::get<1>(self); }
+            static_assert(std::same_as<decltype(std::declval<ParsedChar<T>>().col()), string_size_type<T>&>);
+            static_assert(std::same_as<decltype(std::declval<const ParsedChar<T>>().col()), string_size_type<T>>);
 
-            inline constexpr explicit operator T(void) const noexcept { return std::get<2>(*this); }
+            template <typename Self>
+            inline ParsedChar<T>::helper<Self, T>                    val (this Self&& self) noexcept { return std::get<2>(self); }
+            static_assert(std::same_as<decltype(std::declval<ParsedChar<T>>().val()), T&>);
+            static_assert(std::same_as<decltype(std::declval<const ParsedChar<T>>().val()), T>);
+#else
+            inline constexpr string_size_type<T>  line(void) const noexcept { return std::get<0>(*this); }
+            inline constexpr string_size_type<T>  col (void) const noexcept { return std::get<1>(*this); }
+            inline constexpr T                    val (void) const noexcept { return std::get<2>(*this); }
+
+            inline constexpr string_size_type<T>& line(void)       noexcept { return std::get<0>(*this); }
+            inline constexpr string_size_type<T>& col (void)       noexcept { return std::get<1>(*this); }
+            inline constexpr T&                   val (void)       noexcept { return std::get<2>(*this); }
+
+#endif
+            inline constexpr explicit operator T (void) const noexcept { return std::get<2>(*this); }
+            inline constexpr explicit operator T&(void)       noexcept { return std::get<2>(*this); }
     };
 
     template <typename T, typename BaseTraits = std::char_traits<T>>
@@ -279,13 +303,13 @@ namespace SupDef
                 size_t line, col, i;
                 for (i = 0, line = 0, col = 0; i < str.size(); ++i)
                 {
-                    if (str[i] == C('\n'))
+                    if (SAME(str[i], '\n'))
                     {
                         ++line;
                         col = 0;
                         continue;
                     }
-                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                    this->push_back(ParsedChar<T>(line, col++, CONVERT(T, str[i])));
                 }
             }
             template <typename C>
@@ -295,13 +319,13 @@ namespace SupDef
                 size_t line, col, i;
                 for (i = 0, line = 0, col = 0; i < str.size(); ++i)
                 {
-                    if (str[i] == C('\n'))
+                    if (SAME(str[i], '\n'))
                     {
                         ++line;
                         col = 0;
                         continue;
                     }
-                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                    this->push_back(ParsedChar<T>(line, col++, CONVERT(T, str[i])));
                 }
             }
             template <typename C>
@@ -312,13 +336,13 @@ namespace SupDef
                 size_t line, col, i;
                 for (i = 0, line = 0, col = 0; i < str.size(); ++i)
                 {
-                    if (str[i] == C('\n'))
+                    if (SAME(str[i], '\n'))
                     {
                         ++line;
                         col = 0;
                         continue;
                     }
-                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                    this->push_back(ParsedChar<T>(line, col++, CONVERT(T, str[i])));
                 }
                 return *this;
             }
@@ -330,13 +354,13 @@ namespace SupDef
                 size_t line, col, i;
                 for (i = 0, line = 0, col = 0; i < str.size(); ++i)
                 {
-                    if (str[i] == C('\n'))
+                    if (SAME(str[i], '\n'))
                     {
                         ++line;
                         col = 0;
                         continue;
                     }
-                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                    this->push_back(ParsedChar<T>(line, col++, CONVERT(T, str[i])));
                 }
                 return *this;
             }
@@ -346,15 +370,15 @@ namespace SupDef
             ParsedCharString(const C* str) : base_type()
             {
                 size_t line, col, i;
-                for (i = 0, line = 0, col = 0; str[i] != C('\0'); ++i)
+                for (i = 0, line = 0, col = 0; DIFFERENT(str[i], '\0'); ++i)
                 {
-                    if (str[i] == C('\n'))
+                    if (SAME(str[i], '\n'))
                     {
                         ++line;
                         col = 0;
                         continue;
                     }
-                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                    this->push_back(ParsedChar<T>(line, col++, CONVERT(T, str[i])));
                 }
             }
             template <typename C>
@@ -363,15 +387,15 @@ namespace SupDef
             {
                 this->clear();
                 size_t line, col, i;
-                for (i = 0, line = 0, col = 0; str[i] != C('\0'); ++i)
+                for (i = 0, line = 0, col = 0; DIFFERENT(str[i], '\0'); ++i)
                 {
-                    if (str[i] == C('\n'))
+                    if (SAME(str[i], '\n'))
                     {
                         ++line;
                         col = 0;
                         continue;
                     }
-                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                    this->push_back(ParsedChar<T>(line, col++, CONVERT(T, str[i])));
                 }
                 return *this;
             }
@@ -383,13 +407,13 @@ namespace SupDef
                 size_t line, col, i;
                 for (i = 0, line = 0, col = 0; i < n; ++i)
                 {
-                    if (str[i] == C('\n'))
+                    if (SAME(str[i], '\n'))
                     {
                         ++line;
                         col = 0;
                         continue;
                     }
-                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(str[i])));
+                    this->push_back(ParsedChar<T>(line, col++, CONVERT(T, str[i])));
                 }
             }
 
@@ -400,13 +424,13 @@ namespace SupDef
                 size_t line, col, i;
                 for (i = 0, line = 0, col = 0; i < il.size(); ++i)
                 {
-                    if (il[i] == C('\n'))
+                    if (SAME(il[i], '\n'))
                     {
                         ++line;
                         col = 0;
                         continue;
                     }
-                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(il[i])));
+                    this->push_back(ParsedChar<T>(line, col++, CONVERT(T, il[i])));
                 }
             }
             template <typename C>
@@ -417,13 +441,13 @@ namespace SupDef
                 size_t line, col, i;
                 for (i = 0, line = 0, col = 0; i < il.size(); ++i)
                 {
-                    if (il[i] == C('\n'))
+                    if (SAME(il[i], '\n'))
                     {
                         ++line;
                         col = 0;
                         continue;
                     }
-                    this->push_back(ParsedChar<T>(line, col++, static_cast<T>(il[i])));
+                    this->push_back(ParsedChar<T>(line, col++, CONVERT(T, il[i])));
                 }
                 return *this;
             }
@@ -436,14 +460,14 @@ namespace SupDef
                 std::unique_ptr<C[]> result(new C[
                     this->size()          +
                     newline_count(*this) +
-                    (this->size() > 0 ? (this->at(this->size() - 1).val() == C('\0') ? 0 : 1) : 1)
+                    (this->size() > 0 ? (SAME(this->at(this->size() - 1).val(), '\0') ? 0 : 1) : 1)
                 ]);
                 if (this->size() < 1)
                 {
                     result[0] = C('\0');
                     return result;
                 }
-                result[0] = this->at(0).val();
+                result[0] = CONVERT(C, this->at(0).val());
                 size_t offset = 0;
                 for (size_t i = 1; i < this->size(); ++i)
                 {
@@ -452,12 +476,12 @@ namespace SupDef
                     if (curr > prev)
                     {
                         for (size_t j = 0; j < curr - prev; ++j)
-                            result[i + offset + j] = C('\n');
+                            result[i + offset + j] = CONVERT(C, '\n');
                         offset += curr - prev;
                     }
-                    result[i + offset] = this->at(i).val();
+                    result[i + offset] = CONVERT(C, this->at(i).val());
                 }
-                if (this->at(this->size() - 1).val() != C('\0'))
+                if (DIFFERENT(this->at(this->size() - 1).val(), '\0'))
                     result[this->size() + newline_count(*this)] = C('\0');
                 return result;
             }
@@ -477,7 +501,7 @@ namespace SupDef
                     result[0] = C('\0');
                     return result;
                 }
-                result[0] = this->at(0).val();
+                result[0] = CONVERT(C, this->at(0).val());
                 size_t offset = 0;
                 for (size_t i = 1; i < this->size(); ++i)
                 {
@@ -486,10 +510,10 @@ namespace SupDef
                     if (curr > prev)
                     {
                         for (size_t j = 0; j < curr - prev; ++j)
-                            result[i + offset + j] = C('\n');
+                            result[i + offset + j] = CONVERT(C, '\n');
                         offset += curr - prev;
                     }
-                    result[i + offset] = this->at(i).val();
+                    result[i + offset] = CONVERT(C, this->at(i).val());
                 }
                 return result;
             }
@@ -840,7 +864,7 @@ namespace SupDef
      */
     template <typename T, typename U>
         requires CharacterType<T> && FilePath<U>
-    inline 
+    static 
     std::string 
     format_error
     (
@@ -878,31 +902,31 @@ namespace SupDef
                 string_size_type<T> end = context.value().size();
                 for (string_size_type<T> i = col.value() - 1; i >= 0; --i)
                 {
-                    if (context.value().at(i) == static_cast<T>(' ') || context.value().at(i) == static_cast<T>('\t'))
+                    if (SAME(context.value().at(i), ' ') || SAME(context.value().at(i), '\t'))
                     {
                         start = i + 1;
                         break;
                     }
                 }
-                for (string_size_type<T> i = col.value() + 1; i < context.value().size(); ++i)
+                for (string_size_type<T> i = col.value() - 1; i < context.value().size(); ++i)
                 {
-                    if (context.value().at(i) == static_cast<T>(' ') || context.value().at(i) == static_cast<T>('\t'))
+                    if (SAME(context.value().at(i), ' ') || SAME(context.value().at(i), '\t'))
                     {
                         end = i;
                         break;
                     }
                 }
-                result += " " + TXT(BOLD) + "|" + TXT(RESET) + "  " + Util::convert_string<char, T>(context.value().substr(0, start));
+                result += " " + TXT(BOLD) + "|" + TXT(RESET) + "  " + Util::convert<char, T>(context.value().substr(0, start));
                 assert(static_cast<long long>(end) - static_cast<long long>(start) >= 0LL);
-                result += FG(BRIGHT_RED) + TXT(BOLD) + Util::convert_string<char, T>(context.value().substr(start, end - start)) + FG(DEFAULT) + TXT(RESET);
+                result += FG(BRIGHT_RED) + TXT(BOLD) + Util::convert<char, T>(context.value().substr(start, end - start)) + FG(DEFAULT) + TXT(RESET);
                 if (static_cast<long long>(context.value().size()) - static_cast<long long>(end) > 0LL)
-                    result += Util::convert_string<char, T>(context.value().substr(end, context.value().size() - end)) + "\n";
+                    result += Util::convert<char, T>(context.value().substr(end, context.value().size() - end)) + "\n";
                 else
                     result += "\n";
                 uint16_t start_term_col = std::string(" |  ").size();
                 for (string_size_type<T> i = 0; i < start; ++i)
                 {
-                    if (context.value()[i] == static_cast<T>('\t'))
+                    if (SAME(context.value().at(i), '\t'))
                         start_term_col += 4;
                     else
                         ++start_term_col;
@@ -919,7 +943,7 @@ namespace SupDef
                 result += '\n';
             }
             else
-                result += "  | " + Util::convert_string<char, T>(context.value()) + "\n";
+                result += "  | " + Util::convert<char, T>(context.value()) + "\n";
         }
         return result;
     }
@@ -1146,22 +1170,31 @@ namespace SupDef
     }
 
     template <typename T, typename U>
-        requires CharacterType<T> && std::convertible_to<U, T>
-    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T> str, U delimiter) noexcept(std::is_nothrow_convertible_v<U, T>)
+        requires CharacterType<T> && (std::convertible_to<U, T> || CharacterType<U>) && (!std::same_as<T, U>)
+    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T>&& str, const U& delimiter) noexcept(std::is_nothrow_convertible_v<U, T> && !CharacterType<U>)
     {
         std::vector<std::basic_string<T>> result{};
         std::basic_stringstream<T> ss(str);
         std::basic_string<T> token;
         T converted_delim;
-        if constexpr (std::is_nothrow_convertible_v<U, T>)
+        if constexpr (std::is_nothrow_convertible_v<U, T> && !CharacterType<U>)
             converted_delim = static_cast<T>(delimiter);
         else
         {
             try
             {
-                converted_delim = static_cast<T>(delimiter);
+                if constexpr (CharacterType<U>)
+                {
+                    auto converted_delim_str = CONVERT(T, delimiter);
+                    if (converted_delim_str.length() == 1)
+                        converted_delim = converted_delim_str.at(0);
+                    else
+                        return split_string<T, U>(std::move(str), converted_delim_str);
+                }
+                else
+                    converted_delim = static_cast<T>(delimiter);
             }
-            catch (const std::bad_cast& e)
+            catch (const std::exception& e)
             {
 #if defined(__GNUC__)
                 throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to convert delimiter to string character type in function " + std::string(__PRETTY_FUNCTION__) + " (caught exception: " + e.what() + ")");
@@ -1178,6 +1211,49 @@ namespace SupDef
         return result;
     }
 
+    template <typename T, typename U>
+        requires CharacterType<T> && std::same_as<T, U>
+    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T>&& str, const U& delimiter) noexcept
+    {
+        std::vector<std::basic_string<T>> result{};
+        std::basic_stringstream<T> ss(str);
+        std::basic_string<T> token;
+        while (std::getline(ss, token, delimiter))
+            result.push_back(token);
+        return result;
+    }
+
+    template <typename T, typename U>
+        requires CharacterType<T> && CharacterType<U>
+    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T>&& str, const std::basic_string<U>& delim)
+    {
+        if (CONVERT(T, delim).length() == 1)
+            return split_string<T, U>(std::move(str), delim.at(0));
+        std::vector<std::basic_string<T>> result{};
+        std::remove_cv_t<decltype(std::basic_string<T>::npos)> pos = 0, prev_pos = 0;
+        while ((pos = std::move(str).find(delim, prev_pos)) != std::basic_string<T>::npos)
+        {
+            result.push_back(std::move(str).substr(prev_pos, pos - prev_pos));
+            prev_pos = pos + delim.length();
+        }
+        result.push_back(std::move(str).substr(prev_pos, pos - prev_pos));
+        return result;
+    }
+
+    template <typename T, typename U>
+        requires CharacterType<T> && CharacterType<U>
+    inline std::vector<std::basic_string<T>> split_string(const std::basic_string<T>& str, const std::basic_string<U>& delim)
+    {
+        return split_string<T, U>(std::basic_string<T>(str), delim);
+    }
+
+    template <typename T, typename U>
+        requires CharacterType<T> && CharacterType<U>
+    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T>&& str, std::basic_string<U>&& delim)
+    {
+        return split_string<T, U>(std::move(str), delim);
+    }
+    
     /**
      * @brief Utility concept for coroutines
      * 
@@ -1578,7 +1654,7 @@ namespace SupDef
         private:
             std::shared_ptr<U> path;
             std::vector<PragmaDef<T>> super_defines;
-            std::vector<PragmaInc<T, U>> includes;
+            std::vector<PragmaInc<T, U>> imports;
 
         public:
             std::unique_ptr<Parser<T>> parser;
@@ -1592,7 +1668,7 @@ namespace SupDef
             SrcFile(SrcFile&& other) noexcept = default;
             SrcFile(SrcFile& other) : path(other->get_path),
                                       super_defines(other->get_super_defines()),
-                                      includes(other->get_includes()),
+                                      imports(other->get_imports()),
                                       parser(std::make_unique<Parser<T>>(*(other->get_path()))),
                                       file(std::make_unique<File<std::basic_ifstream<T>>>(*(other->get_path())))
             { }
@@ -1612,9 +1688,9 @@ namespace SupDef
                 return this->super_defines;
             }
 
-            inline std::vector<PragmaInc<T, U>> get_includes() const noexcept
+            inline std::vector<PragmaInc<T, U>> get_imports() const noexcept
             {
-                return this->includes;
+                return this->imports;
             }
 
             inline void add_super_define(const PragmaDef<T>& super_define) noexcept
@@ -1622,16 +1698,16 @@ namespace SupDef
                 this->super_defines.push_back(super_define);
             }
 
-            inline void add_include(const PragmaInc<T, U>& include) noexcept
+            inline void add_include(const PragmaInc<T, U>& import) noexcept
             {
-                this->includes.push_back(include);
+                this->imports.push_back(import);
             }
 
             inline void restart() noexcept
             {
                 this->path.reset();
                 this->super_defines.clear();
-                this->includes.clear();
+                this->imports.clear();
                 this->parser.reset();
                 this->file.reset();
             }
@@ -1641,7 +1717,7 @@ namespace SupDef
                 this->restart();
                 this->path = std::make_shared<U>(path);
                 this->super_defines.clear();
-                this->includes.clear();
+                this->imports.clear();
                 this->parser = std::make_unique<Parser<T>>(path);
                 this->file = std::make_unique<File<std::basic_ifstream<T>>>(path);
             }
@@ -1650,7 +1726,7 @@ namespace SupDef
             {
                 this->path = other.path;
                 this->super_defines = other.super_defines;
-                this->includes = other.includes;
+                this->imports = other.imports;
                 this->parser = std::move(other.parser);
                 this->file = std::move(other.file);
                 return *this;
@@ -1676,7 +1752,7 @@ namespace SupDef
 #if SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR
     template <typename T>
         requires CharacterType<T>
-    Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> search_includes(Parser<T>& parser);
+    Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> search_imports(Parser<T>& parser);
 #endif
     /**
      * @class Parser
@@ -1694,22 +1770,22 @@ namespace SupDef
             typedef typename std::basic_string<T> string_type;
             typedef typename std::tuple<string_type, string_size_type<T>, string_size_type<T>> pragma_loc_type;
 
-            std::shared_ptr<std::basic_string<T>> file_content_raw;
+            std::basic_string<T> file_content_raw;
             std::vector<std::basic_string<T>> lines_raw;
 
             Parser();
             Parser(std::filesystem::path file_path);
             ~Parser() noexcept = default;
 
-            std::shared_ptr<std::basic_string<T>> slurp_file();
+            std::basic_string<T> slurp_file();
             Parser& strip_comments(void);
 #if SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR
         private:
-            friend Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> search_includes<T>(Parser& parser);
+            friend Coro<Result<std::shared_ptr<std::basic_string<T>>, Error<T, std::filesystem::path>>> search_imports<T>(Parser& parser);
         public:
 #else
-            // Search for `#pragma supdef include ...` pragmas
-            Coro<Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> search_includes(void);
+            // Search for `#pragma supdef import ...` pragmas
+            Coro<Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> search_imports(void);
 #endif
             // Search for `#pragma supdef begin ...` and its corresponding `#pragma supdef end` pragmas
             Coro<Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> search_super_defines(void);
@@ -1724,6 +1800,11 @@ namespace SupDef
             std::unique_ptr<std::basic_ifstream<T>> file;
             
             std::basic_string<T> remove_cstr_lit(void);
+
+            // TODO: Implement the following three methods
+            bool is_super_define_start(std::vector<ParsedChar<T>>& line);
+            bool is_super_define_end(std::vector<ParsedChar<T>>& line);
+            bool is_import(std::vector<ParsedChar<T>>& line);
 #if SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR
         public:
 #endif
@@ -1745,13 +1826,12 @@ namespace SupDef
      */
     template <typename P1, typename P2>
         requires CharacterType<P1> && FilePath<P2>
-    class Engine
+    class Engine : public EngineBase
     {
         private:
             File<std::basic_ofstream<P1>> tmp_file;
 
         public:
-            static std::vector<std::filesystem::path> include_paths;
             SrcFile<P1, P2> src_file;
             File<std::basic_ofstream<P1>> dst_file;
             
@@ -1762,66 +1842,30 @@ namespace SupDef
 
             ~Engine() noexcept;
 
-            template <typename T>
-                requires FilePath<T>
-            static void add_include_path(T path)
-            {
-                if (!std::filesystem::exists(path))
-                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Include path does not exist");
-                include_paths.push_back(path);
-            }
 #ifdef ADD_INC_PATH
     #undef ADD_INC_PATH
 #endif
-#define ADD_INC_PATH(TYPE, PATH)                                        \
-    SupDef::template Engine<char, TYPE>::add_include_path(PATH);        \
-    SupDef::template Engine<wchar_t, TYPE>::add_include_path(PATH);     \
-    SupDef::template Engine<char8_t, TYPE>::add_include_path(PATH);     \
-    SupDef::template Engine<char16_t, TYPE>::add_include_path(PATH);    \
-    SupDef::template Engine<char32_t, TYPE>::add_include_path(PATH)
+#define ADD_INC_PATH(PATH) SupDef::EngineBase::add_include_path(PATH)
 
-            template <typename T>
-                requires FilePath<T>
-            static void remove_include_path(T path)
-            {
-                if (!std::filesystem::exists(path))
-                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Include path does not exist");
-                auto it = std::find(include_paths.begin(), include_paths.end(), path);
-                if (it != include_paths.end())
-                    include_paths.erase(it);
-            }
 #ifdef DEL_INC_PATH
     #undef DEL_INC_PATH
 #endif
-#define DEL_INC_PATH(TYPE, PATH)                                        \
-    SupDef::template Engine<char, TYPE>::remove_include_path(PATH);     \
-    SupDef::template Engine<wchar_t, TYPE>::remove_include_path(PATH);  \
-    SupDef::template Engine<char8_t, TYPE>::remove_include_path(PATH);  \
-    SupDef::template Engine<char16_t, TYPE>::remove_include_path(PATH); \
-    SupDef::template Engine<char32_t, TYPE>::remove_include_path(PATH)
+#define DEL_INC_PATH(PATH) SupDef::EngineBase::remove_include_path(PATH)
 
-            static void clear_include_paths(void)
-            {
-                include_paths.clear();
-            }
 #ifdef CLR_INC_PATH
     #undef CLR_INC_PATH
 #endif
-#define CLR_INC_PATH(TYPE)                                          \
-    SupDef::template Engine<char, TYPE>::clear_include_paths();     \
-    SupDef::template Engine<wchar_t, TYPE>::clear_include_paths();  \
-    SupDef::template Engine<char8_t, TYPE>::clear_include_paths();  \
-    SupDef::template Engine<char16_t, TYPE>::clear_include_paths(); \
-    SupDef::template Engine<char32_t, TYPE>::clear_include_paths()
+#define CLR_INC_PATH() SupDef::EngineBase::clear_include_paths()
 
-            static auto get_include_paths(void)
-            {
-                return include_paths;
-            }
 #ifdef GET_INC_PATH
     #undef GET_INC_PATH
 #endif
-#define GET_INC_PATH(TYPE1, TYPE2) SupDef::template Engine<TYPE1, TYPE2>::get_include_paths()
+#define GET_INC_PATH() SupDef::EngineBase::get_include_paths()
+
+#ifdef SET_INC_PATH
+    #undef SET_INC_PATH
+#endif
+#define SET_INC_PATH(PATHS) SupDef::EngineBase::set_include_paths(PATHS)
 
             void restart();
             
@@ -1856,22 +1900,22 @@ namespace SupDef
             std::array<T, std::conditional_t<authorize_numbers, std::integral_constant<size_t, 62>, std::integral_constant<size_t, 52>>::value> table = {};
             for (size_t i = 0; i < 26; ++i)
             {
-                table[i] = static_cast<T>(lowercase_alphabet[i]);
-                table[i + 26] = static_cast<T>(uppercase_alphabet[i]);
+                table[i] = CONVERT(T, lowercase_alphabet[i]);
+                table[i + 26] = CONVERT(T, uppercase_alphabet[i]);
             }
             if (!authorize_numbers) return table;
             for (size_t i = 0; i < 10; ++i)
-                table[i + 2*26] = static_cast<T>(numbers[i]);
+                table[i + 2*26] = CONVERT(T, numbers[i]);
             return table;
         };
         auto is_in = [&](T c) -> bool
         {
-            for (auto ch : gen_table())
-                if (c == ch)
+            for (auto&& ch : gen_table())
+                if (SAME(c, ch))
                     return true;
             return false;
         };
-        return c == static_cast<T>('_') || is_in(c);
+        return SAME(c, '_') || is_in(c);
     }
 
     template <typename T>

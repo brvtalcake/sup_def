@@ -29,6 +29,8 @@
 
 namespace SupDef
 {
+    std::vector<std::filesystem::path> EngineBaseHelper::include_paths = {};
+
     EXP_INST_CLASS(Engine,
         (char, std::filesystem::path),
         (char, std::string),

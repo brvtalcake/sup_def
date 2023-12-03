@@ -82,18 +82,39 @@ namespace SupDef
 #define ExcType_DEFINED 1
 #endif
 
+    /**
+     * @fn std::string format_error(const std::string& error_msg, std::optional<std::string> error_type, std::optional<string_size_type<char>> line, std::optional<string_size_type<char>> col, std::optional<std::string> context)
+     * @brief Format an error message
+     * 
+     * @param type The type of the error
+     * @param error_msg The main error message
+     * @param error_type Additional error type information
+     * @param line Line number where the error occured, if any
+     * @param col Column number where the error occured, if any
+     * @param context Line context where the error occured, if any
+     * @tparam T The character type of the parsed file
+     * @return The formatted error message
+     */
+    template <typename T, typename U>
+        requires CharacterType<T> && FilePath<U>
+    static 
+    std::string 
+    format_error(
+        ExcType type,
+        const std::string& error_msg,
+        std::optional<std::string> error_type,
+        std::optional<U> filepath,
+        std::optional<string_size_type<T>> line,
+        std::optional<string_size_type<T>> col,
+        std::optional<std::basic_string<T>> context
+    ) noexcept;
+
 #define INCLUDED_FROM_SUPDEF_SOURCE 1
 #include <sup_def/common/util/exception.hpp>
 #undef INCLUDED_FROM_SUPDEF_SOURCE
 
     namespace Util
     {
-        template <typename C1, typename C2>
-            requires CharacterType<C1> && CharacterType<C2>
-        inline std::basic_string<C1> convert_string(const std::basic_string<C2>& str);
-
-        template <typename C1>
-            requires CharacterType<C1>
-        inline std::basic_string<C1> convert_string(const std::filesystem::path& path);
-    }
-}
+        
+    };
+};

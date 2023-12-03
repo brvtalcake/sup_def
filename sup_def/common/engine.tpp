@@ -29,10 +29,6 @@
 
 template <typename P1, typename P2>
     requires CharacterType<P1> && FilePath<P2>
-std::vector<std::filesystem::path> Engine<P1, P2>::include_paths;
-
-template <typename P1, typename P2>
-    requires CharacterType<P1> && FilePath<P2>
 Engine<P1, P2>::Engine() : tmp_file(), src_file(), dst_file() { set_app_locale(); }
 
 template <typename P1, typename P2>

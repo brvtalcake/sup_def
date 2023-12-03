@@ -32,10 +32,24 @@
 #include <iostream>
 #include <string>
 #include <type_traits>
+#include <concepts>
+
 #ifdef __has_include
+    
     #if __has_include(<experimental/simd>)
         #include <experimental/simd>
     #endif
+    
+    #if __has_include(<experimental/scope>)
+        #include <experimental/scope>
+        #ifdef SUPDEF_HAS_SCOPE_EXIT
+            #undef SUPDEF_HAS_SCOPE_EXIT
+        #endif
+        #if __cpp_lib_experimental_scope && __cpp_lib_experimental_scope >= 201902L
+            #define SUPDEF_HAS_SCOPE_EXIT 1
+        #endif
+    #endif
+
 #endif
 
 namespace SupDef 
@@ -172,37 +186,6 @@ namespace SupDef
         static_assert(!SPECIALIZATION_OF(std::vector<int>, std::list));
         static_assert(!SPECIALIZATION_OF(std::list<int>, std::vector));
 
-        /**
-         * @fn inline constexpr std::array<C, S> any_string(const char (&literal)[S])
-         * @brief Utility function to ease manipulating strings.
-         * 
-         * @tparam C The character type of the returned array
-         * @tparam S The size of the returned array (deduced from the string literal)
-         * @param[in] literal The string literal to convert to an `std::array<C, S>`. Must be of the form: `char[S]` (possibly cv-qualified)
-         * @return Returns an `std::array<C, S>` (where `C` is a character type) from a string literal of character type `char`
-         * @todo Put it in `SupDef::Util` namespace
-         */
-        template <typename C, size_t S>
-            requires CharacterType<C>
-        inline constexpr auto any_string(const char (&literal)[S]) -> std::array<C, S>
-        {
-            std::array<C, S> r = {};
-            for (size_t i = 0; i < S; i++)
-                    r[i] = static_cast<C>(literal[i]);
-            return r;
-        }
-
-#if defined(ANY_STRING)
-    #undef ANY_STRING
-#endif
-/**
- * @def ANY_STRING(TYPE, LIT)
- * @brief A wrapper equivalent to `std::basic_string<TYPE>(any_string<TYPE>(LIT).data())`
- * @param TYPE The character type of the string
- * @param LIT The string literal to convert to a `std::basic_string<TYPE>`
- */
-#define ANY_STRING(TYPE, LIT) (std::basic_string<TYPE>(SupDef::Util::any_string<TYPE>(LIT).data()))
-
         template <typename... Types>
         consteval size_t variadic_count(Types...)
         { return sizeof...(Types); }
@@ -215,29 +198,7 @@ namespace SupDef
 #if defined(VARIADIC_COUNT)
     #undef VARIADIC_COUNT
 #endif
-#define VARIADIC_COUNT(...) SupDef::Util::variadic_count(__VA_ARGS__)
-
-        template <typename T, size_t N>
-            requires CharacterType<T>
-        consteval size_t cstr_len(const T (&)[N])
-        { return N - 1; }
-
-        template <typename T>
-            requires CharacterType<T>
-        consteval size_t cstr_len(const T* str)
-        {
-            size_t len = 0;
-            while (str[len] != static_cast<T>('\0'))
-                ++len;
-            return len;
-        }
-
-        // TODO: Fix
-        // static_assert(cstr_len("Hello") == 5);
-        // static_assert(cstr_len(L"Hello") == 5);
-        // static_assert(cstr_len(u8"Hello") == 5);
-        // static_assert(cstr_len(u"Hello") == 5);
-        // static_assert(cstr_len(U"Hello") == 5);
+#define VARIADIC_COUNT(...) ::SupDef::Util::variadic_count(__VA_ARGS__)
 
         template <typename... Args>
         [[noreturn]] inline void unreachable(Args&&... args)
@@ -340,19 +301,20 @@ namespace SupDef
 
 #elif __cpp_lib_experimental_parallel_simd >= 201803L
         
-        namespace stdx = std::experimental;
+        namespace stdx = ::std::experimental;
 
         // TODO: Test for multiple dimensions and improve
-        template <typename T, size_t N, class ABI = stdx::simd_abi::deduce_t<T, N>>
+        template <typename T, size_t N, size_t D = 1, class ABI = stdx::simd_abi::deduce_t<T, N>>
             requires std::is_arithmetic_v<T> && stdx::is_abi_tag_v<ABI>
         class Array : public stdx::simd<T, ABI>
         {
             private:
                 typedef typename stdx::simd<T, ABI> simd_type;
                 // Is this 1D, 2D, 3D, ... ?
-                size_t dim = 1;
+                size_t dim = D;
                 // Dimensions of the array in x, y, z, ...
-                std::vector<size_t> dims = { N };
+                std::vector<size_t> dims = std::vector<size_t>(D, N);
+                size_t elem_count = D * N;
             public:
 
                 /* Member functions */
@@ -393,14 +355,15 @@ namespace SupDef
                         this->operator[](i++) = arg;
                 }
 
-
-                void set_dim(size_t d) noexcept
+                template <typename Arg>
+                    requires std::convertible_to<Arg, size_t> && std::is_unsigned_v<Arg>
+                void set_dim(Arg d)
                 {
-                    this->dim = d;
+                    this->dim = size_t(d);
                 }
 
                 template <typename... Args>
-                    requires (std::same_as<size_t, Args> && ...)
+                    requires (std::convertible_to<Args, size_t> && ...) && (std::is_unsigned_v<Args> && ...)
                 void set_dims(Args... args)
                 {
                     if (sizeof...(args) != this->dim)
@@ -609,52 +572,459 @@ namespace SupDef
             return std::filesystem::canonical(file_path);
         }
 
+        template <bool C>
+        static constexpr size_t bool_to_size_t = C ? 1 : 0;
+        
+        template <typename... Types>
+        struct TypeContainer
+        {
+            static constexpr size_t size = sizeof...(Types);
+            
+            using types = std::tuple<Types...>;
+            template <size_t N>
+                requires (N < sizeof...(Types))
+            using get = GetNthType<N, Types...>;
+            template <typename T>
+            static constexpr size_t count = (bool_to_size_t<std::same_as<T, Types>> + ...);
+            template <typename T>
+            static constexpr bool contains = (std::same_as<T, Types> || ...);
+            // For each type in Types, apply predicate template T to it
+            template <template <typename> typename T>
+            static constexpr bool apply_predicate = (T<Types>::value && ...);
+        };
+
+        /**
+         * @struct CanConstructFromImpl
+         * @brief Check if all types in a type container `T1` are in the second type container `T2` (condition 1),
+         *        and that each type in `T1` appears at least the same amount of times in `T2` (condition 2).
+         * 
+         * @tparam T1 The type container to check
+         * @tparam T2 The type container to check against
+         */
+        template <typename T1, typename T2>
+            requires (SPECIALIZATION_OF(T1, TypeContainer) && SPECIALIZATION_OF(T2, TypeContainer))
+        class CanConstructFromImpl
+        {
+            private:
+                template <typename T>
+                struct CanConstructFromImplHelperCondition1
+                {
+                    static consteval bool check()
+                    {
+                        return T2::template contains<T>;
+                    }
+                    static constexpr bool value = check();
+                };
+                template <typename T>
+                struct CanConstructFromImplHelperCondition2
+                {
+                    static consteval bool check()
+                    {
+                        return T2::template count<T> >= T1::template count<T>;
+                    }
+                    static constexpr bool value = check();
+                };
+            public:
+                static constexpr bool value = T1::template apply_predicate<CanConstructFromImplHelperCondition1> &&
+                                              T1::template apply_predicate<CanConstructFromImplHelperCondition2>;
+        };
+
+#ifdef CAN_CONSTRUCT_FROM
+    #undef CAN_CONSTRUCT_FROM
+#endif
+/**
+ * @brief Usage: `CAN_CONSTRUCT_FROM((type1, type2, type3), (type4, type5, type6))`
+ * 
+ */
+#define CAN_CONSTRUCT_FROM(T1, T2) (::SupDef::Util::CanConstructFromImpl<TypeContainer<ID T1>, TypeContainer<ID T2>>::value)
+
+        static_assert(CAN_CONSTRUCT_FROM((int, char, float), (int, char, float)));
+        static_assert(CAN_CONSTRUCT_FROM((int, char, float), (float, int, char)));
+        static_assert(!CAN_CONSTRUCT_FROM((int, int, float), (float, int, char)));
+        static_assert(CAN_CONSTRUCT_FROM((int, int, float), (float, int, char, int)));
+
+        /**
+         * @brief Check if the `std::codecvt<C1, C2, std::mbstate_t>` class is valid, i.e. garanteed by the standard to be implemented,
+         *        and not deprecated.
+         * 
+         * @tparam C1 The first character type
+         * @tparam C2 The second character type
+         */
+        template <typename C1, typename C2>
+        concept IsValidCodeCvt = CAN_CONSTRUCT_FROM((C1, C2), (char   , char    ))            ||
+                                 CAN_CONSTRUCT_FROM((C1, C2), (char   , wchar_t ))            ||
+                                 CAN_CONSTRUCT_FROM((C1, C2), (char8_t, char16_t, char32_t));
+
+        static_assert(IsValidCodeCvt<char, char>);
+        static_assert(IsValidCodeCvt<char, wchar_t>);
+        static_assert(IsValidCodeCvt<wchar_t, char>);
+        static_assert(IsValidCodeCvt<char8_t, char16_t>);
+        static_assert(IsValidCodeCvt<char16_t, char8_t>);
+        static_assert(IsValidCodeCvt<char8_t, char32_t>);
+        static_assert(IsValidCodeCvt<char32_t, char8_t>);
+        static_assert(IsValidCodeCvt<char16_t, char32_t>);
+        static_assert(IsValidCodeCvt<char32_t, char16_t>);
+        static_assert(!IsValidCodeCvt<char, char8_t>);
+        static_assert(!IsValidCodeCvt<char8_t, char>);
+        static_assert(!IsValidCodeCvt<char, char16_t>);
+        static_assert(!IsValidCodeCvt<char16_t, char>);
+        static_assert(!IsValidCodeCvt<char, char32_t>);
+        static_assert(!IsValidCodeCvt<char32_t, char>);
+        static_assert(!IsValidCodeCvt<wchar_t, char8_t>);
+        static_assert(!IsValidCodeCvt<char8_t, wchar_t>);
+        static_assert(!IsValidCodeCvt<wchar_t, char16_t>);
+        static_assert(!IsValidCodeCvt<char16_t, wchar_t>);
+        static_assert(!IsValidCodeCvt<wchar_t, char32_t>);
+        static_assert(!IsValidCodeCvt<char32_t, wchar_t>);
+
+        // Base template
         template <typename C1, typename C2>
             requires CharacterType<C1> && CharacterType<C2>
-        inline std::basic_string<C1> convert_string(const std::basic_string<C2>& str)
+        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */);
+
+                /* Internal */ /* External */
+        template <typename C1, typename C2>
+            requires IsValidCodeCvt<C1, C2> && (!(std::same_as<C1, C2> && (std::same_as<char, C1> || std::same_as<char, C2>))) /* No `<char, char>` */ &&
+                     (CharacterType<C1> && CharacterType<C2>) // double check, even if garanteed by `IsValidCodeCvt`, in case I fucked up
+        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
         {
-            std::basic_string<C1> ret;
-            for (auto& c : str)
-                ret += static_cast<C1>(c);
+            using facet_type = typename std::codecvt<C1, C2, std::mbstate_t>;
+            const facet_type& f = std::use_facet<std::codecvt<C1, C2, std::mbstate_t>>(std::locale());
+            std::mbstate_t mb = std::mbstate_t();
+            std::codecvt_base::result res;
+            std::size_t factor = 4;
+            /* Internal */
+            std::basic_string<C1> ret(str.size() * factor, static_cast<C1>('\0'));
+            C1* internal_next = nullptr;
+            const C2* external_next = nullptr;
+            do
+            {
+                mb = std::mbstate_t();
+                ret.clear();
+                internal_next = nullptr;
+                external_next = nullptr;
+                res = f.in(
+                    mb, &str[0], &str[str.size()], external_next, &ret[0], &ret[ret.size()], internal_next
+                );
+                factor++;
+            } while (res == std::codecvt_base::partial);
+            if (res == std::codecvt_base::error)
+                throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "convert(const std::basic_string<C2>&): std::codecvt_base::error");
+            ret.resize(internal_next - &ret[0]);
             return ret;
+        }
+
+        // Assuming UTF-8 locale and that exec encoding for `char` is UTF-8
+        template <>
+        inline std::basic_string<char> convert<char, char8_t>(const std::basic_string<char8_t>& str /* External */)
+        {
+            std::basic_string<char> ret;
+            ret.reserve(str.size());
+            for (auto& c : str)
+                ret += reinterpret_cast<const char&>(c);
+            return ret;
+        }
+
+        template <>
+        inline std::basic_string<char8_t> convert<char8_t, char>(const std::basic_string<char>& str /* External */)
+        {
+            std::basic_string<char8_t> ret;
+            ret.reserve(str.size());
+            for (auto& c : str)
+                ret += reinterpret_cast<const char8_t&>(c);
+            return ret;
+        }
+
+        template <>
+        inline std::basic_string<wchar_t> convert<wchar_t, char8_t>(const std::basic_string<char8_t>& str /* External */)
+        {
+            return convert<wchar_t>(convert<char>(str));
+        }
+
+        template <>
+        inline std::basic_string<char8_t> convert<char8_t, wchar_t>(const std::basic_string<wchar_t>& str /* External */)
+        {
+            return convert<char8_t>(convert<char>(str));
+        }
+
+        template <typename C1, typename C2>
+            requires CAN_CONSTRUCT_FROM((C2), (char16_t, char32_t)) && std::same_as<char, C1> && (CharacterType<C1> && CharacterType<C2>)
+        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        {
+            return convert<C1>(convert<char8_t>(str));
+        }
+
+        template <typename C1, typename C2>
+            requires CAN_CONSTRUCT_FROM((C1), (char16_t, char32_t)) && std::same_as<char, C2> && (CharacterType<C1> && CharacterType<C2>)
+        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        {
+            return convert<C1>(convert<char8_t>(str));
+        }
+
+        template <typename C1, typename C2>
+            requires CAN_CONSTRUCT_FROM((C2), (char16_t, char32_t)) && std::same_as<wchar_t, C1> && (CharacterType<C1> && CharacterType<C2>)
+        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        {
+            return convert<C1>(convert<char>(convert<char8_t>(str)));
+        }
+
+        template <typename C1, typename C2>
+            requires CAN_CONSTRUCT_FROM((C1), (char16_t, char32_t)) && std::same_as<wchar_t, C2> && (CharacterType<C1> && CharacterType<C2>)
+        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        {
+            return convert<C1>(convert<char8_t>(convert<char>(str)));
+        }
+
+        template <typename C1, typename C2>
+            requires (CharacterType<C1> && CharacterType<C2>) && std::same_as<C1, C2>
+        constexpr inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        {
+            return std::basic_string<C1>(str);
         }
 
         template <typename C1>
             requires CharacterType<C1>
-        inline std::basic_string<C1> convert_string(const std::filesystem::path& path)
+        inline std::basic_string<C1> convert(const std::filesystem::path& path)
         {
-            return convert_string<C1>(path.string());
+            return convert<C1>(path.string());
         }
 
-#ifdef CONVERT_STR
-    #undef CONVERT_STR
+        template <typename C1, typename C2>
+            requires CharacterType<C1> && CharacterType<C2>
+        inline std::basic_string<C1> convert(const C2& c)
+        {
+            return convert<C1>(std::basic_string<C2>(1, c));
+        }
+
+        template <typename C1, typename C2>
+            requires CharacterType<C1> && CharacterType<C2>
+        inline std::basic_string<C1> convert(const C2&& c)
+        {
+            return convert<C1>(std::basic_string<C2>(1, c));
+        }
+
+#ifdef CONVERT
+    #undef CONVERT
 #endif
-#define CONVERT_STR(TYPE, STR) SupDef::Util::convert_string<TYPE>(STR)
+#define CONVERT(TYPE, STR_OR_CHAR) ::SupDef::Util::convert<TYPE>(STR_OR_CHAR)
+
+        template <typename C1, typename C2>
+            requires CharacterType<C1> && CharacterType<C2>
+        inline bool same(const std::basic_string<C1>& s1, const std::basic_string<C2>& s2)
+        {
+            return CONVERT(char8_t, s1) == CONVERT(char8_t, s2);
+        }
+
+        template <typename C1, typename C2>
+            requires CharacterType<C1> && CharacterType<C2>
+        inline bool same(const std::basic_string<C1>& s1, const C2* s2)
+        {
+            return CONVERT(char8_t, s1) == CONVERT(char8_t, std::basic_string<C2>(s2));
+        }
+
+        template <typename C1, typename C2>
+            requires CharacterType<C1> && CharacterType<C2>
+        inline bool same(const C1* s1, const std::basic_string<C2>& s2)
+        {
+            return CONVERT(char8_t, std::basic_string<C1>(s1)) == CONVERT(char8_t, s2);
+        }
+
+        template <typename C1, typename C2>
+            requires CharacterType<C1> && CharacterType<C2>
+        inline bool same(const C1 c1, const C2 c2)
+        {
+            return CONVERT(char8_t, c1) == CONVERT(char8_t, c2);
+        }
+
+#ifdef SAME
+    #undef SAME
+#endif
+#define SAME(S1, S2) ::SupDef::Util::same(S1, S2)
+
+#ifdef DIFFERENT
+    #undef DIFFERENT
+#endif
+#define DIFFERENT(S1, S2) (!SAME(S1, S2))
 
         template <typename T>
             requires CharacterType<T>
-        auto remove_whitespaces(const std::basic_string<T>& s) -> std::basic_string<T>
+        auto remove_whitespaces(const std::basic_string<T>& s, bool rmNL = false) -> std::basic_string<T>
         {
             std::basic_string<T> res;
             res.reserve(s.size());
             for (auto& c : s)
             {
-                if (c != static_cast<T>(' ') && c != static_cast<T>('\t'))
+                if (DIFFERENT(c, ' ') && DIFFERENT(c, '\t') && (rmNL ? DIFFERENT(c, '\n') : true))
                     res += c;
             }
             return res;
         }
 
-        // TODO: Finish this
+        /**
+         * @fn inline constexpr std::array<C, S> any_string(const char (&literal)[S])
+         * @brief Utility function to ease manipulating strings.
+         * 
+         * @tparam C The character type of the returned array
+         * @tparam S The size of the returned array (deduced from the string literal)
+         * @param[in] literal The string literal to convert to an `std::array<C, S>`. Must be of the form: `char[S]` (possibly cv-qualified)
+         * @return Returns an `std::array<C, S>` (where `C` is a character type) from a string literal of character type `char`
+         * @todo Put it in `SupDef::Util` namespace
+         */
+        template <typename C, size_t S>
+            requires CharacterType<C>
+        inline constexpr auto any_string(const char (&literal)[S]) -> std::array<C, S>
+        {
+            std::basic_string<C> str(CONVERT(C, std::string(literal)));
+            std::array<C, S> arr{};
+            std::copy(str.begin(), str.end(), arr.begin());
+            return arr;
+        }
+
+#if defined(ANY_STRING)
+    #undef ANY_STRING
+#endif
+/**
+ * @def ANY_STRING(TYPE, LIT)
+ * @brief A wrapper equivalent to `std::basic_string<TYPE>(any_string<TYPE>(LIT).data())`
+ * @param TYPE The character type of the string
+ * @param LIT The string literal to convert to a `std::basic_string<TYPE>`
+ */
+#define ANY_STRING(TYPE, LIT) (std::basic_string<TYPE>(::SupDef::Util::any_string<TYPE>(LIT).data()))
+
+        enum class DeferType : uint8_t
+        {
+            SCOPE_EXIT = 0,
+            SCOPE_FAIL = 1,
+            SCOPE_SUCCESS = 2
+        };
+
+#if SUPDEF_HAS_SCOPE_EXIT
+        template <DeferType T, typename F>
+        using DeferImplBase = std::conditional_t<
+                                (T == DeferType::SCOPE_EXIT),
+                                std::experimental::scope_exit<F>,
+                                std::conditional_t<
+                                    (T == DeferType::SCOPE_FAIL),
+                                    std::experimental::scope_fail<F>,
+                                    std::experimental::scope_success<F>
+                                >
+                            >;
+
+        // TODO: Test this
+        template <DeferType T, typename... F>
         class DeferImpl
         {
             private:
-                std::function<void()> func;
+                std::tuple<DeferImplBase<T, F>...> deferals;
+                std::tuple<F...> deferals_fns;
+                bool released = false;
 
+                // Execute and release
+                void execute_and_release() noexcept((std::is_nothrow_invocable_v<F> && ...))
+                {
+                    std::apply([](auto&&... args) { ((args()), ...); }, this->deferals_fns);
+                    this->release();
+                }
             public:
-                DeferImpl(std::function<void()> func) : func(func) { }
-                ~DeferImpl() { (this->func)(); }
+                DeferImpl() = default;
+                template <typename... Fn>
+                    requires (sizeof...(Fn) == sizeof...(F)) &&
+                             (std::constructible_from<DeferImplBase<T, F>, Fn> && ...)
+                DeferImpl(Fn&&... fn) noexcept((std::is_nothrow_constructible_v<DeferImplBase<T, F>, Fn> && ...))
+                    : deferals(std::forward<Fn>(fn)...)
+                    , deferals_fns(std::forward<Fn>(fn)...)
+                { }
+                
+                DeferImpl(const DeferImpl&) = delete;
+                DeferImpl(DeferImpl&&) = default;
+
+                DeferImpl& operator=(const DeferImpl&) = delete;
+                DeferImpl& operator=(DeferImpl&&) = delete;
+                
+                ~DeferImpl() = default;
+
+                void release() noexcept
+                {
+                    std::apply([](auto&&... args) { ((args.release()), ...); }, this->deferals);
+                    this->released = true;
+                }
+
+                operator bool() const noexcept
+                {
+                    return !this->released;
+                }
+
+                void operator()() noexcept(noexcept(this->execute_and_release()))
+                {
+                    this->execute_and_release();
+                }
         };
+#else
+    #error "Defer not implemented yet"
+#endif
+
+#ifdef DEFER
+    #undef DEFER
+#endif
+#define DEFER(...)                                                      \
+    PP_IF(                                                              \
+        BOOST_PP_AND(                                                   \
+            BOOST_PP_GREATER(VA_COUNT(__VA_ARGS__), 1),                 \
+            IS_ARG_DEFER_SCOPE_TYPE(FIRST_ARG(__VA_ARGS__))             \
+        )                                                               \
+    )                                                                   \
+    (                                                                   \
+        ::SupDef::Util::DeferImpl<                                      \
+            ::SupDef::Util::DeferType::FIRST_ARG(__VA_ARGS__)           \
+        > BOOST_PP_LPAREN() DROP_FIRST(__VA_ARGS__) BOOST_PP_RPAREN()   \
+    )                                                                   \
+    (                                                                   \
+        ::SupDef::Util::DeferImpl<                                      \
+            ::SupDef::Util::DeferType::SCOPE_EXIT                       \
+        > BOOST_PP_LPAREN() __VA_ARGS__ BOOST_PP_RPAREN()               \
+    )
+
+#ifdef PP_DETECTOR_SCOPE_EXIT_SCOPE_TYPE_ARG
+    #undef PP_DETECTOR_SCOPE_EXIT_SCOPE_TYPE_ARG
+#endif
+#define PP_DETECTOR_SCOPE_EXIT_SCOPE_TYPE_ARG ~, ~
+
+#ifdef PP_DETECTOR_SCOPE_FAIL_SCOPE_TYPE_ARG
+    #undef PP_DETECTOR_SCOPE_FAIL_SCOPE_TYPE_ARG
+#endif
+#define PP_DETECTOR_SCOPE_FAIL_SCOPE_TYPE_ARG ~, ~
+
+#ifdef PP_DETECTOR_SCOPE_SUCCESS_SCOPE_TYPE_ARG
+    #undef PP_DETECTOR_SCOPE_SUCCESS_SCOPE_TYPE_ARG
+#endif
+#define PP_DETECTOR_SCOPE_SUCCESS_SCOPE_TYPE_ARG ~, ~
+
+#ifdef IS_ARG_DEFER_SCOPE_TYPE
+    #undef IS_ARG_DEFER_SCOPE_TYPE
+#endif
+#define IS_ARG_DEFER_SCOPE_TYPE(ARG) PP_DETECT(ARG, SCOPE_TYPE_ARG)
+
+        template <typename T, size_t N>
+            requires CharacterType<T>
+        consteval size_t cstr_len(const T (&literal)[N])
+        {
+            size_t i = 0;
+            while (i < N && literal[i] != T(0))
+                ++i;
+            return i;
+        }
+
+        static_assert(cstr_len("Hello")   == 5);
+        static_assert(cstr_len(L"Hello")  == 5);
+        static_assert(cstr_len(u8"Hello") == 5);
+        static_assert(cstr_len(u"Hello")  == 5);
+        static_assert(cstr_len(U"Hello")  == 5);
+
+#ifdef CSTR_LEN
+    #undef CSTR_LEN
+#endif
+#define CSTR_LEN(LIT) ::SupDef::Util::cstr_len(LIT)
+
 
     }
     using Util::remove_whitespaces;

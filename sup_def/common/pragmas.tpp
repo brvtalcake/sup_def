@@ -17,21 +17,13 @@ std::basic_string<T> PragmaDef<T>::substitute(Args&&... args_parm) noexcept(__cp
         return this->get_body();
     }
 
-    auto convert_str = [](std::string str) -> std::basic_string<T>
-    {
-        std::basic_string<T> ret;
-        for (auto& c : str)
-            ret += static_cast<T>(c);
-        return ret;
-    };
-
     auto cut_whitespaces = [](std::basic_string<T>& str) -> std::basic_string<T>&
     {
-        auto pos = str.find(static_cast<T>(' '));
+        auto pos = str.find(CONVERT(T, ' '));
         while (pos != std::basic_string<T>::npos)
         {
             str.erase(pos, 1);
-            pos = str.find(static_cast<T>(' '));
+            pos = str.find(CONVERT(T, ' '));
         }
         return str;
     };
@@ -45,7 +37,7 @@ std::basic_string<T> PragmaDef<T>::substitute(Args&&... args_parm) noexcept(__cp
     std::basic_string<T> body = this->get_body();
     for (decltype(argc) i = 0; i < argc + 1; ++i)
     {
-        std::basic_string<T> arg = static_cast<T>('$') + convert_str(std::to_string(i));
+        std::basic_string<T> arg = CONVERT(T, '$') + CONVERT(T, std::to_string(i));
         std::basic_regex<T> arg_regex(arg);
         body = std::regex_replace(body, arg_regex, args[i]);
     }

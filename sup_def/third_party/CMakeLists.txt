@@ -15,6 +15,8 @@ target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../
 target_include_directories(sdthirdparty INTERFACE "/${Boost_INCLUDE_DIRS}/")
 target_compile_definitions(sdthirdparty INTERFACE SUPDEF_DEBUG=$<IF:$<NOT:$<CONFIG:Release>>,1,0>)
 target_compile_definitions(sdthirdparty INTERFACE SUPDEF_REMOVE_IF_0_BLOCKS=$<IF:$<NOT:$<CONFIG:Release>>,1,0>)
+target_compile_definitions(sdthirdparty INTERFACE _GLIBCXX_CONCEPT_CHECKS=1 _GLIBCXX_ASSERTIONS=1)
+
 # TODO: Remove this workaround when GCC bug is fixed, and fix other bugs in my own code
 target_compile_definitions(sdthirdparty INTERFACE SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR=0)
 
@@ -205,4 +207,26 @@ endif()
 # TODO: Rebuild custom toolchain with additional GCC configure flags
 
 # Add -ffunction-sections and -fdata-sections to reduce binary size
-target_compile_options(sdthirdparty INTERFACE -ffunction-sections -fdata-sections)
+target_compile_options(sdthirdparty INTERFACE -ffunction-sections -fdata-sections -Wall -Wextra -Wno-unknown-pragmas)
+
+# Get `USER_NPROC`
+include(ProcessorCount)
+ProcessorCount(USER_NPROC)
+
+if (NOT USER_NPROC EQUAL 0)
+    message(STATUS "Number of processors/cores: ${USER_NPROC}")
+else()
+    message(WARNING "Unable to get number of processors/cores")
+endif()
+
+
+if ((NOT MAINTAINER) OR (NOT (${MAINTAINER} STREQUAL "Unknown")))
+    message(STATUS "Maintainer is ${MAINTAINER}")
+endif()
+
+if (${MAINTAINER} STREQUAL "Axel PASCON")
+    target_compile_options(sdthirdparty INTERFACE -march=alderlake -mtune=alderlake -fexceptions)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_compile_options(sdthirdparty INTERFACE -ffinite-loops -ffold-simple-inlines -fgcse-las -fgcse-sm -fgraphite -fgraphite-identity -fipa-pta -fira-loop-pressure -fira-region=mixed -flive-range-shrinkage -floop-nest-optimize -fmodulo-sched -fmodulo-sched-allow-regmoves -fprefetch-loop-arrays -frename-registers -frtti -fsched-pressure -fschedule-insns -fschedule-insns2 -fthreadsafe-statics -ftracer -ftree-cselim -ftree-loop-if-convert -ftree-lrs -ftree-parallelize-loops=${USER_NPROC} -ftree-vectorize -funreachable-traps -fvariable-expansion-in-unroller -fweb -maccumulate-outgoing-args -malign-data=cacheline)
+    endif()
+endif()

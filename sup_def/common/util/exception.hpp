@@ -40,6 +40,7 @@ class Exception : public std::exception
         std::optional<string_size_type<T>> col;
         std::optional<std::basic_string<T>> context;
         std::optional<StackTrace> trace;
+        mutable char* what_msg = nullptr;
 
         inline std::optional<std::string> get_type_str(void) const noexcept
         {
@@ -96,9 +97,23 @@ class Exception : public std::exception
                 this->trace = std::nullopt;
         }
 
-        ~Exception() = default;
+        ~Exception() noexcept override
+        {
+            if (this->what_msg != nullptr)
+                delete[] this->what_msg;
+            this->what_msg = nullptr;
+        }
 
-        constexpr inline const char* what() const noexcept override { return format_error<T, U>(this->type, this->msg, this->get_type_str(), this->filepath, this->line, this->col, this->context).c_str(); }
+        constexpr inline const char* what() const noexcept override 
+        {
+            std::string str(::SupDef::format_error<T, U>(this->type, this->msg, this->get_type_str(), this->filepath, this->line, this->col, this->context));
+            if (this->what_msg != nullptr)
+                delete[] this->what_msg;
+            this->what_msg = new char[str.size() + 1];
+            std::copy(str.begin(), str.end(), this->what_msg);
+            this->what_msg[str.size()] = '\0';
+            return this->what_msg;
+        }
         constexpr inline ExcType get_type() const noexcept { return this->type; }
         constexpr inline Exception& set_type(ExcType type) noexcept { this->type = type; return *this; }
         inline void report(std::ostream& os = std::cerr) const noexcept
@@ -107,7 +122,7 @@ class Exception : public std::exception
                 SupDef::Util::reg_error();
             else
                 SupDef::Util::reg_warning();
-            os << format_error<T, U>(this->type, this->msg, this->get_type_str(), this->filepath, this->line, this->col, this->context);
+            os << ::SupDef::format_error<T, U>(this->type, this->msg, this->get_type_str(), this->filepath, this->line, this->col, this->context);
             if (this->trace.has_value())
                 os << "Current stack trace:\n" << this->trace.value() << std::endl;
         }

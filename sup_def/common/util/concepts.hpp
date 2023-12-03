@@ -46,11 +46,11 @@ namespace Util
 
 #if !DEFINED(CharacterType)
 template <typename T>
-concept CharacterType = std::same_as<char, std::remove_cv_t<T>>       ||
-                        std::same_as<wchar_t, std::remove_cv_t<T>>    ||
-                        std::same_as<char8_t, std::remove_cv_t<T>>    ||
-                        std::same_as<char16_t, std::remove_cv_t<T>>   ||
-                        std::same_as<char32_t, std::remove_cv_t<T>>;
+concept CharacterType = std::same_as<char, std::remove_cvref_t<T>>       ||
+                        std::same_as<wchar_t, std::remove_cvref_t<T>>    ||
+                        std::same_as<char8_t, std::remove_cvref_t<T>>    ||
+                        std::same_as<char16_t, std::remove_cvref_t<T>>   ||
+                        std::same_as<char32_t, std::remove_cvref_t<T>>;
 #define CharacterType_DEFINED 1
 #endif
 

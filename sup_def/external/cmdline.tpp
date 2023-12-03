@@ -128,16 +128,16 @@ template <typename T>
     requires FilePath<T>
 inline constexpr void CmdLine<T>::update_engine(void)
 {
-    CLR_INC_PATH(T);
+    CLR_INC_PATH();
     for (CmdLine<T>::path_type inc : this->include_paths)
     {
         if constexpr (CStrFilePath<T>)
         {
-            ADD_INC_PATH(T, inc.c_str());
+            ADD_INC_PATH(inc.c_str());
         }
         else
         {
-            ADD_INC_PATH(T, inc);
+            ADD_INC_PATH(inc);
         }
     }
 }

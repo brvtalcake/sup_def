@@ -32,20 +32,86 @@
 
 namespace SupDef 
 {
-    namespace Util
-    {
-
 #include <sup_def/common/config.h>
 
-        template <typename P1, typename P2>
-            requires CharacterType<P1> && FilePath<P2>
-        class Engine;
+    class EngineBaseHelper
+    {
+        public:
+            EngineBaseHelper() = default;
+            ~EngineBaseHelper() = default;
 
-        template <typename P1, typename P2>
-            requires CharacterType<P1> && FilePath<P2>
+        protected:
+            static std::vector<std::filesystem::path> include_paths;
+    };
+
+    class EngineBase : private EngineBaseHelper
+    {
+        public:
+            EngineBase() = default;
+            ~EngineBase() = default;
+
+            EngineBase(const EngineBase&) = delete;
+            EngineBase(EngineBase&&) = delete;
+            EngineBase& operator=(const EngineBase&) = delete;
+            EngineBase& operator=(EngineBase&&) = delete;
+
+            template <typename... U>
+                requires (FilePath<U> && ...)
+            EngineBase(U&&... paths)
+            {
+                (this->add_include_path(paths), ...);
+            }
+            
+            template <typename U>
+                requires FilePath<U>
+            static void add_include_path(U path)
+            {
+                if (!std::filesystem::exists(path))
+                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Include path does not exist");
+                include_paths.push_back(path);
+            }
+
+            template <typename U>
+                requires FilePath<U>
+            static void remove_include_path(U path)
+            {
+                if (!std::filesystem::exists(path))
+                    throw Exception<char, std::filesystem::path>(ExcType::INVALID_PATH_ERROR, "Include path does not exist");
+                auto it = std::find(include_paths.begin(), include_paths.end(), path);
+                if (it != include_paths.end())
+                    include_paths.erase(it);
+            }
+
+            static void clear_include_paths(void)
+            {
+                include_paths.clear();
+            }
+
+            static std::vector<std::filesystem::path>& get_include_paths(void)
+            {
+                return include_paths;
+            }
+
+            static void set_include_paths(const std::vector<std::filesystem::path>& paths)
+            {
+                include_paths = paths;
+            }
+
+            static void set_include_paths(std::vector<std::filesystem::path>&& paths)
+            {
+                include_paths = std::move(paths);
+            }
+    };
+
+    template <typename P1, typename P2>
+        requires CharacterType<P1> && FilePath<P2>
+    class Engine;
+
+    namespace Util
+    {
         inline std::optional<std::filesystem::path> get_included_fpath(std::filesystem::path file_path)
         {
-            for (auto& include_path : Engine<P1, P2>::get_include_paths())
+            for (auto& include_path : ::SupDef::EngineBase::get_include_paths())
             {
                 auto include_file_path = get_normalized_path(include_path) / file_path;
                 if (std::filesystem::exists(include_file_path))

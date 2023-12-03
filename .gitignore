@@ -70,3 +70,4 @@ bug.cc
 bug
 
 normal.log
+test_locales.cpp

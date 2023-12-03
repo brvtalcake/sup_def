@@ -62,7 +62,7 @@ int main (int argc, char const *argv[ ])
         parser.slurp_file();
         parser.strip_comments();
         parser.print_content(std::cout);
-        for (auto inc_or_err : parser.search_includes())
+        for (auto inc_or_err : parser.search_imports())
         {
             if (inc_or_err.is_null())
                 continue;

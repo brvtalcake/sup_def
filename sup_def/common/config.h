@@ -113,7 +113,7 @@
         (                                                                   \
             ISEMPTY(__VA_ARGS__)                                            \
         )                                                                   \
-        (0)                                                                 \
+        ( 0 )                                                               \
         (                                                                   \
             VA_COUNT__(                                                     \
                 __VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11,        \
@@ -176,6 +176,11 @@
     #undef LAST_ARG_
 #endif
 #define LAST_ARG_(...) FIRST_ARG(__VA_ARGS__)
+
+#ifdef PP_DETECT
+    #undef PP_DETECT
+#endif
+#define PP_DETECT(IDENT, IN) BOOST_PP_EQUAL(VA_COUNT(PP_DETECTOR_ ## IDENT ## _ ## IN), 2)
 
 #if defined(REVERSE)
     #undef REVERSE
@@ -335,7 +340,7 @@
 // then 'supdef' followed by any number of spaces > 0
 // then 'start' followed by any number of spaces > 0
 // then the name of the define followed by any number of spaces >= 0
-#define SUPDEF_PRAGMA_DEF_BEG_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_BEGIN "\\s+" SUPDEF_MACRO_ID_REGEX "\\s*$"
+#define SUPDEF_PRAGMA_DEF_BEG_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_BEGIN "\\s+(" SUPDEF_MACRO_ID_REGEX ")\\s*$"
 
 #if defined(SUPDEF_PRAGMA_DEF_END_REGEX)
     #undef SUPDEF_PRAGMA_DEF_END_REGEX
@@ -344,36 +349,36 @@
 // then 'pragma' followed by any number of spaces > 0
 // then 'supdef' followed by any number of spaces > 0
 // then 'end' followed by any number of spaces > 0
-#define SUPDEF_PRAGMA_DEF_END_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_END "\\s+" SUPDEF_MACRO_ID_REGEX "\\s*$"
+#define SUPDEF_PRAGMA_DEF_END_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_DEFINE_END "\\s+(" SUPDEF_MACRO_ID_REGEX ")\\s*$"
 
-#if defined(SUPDEF_PRAGMA_INCLUDE)
-    #undef SUPDEF_PRAGMA_INCLUDE
+#if defined(SUPDEF_PRAGMA_IMPORT)
+    #undef SUPDEF_PRAGMA_IMPORT
 #endif
-#define SUPDEF_PRAGMA_INCLUDE "include"
+#define SUPDEF_PRAGMA_IMPORT "import"
 
-#if defined(SUPDEF_PRAGMA_INCLUDE_REGEX)
-    #undef SUPDEF_PRAGMA_INCLUDE_REGEX
+#if defined(SUPDEF_PRAGMA_IMPORT_REGEX)
+    #undef SUPDEF_PRAGMA_IMPORT_REGEX
 #endif
 // '#' at the beginning of the line, followed by any number of spaces >= 0
 // then 'pragma' followed by any number of spaces > 0
 // then 'supdef' followed by any number of spaces > 0
-// then 'include' followed by any number of spaces > 0
+// then 'import' followed by any number of spaces > 0
 // then a C string literal followed by any number of spaces >= 0
-#define SUPDEF_PRAGMA_INCLUDE_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+[<>]*\"([^\"]*)\"[<>]*\\s*$"
-#ifdef SUPDEF_PRAGMA_INCLUDE_REGEX_ANGLE_BRACKETS
-    #undef SUPDEF_PRAGMA_INCLUDE_REGEX_ANGLE_BRACKETS
+#define SUPDEF_PRAGMA_IMPORT_REGEX "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_IMPORT "\\s+[<>]*\"([^\"]*)\"[<>]*\\s*$"
+#ifdef SUPDEF_PRAGMA_IMPORT_REGEX_ANGLE_BRACKETS
+    #undef SUPDEF_PRAGMA_IMPORT_REGEX_ANGLE_BRACKETS
 #endif
-#define SUPDEF_PRAGMA_INCLUDE_REGEX_ANGLE_BRACKETS "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+[\"]*<([^>]*)>[\"]*\\s*$"
-#ifdef SUPDEF_PRAGMA_INCLUDE_REGEX_NO_QUOTES
-    #undef SUPDEF_PRAGMA_INCLUDE_REGEX_NO_QUOTES
+#define SUPDEF_PRAGMA_IMPORT_REGEX_ANGLE_BRACKETS "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_IMPORT "\\s+[\"]*<([^>]*)>[\"]*\\s*$"
+#ifdef SUPDEF_PRAGMA_IMPORT_REGEX_NO_QUOTES
+    #undef SUPDEF_PRAGMA_IMPORT_REGEX_NO_QUOTES
 #endif
 // This one is without `""` nor `<>`
-#define SUPDEF_PRAGMA_INCLUDE_REGEX_NO_QUOTES "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+([^\\s]+)\\s*$"
-#ifdef SUPDEF_PRAGMA_INCLUDE_REGEX_NO_PATH
-    #undef SUPDEF_PRAGMA_INCLUDE_REGEX_NO_PATH
+#define SUPDEF_PRAGMA_IMPORT_REGEX_NO_QUOTES "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_IMPORT "\\s+([^\\s]+)\\s*$"
+#ifdef SUPDEF_PRAGMA_IMPORT_REGEX_NO_PATH
+    #undef SUPDEF_PRAGMA_IMPORT_REGEX_NO_PATH
 #endif
 // This one is just invalid
-#define SUPDEF_PRAGMA_INCLUDE_REGEX_NO_PATH "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_INCLUDE "\\s+([^\\s]*)\\s*$"
+#define SUPDEF_PRAGMA_IMPORT_REGEX_NO_PATH "^\\s*#\\s*pragma\\s+" SUPDEF_PRAGMA_NAME "\\s+" SUPDEF_PRAGMA_IMPORT "\\s+([^\\s]*)\\s*$"
 
 #include <version>
 #if !defined( __cpp_lib_coroutine) || __cpp_lib_coroutine  != 201902L || \

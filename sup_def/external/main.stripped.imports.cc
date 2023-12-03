@@ -1,11 +1,7 @@
 
-/*
- * main.cpp
- * 
- * 
- */
+ 
 
-// #pragma supdef import // error */
+
 
 #include <sup_def/common/sup_def.hpp>
 #include <sup_def/external/external.hpp>
@@ -23,30 +19,23 @@ namespace SDE = SupDef::External;
 #include <map>
 #include <regex>
 
-#include <iomanip> // 
-
-#pragma supdef import <blabla.sd>
-#pragma supdef import blabla2.sd
-
-#pragma supdef import "test.sd"
-
-#pragma supdef import "test2.sd"
-
-// #pragma/* */ supdef import "test4.sd"> // error
-
-#pragma supdef import test3.sd
+#include <iomanip>
 
 
-/* #pragma supdef import <te"st"5.sd> // error */
 
-//#pragma supdef import "<test5.sd>" // error
 
-/* test             
-    
-    */
 
-//
-// #pragma supdef import // error */
+
+
+
+ 
+
+
+
+ 
+
+
+
 
 #if 0
 
@@ -58,17 +47,17 @@ namespace SDE = SupDef::External;
 #pragma supdef begin TEST_MACRO2
 "#undef $1"
 "#define $1 blah"
-#pragma supdef end TEST_MACRO5 // Error
+#pragma supdef end TEST_MACRO5
 
 #endif
 
-template <typename T>//test
+template <typename T>
 auto identity(T&& t) -> decltype(t) 
 { return std::forward<T>(t); };
 
 using SDU::demangle;
 
-int main/**/(int argc, char/**/const *argv[/*])*/])
+int main (int argc, char const *argv[ ])
 {
     SDE::init(argc, argv);
 #if 0
@@ -182,19 +171,17 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     std::cout << arr1[4] << "\n";
     for (size_t i = 0; i < arr1.size(); ++i)
     {
-        //std::cout << demangle(typeid(arr1[i]).name()) << "\n";
-#if 1
+
         arr1[i] = 0;
 #else
         decltype(arr1)::reference&& ref = identity(arr1[i]);
         identity(ref) = 0;
 #endif
     }
-    //int assign = 1;
-    //for (auto&& i : arr1)
-    //{
-    //    std::cout << demangle(typeid(i).name()) << "\n";
-    //}
+
+
+
+
     for (auto i : arr1)
         std::cout << i << "\n";
     std::cout << "\n";
@@ -213,16 +200,16 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
 
     const Array<int, 1> testarr1(1);
     for (auto i : testarr1)
-        std::cout << demangle(typeid(i).name()) << std::endl; // i
+        std::cout << demangle(typeid(i).name()) << std::endl;
     for (auto&& i : testarr1)
-        std::cout << demangle(typeid(i).name()) << std::endl; // i
+        std::cout << demangle(typeid(i).name()) << std::endl;
     Array<int, 1> testarr2(1);
     for (auto i : testarr2)
-        std::cout << demangle(typeid(i).name()) << std::endl; // Some complicated scheisse
+        std::cout << demangle(typeid(i).name()) << std::endl;
     for (auto&& i : testarr2)
-        std::cout << demangle(typeid(i).name()) << std::endl;// Some complicated scheisse again
-    //for (decltype(testarr2)::reference i : testarr2)
-    //    std::cout << demangle(typeid(i).name()) << std::endl; // Some complicated scheisse again
+        std::cout << demangle(typeid(i).name()) << std::endl;
+
+
     std::cout << demangle(typeid(arr1[0] = 1).name()) << std::endl;
     std::cout << demangle(typeid(arr1[0]).name()) << std::endl;
     std::cout << demangle(typeid(decltype(arr1)::reference).name()) << std::endl;
@@ -234,7 +221,7 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     [[gnu::unused]]
     std::string test_str1 = "/* test */", test_str2 = "// test";
 #endif
-    /* SDU::exit_program(0); */
+     
 #if 0
     using SD::ParsedCharString;
     ParsedCharString<char> test1("test1\nblah\n");
@@ -268,5 +255,3 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     std::wcout << L"test 六書 1.0231" << std::endl;
     return SDE::main_ret();
 }
-/*
-*/

@@ -80,7 +80,7 @@ namespace SupDef
     {
         std::basic_string<T> body{};
         for (auto& line : this->body_lines)
-            body += *(line) + static_cast<T>('\n');
+            body += *(line) + CONVERT(T, '\n');
         return body;
     }
 
