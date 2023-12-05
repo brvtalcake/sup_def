@@ -1545,106 +1545,290 @@ namespace SupDef
                               std::same_as<std::remove_cvref_t<T>, std::basic_ifstream<std::byte>>;
 
     template <typename T>
-    concept FileStream = OutputFileStream<T> || InputFileStream<T>;
+    concept InputOutputStream = std::same_as<std::remove_cvref_t<T>, std::fstream>                  ||
+                                std::same_as<std::remove_cvref_t<T>, std::wfstream>                 ||
+                                std::same_as<std::remove_cvref_t<T>, std::basic_fstream<char8_t>>   ||
+                                std::same_as<std::remove_cvref_t<T>, std::basic_fstream<char16_t>>  ||
+                                std::same_as<std::remove_cvref_t<T>, std::basic_fstream<char32_t>>  ||
+                                std::same_as<std::remove_cvref_t<T>, std::basic_fstream<std::byte>>;
+
+    template <typename T>
+    concept FileStream = OutputFileStream<T> || InputFileStream<T> || InputOutputStream<T>;
+
+    // TODO: Fix bugs in File and File_StreamOperatorsImpl
+    template <typename T>
+        requires FileStream<T>
+    struct File;
+
+    template <typename T>
+    struct File_StreamOperatorsImpl {};
+
+    template <OutputFileStream StreamType>
+    struct File_StreamOperatorsImpl<StreamType>
+    {
+        protected:
+            std::optional<StreamType>* stream_ptr;
+            typedef typename StreamType::char_type char_type;
+
+        public:
+            File_StreamOperatorsImpl() = default;
+            File_StreamOperatorsImpl(std::optional<StreamType>& stream_ref) : stream_ptr(std::addressof(stream_ref)) {}
+            File_StreamOperatorsImpl(File<StreamType>& file) : stream_ptr(std::addressof(file.get_stream())) {}
+            File_StreamOperatorsImpl(const File_StreamOperatorsImpl&) = default;
+            File_StreamOperatorsImpl(File_StreamOperatorsImpl&&) = default;
+            ~File_StreamOperatorsImpl() = default;
+
+        protected:
+            inline StreamType& operator<<(const char_type* str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) << str;
+            }
+            inline StreamType& operator<<(const std::basic_string<char_type>& str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) << str;
+            }
+            inline StreamType& operator<<(const char_type& c)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) << c;
+            }
+            inline StreamType& operator<<(const std::basic_string_view<char_type>& str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) << str;
+            }
+
+            // Delete operator>>
+            template <typename U>
+            StreamType& operator>>(U&&) = delete;
+    };
+
+    template <InputFileStream StreamType>
+    struct File_StreamOperatorsImpl<StreamType>
+    {
+        protected:
+            std::optional<StreamType>* stream_ptr;
+            typedef typename StreamType::char_type char_type;
+
+        public:
+            File_StreamOperatorsImpl() = default;
+            File_StreamOperatorsImpl(std::optional<StreamType>& stream_ref) : stream_ptr(std::addressof(stream_ref)) {}
+            File_StreamOperatorsImpl(File<StreamType>& file) : stream_ptr(std::addressof(file.get_stream())) {}
+            File_StreamOperatorsImpl(const File_StreamOperatorsImpl&) = default;
+            File_StreamOperatorsImpl(File_StreamOperatorsImpl&&) = default;
+            ~File_StreamOperatorsImpl() = default;
+
+        protected:
+            inline StreamType& operator>>(char_type* str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) >> str;
+            }
+            inline StreamType& operator>>(std::basic_string<char_type>& str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) >> str;
+            }
+            inline StreamType& operator>>(char_type& c)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) >> c;
+            }
+
+            // Delete operator<<
+            template <typename U>
+            StreamType& operator<<(U&&) = delete;
+    };
+
+    template <InputOutputStream StreamType>
+    struct File_StreamOperatorsImpl<StreamType>
+    {
+        protected:
+            std::optional<StreamType>* stream_ptr;
+            typedef typename StreamType::char_type char_type;
+
+        public:
+            File_StreamOperatorsImpl() = default;
+            File_StreamOperatorsImpl(std::optional<StreamType>& stream_ref) : stream_ptr(std::addressof(stream_ref)) {}
+            File_StreamOperatorsImpl(File<StreamType>& file) : stream_ptr(std::addressof(file.get_stream())) {}
+            File_StreamOperatorsImpl(const File_StreamOperatorsImpl&) = default;
+            File_StreamOperatorsImpl(File_StreamOperatorsImpl&&) = default;
+            ~File_StreamOperatorsImpl() = default;
+
+        protected:
+            inline StreamType& operator<<(const char_type* str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) << str;
+            }
+            inline StreamType& operator<<(const std::basic_string<char_type>& str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) << str;
+            }
+            inline StreamType& operator<<(const char_type& c)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) << c;
+            }
+            inline StreamType& operator<<(const std::basic_string_view<char_type>& str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
+                return *(*this->stream_ptr) << str;
+            }
+
+            inline StreamType& operator>>(char_type* str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
+                *(*this->stream_ptr) >> str;
+            }
+            inline StreamType& operator>>(std::basic_string<char_type>& str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
+                *(*this->stream_ptr) >> str;
+            }
+            inline StreamType& operator>>(char_type& c)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
+                *(*this->stream_ptr) >> c;
+            }
+
+            // No deletion needed
+    };
 
     template <typename T>
         requires FileStream<T>
-    struct File
+    struct File : private File_StreamOperatorsImpl<T>
     {
         public:
-            std::filesystem::path path;
-            std::optional<std::unique_ptr<T>> stream;
+            typedef T stream_type;
+            typedef typename T::char_type char_type;
 
-            File() : path(std::filesystem::path()), stream(std::nullopt) {}
-            File(std::filesystem::path path) : path(path), stream(std::make_unique<T>(T(path.c_str()))) {}
-            File(std::filesystem::path path, T stream) : path(path), stream(std::unique_ptr<T>(stream)) {}
-            File(std::filesystem::path path, std::unique_ptr<T> stream) : path(path), stream(std::move(stream)) {}
-            File(const File& other) : path(other.path)
+        private:
+            std::filesystem::path path;
+            std::optional<stream_type> stream;
+
+        public:
+            File() : File_StreamOperatorsImpl<T>(*this), path(), stream(std::nullopt) {}
+            
+            File(std::filesystem::path&& p, std::ios_base::openmode mode) : File_StreamOperatorsImpl<T>(*this), path(std::move(p)), stream(std::in_place, this->path, mode)
             {
-                if (other->stream.has_value() && other->stream.value() != nullptr && other->stream.value()->is_open())
-                {
-                    auto tmp_stream = other->stream.value()->get();
-                    this->stream = std::make_unique<T>(*tmp_stream);
-                }
-                else
-                    this->stream = std::nullopt;
+                if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
             }
-            File(File&& other) noexcept
+            File(std::filesystem::path& p, std::ios_base::openmode mode) : File_StreamOperatorsImpl<T>(*this), path(p), stream(std::in_place, this->path, mode)
             {
-                this->path = other.path;
+                if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+            }
+            
+            File(const File& other) = delete;
+            File(File&& other) : File_StreamOperatorsImpl<T>(*this), path(std::move(other.path)), stream(std::move(other.stream))
+            {
+                if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+            }
+
+            File& operator=(const File& other) = delete;
+            File& operator=(File&& other)
+            {
+                this->path = std::move(other.path);
                 this->stream = std::move(other.stream);
+                this->stream_ptr = std::addressof(this->stream);
+                if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+                return *this;
             }
+
             ~File() noexcept
             {
-                if (this->stream.has_value() && this->stream.value() != nullptr && this->stream.value()->is_open())
-                    this->stream.value()->close();
+                if (this->stream.has_value() && this->stream->is_open())
+                    this->stream->close();
+                this->stream.reset();
             }
-
-            inline auto operator=(const File& other)
-            {
-                this->path = other.path;
-                this->stream = std::make_unique<T>(*other.stream);
-                return *this;
-            }
-            inline auto operator=(File&& other) noexcept
-            {
-                this->path = other.path;
-                this->stream = std::move(other.stream);
-                return *this;
-            }
-            inline auto operator<<(const std::basic_string<T>& str)
-            {
-                return *this->stream << str;
-            }
-            template <typename U>
-                requires (CharacterType<U> || TermControl<U>) && OutputFileStream<T>
-            inline auto operator<<(const U& obj)
-            {
-                std::string str = "";
-                if constexpr (TermControl<U>)
-                    str += obj;
-                else
-                    str = std::to_string(obj);
-                return *this->stream << str;
-            }
-
-            inline void restart() noexcept
-            {
-                this->~File();
-                this->path = std::filesystem::path();
-                this->stream = std::nullopt;
-            }
-
-            inline void restart(std::filesystem::path path) noexcept
-            {
-                this->restart();
-                this->path = path;
-                this->stream = std::make_unique<T>(T(path.c_str()));
-            }
-
-            inline void restart(std::filesystem::path path, T stream) noexcept
-            {
-                this->restart();
-                this->path = path;
-                this->stream = std::make_unique<T>(stream);
-            }
-
-            inline void restart(std::filesystem::path path, std::unique_ptr<T> stream) noexcept
-            {
-                this->restart();
-                this->path = path;
-                this->stream = std::move(stream);
-            }
-
-            constexpr inline auto get_path() const noexcept
+            
+            constexpr inline std::filesystem::path& get_path() noexcept
             {
                 return this->path;
             }
 
-            constexpr inline bool is_open() const noexcept
+            constexpr inline std::optional<stream_type>& get_stream() noexcept
             {
-                return this->stream.has_value() && this->stream.value() != nullptr && this->stream.value()->is_open();
+                return this->stream;
             }
+
+            inline bool is_open() const noexcept
+            {
+                return this->stream.has_value() && this->stream->is_open();
+            }
+
+            void restart()
+            {
+                this->path.clear();
+                if (this->stream.has_value() && this->stream->is_open())
+                    this->stream->close();
+                this->stream.reset();
+                this->stream_ptr = std::addressof(this->stream);
+                if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+            }
+
+            void restart(std::filesystem::path&& p, std::ios_base::openmode mode)
+            {
+                this->restart();
+                this->path = std::move(p);
+                this->stream.emplace(this->path, mode);
+                this->stream_ptr = std::addressof(this->stream);
+                if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+            }
+
+            using File_StreamOperatorsImpl<T>::operator<<;
+            using File_StreamOperatorsImpl<T>::operator>>;
     };
 
     template <typename T, typename U>
@@ -1674,8 +1858,8 @@ namespace SupDef
             { }
             ~SrcFile() noexcept
             {
-                if (this->file->stream.has_value() && this->file->stream.value() != nullptr && this->file->stream.value()->is_open())
-                    this->file->stream.value()->close();
+                if (this->file->is_open())
+                    this->file->get_stream()->close();
             }
 
             inline std::shared_ptr<U> get_path() const noexcept

@@ -10,9 +10,9 @@
 #include <sup_def/common/sup_def.hpp>
 #include <sup_def/external/external.hpp>
 #include <experimental/scope>
-namespace SD = SupDef;
-namespace SDU = SupDef::Util;
-namespace SDE = SupDef::External;
+namespace SD = ::SupDef;
+namespace SDU = ::SupDef::Util;
+namespace SDE = ::SupDef::External;
 
 #include <filesystem>
 #include <fstream>
@@ -265,7 +265,27 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     std::wcout << CONVERT(wchar_t, u8"test 六書 1.0231") << std::endl;
     std::wcout << CONVERT(wchar_t, u"test 六書 1.0231") << std::endl;
     std::wcout << CONVERT(wchar_t, U"test 六書 1.0231") << std::endl;
-    std::wcout << L"test 六書 1.0231" << std::endl;
+    std::wcout << L"test 六書 1.0231" << "\n" << std::endl;
+
+    struct teststruct
+    {
+        int a;
+        int b;
+        int c;
+    };
+    teststruct test{1, 2, 3};
+    teststruct& testref = test;
+    std::cout << COMPARE_ANY(test, testref) << std::endl; // 0
+    teststruct* testptr = &testref;
+    std::cout << COMPARE_ANY(test, testptr) << std::endl; // 1
+    std::cout << COMPARE_ANY(testref, testptr) << std::endl; // 1
+    std::cout << COMPARE_ANY(test, *testptr) << std::endl; // 0
+    std::cout << COMPARE_ANY(testref, *testptr) << std::endl; // 0
+    teststruct test2{1, 2, 4};
+    std::cout << COMPARE_ANY(test, test2) << std::endl; // memcmp(&test, &test2, sizeof(teststruct)) == -1
+
+    SD::File<std::ofstream> file("blah.txt", std::ios_base::out);
+    file << "test";
     return SDE::main_ret();
 }
 /*

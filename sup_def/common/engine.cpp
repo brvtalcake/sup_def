@@ -59,7 +59,29 @@ namespace SupDef
         (char32_t, std::u8string),
         (char32_t, std::u16string),
         (char32_t, std::u32string)
-    )
+    );
+
+    EXP_INST_STRUCT(File,
+        (std::fstream),
+        (std::ifstream),
+        (std::ofstream),
+      
+        (std::wfstream),
+        (std::wifstream),
+        (std::wofstream),
+      
+        (std::basic_fstream<char8_t>),
+        (std::basic_ifstream<char8_t>),
+        (std::basic_ofstream<char8_t>),
+      
+        (std::basic_fstream<char16_t>),
+        (std::basic_ifstream<char16_t>),
+        (std::basic_ofstream<char16_t>),
+      
+        (std::basic_fstream<char32_t>),
+        (std::basic_ifstream<char32_t>),
+        (std::basic_ofstream<char32_t>)
+    );
 }
 
 #else

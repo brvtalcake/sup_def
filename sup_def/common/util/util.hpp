@@ -1025,6 +1025,55 @@ namespace SupDef
 #endif
 #define CSTR_LEN(LIT) ::SupDef::Util::cstr_len(LIT)
 
+        template <typename T1, typename T2>
+            requires (!std::is_lvalue_reference_v<T1> && !std::is_lvalue_reference_v<T2>)
+        constexpr inline int compare_any(const T1& s1, const T2& s2)
+        {
+            if (sizeof(T1) != sizeof(T2))
+                return sizeof(T1) < sizeof(T2) ? -1 : 1;
+            return memcmp(std::addressof(s1), std::addressof(s2), sizeof(T1));
+        }
+
+        template <typename T1, typename T2>
+            requires (!std::is_lvalue_reference_v<T1> && !std::is_lvalue_reference_v<T2>)
+        constexpr inline bool same_any(const T1& s1, const T2& s2)
+        {
+            return compare_any(s1, s2) == 0;
+        }
+
+        template <typename T1, typename T2>
+            requires (!std::is_lvalue_reference_v<T1> && !std::is_lvalue_reference_v<T2>)
+        constexpr inline bool different_any(const T1& s1, const T2& s2)
+        {
+            return compare_any(s1, s2) != 0;
+        }
+
+#ifdef COMPARE_ANY
+    #undef COMPARE_ANY
+#endif
+#define COMPARE_ANY(S1, S2) ::SupDef::Util::compare_any(S1, S2)
+
+#ifdef SAME_ANY
+    #undef SAME_ANY
+#endif
+#define SAME_ANY(S1, S2) ::SupDef::Util::same_any(S1, S2)
+
+#ifdef DIFFERENT_ANY
+    #undef DIFFERENT_ANY
+#endif
+#define DIFFERENT_ANY(S1, S2) ::SupDef::Util::different_any(S1, S2)
+
+        template <typename T>
+            requires (!std::is_lvalue_reference_v<T>)
+        constexpr inline bool is_null(const T& t)
+        {
+            return COMPARE_ANY(t, T()) == 0;
+        }
+
+#ifdef IS_NULL
+    #undef IS_NULL
+#endif
+#define IS_NULL(T) ::SupDef::Util::is_null(T)
 
     }
     using Util::remove_whitespaces;

@@ -253,5 +253,22 @@ int main (int argc, char const *argv[ ])
     std::wcout << CONVERT(wchar_t, u"test 六書 1.0231") << std::endl;
     std::wcout << CONVERT(wchar_t, U"test 六書 1.0231") << std::endl;
     std::wcout << L"test 六書 1.0231" << std::endl;
+
+    struct teststruct
+    {
+        int a;
+        int b;
+        int c;
+    };
+    teststruct test{1, 2, 3};
+    teststruct& testref = test;
+    std::cout << COMPARE_ANY(test, testref) << std::endl;
+    teststruct* testptr = &testref;
+    std::cout << COMPARE_ANY(test, testptr) << std::endl;
+    std::cout << COMPARE_ANY(testref, testptr) << std::endl;
+    std::cout << COMPARE_ANY(test, *testptr) << std::endl;
+    std::cout << COMPARE_ANY(testref, *testptr) << std::endl;
+    teststruct test2{1, 2, 4};
+    std::cout << COMPARE_ANY(test, test2) << std::endl;
     return SDE::main_ret();
 }
