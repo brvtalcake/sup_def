@@ -1,6 +1,0 @@
-[91m[1m[ ERROR n°1 ][39m  (error type: syntax error)  [0mPragma end found with a different supdef name than the start (should be `TEST_MACRO2` instead)
-In file [1m./sup_def/external/main.cpp:61:20:
-[0m [1m|[0m  #pragma supdef end [91m[1mTEST_MACRO5[39m[0m // Error
-[0m[23C[91m[1m^~~~~~~~~~~[39m[0m
-[97msupdef exited with code 1
-[0m

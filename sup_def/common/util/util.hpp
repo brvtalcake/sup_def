@@ -54,6 +54,8 @@
 
 namespace SupDef 
 {
+    template<typename Tp, typename... Types>
+    concept IsOneOf = std::disjunction_v<std::is_same<Tp, Types>...>;
 };
 
 #if defined(COMPILING_EXTERNAL)
@@ -69,6 +71,13 @@ namespace SupDef
     namespace Util
     {
         std::string demangle(std::string s);
+
+        static_assert(IsOneOf<int, int, char, float>);
+        static_assert(IsOneOf<int, char, float, int>);
+        static_assert(IsOneOf<int, int>);
+        static_assert(!IsOneOf<int, char, float>);
+        static_assert(!IsOneOf<int, char, float, double>);
+        static_assert(IsOneOf<int, char, float, double, int>);
 
         template <size_t N, typename... types>
         struct GetNthTypeImpl
@@ -593,6 +602,96 @@ namespace SupDef
             static constexpr bool apply_predicate = (T<Types>::value && ...);
         };
 
+        template <>
+        struct TypeContainer<>
+        {
+            static constexpr size_t size = 0;
+            template <size_t N>
+            using get = void;
+            template <typename T>
+            static constexpr size_t count = 0;
+            template <typename T>
+            static constexpr bool contains = false;
+            template <template <typename> typename T>
+            static constexpr bool apply_predicate = true;
+        };
+
+        // Implement GetTemplateArgs, a TypeContainer alias storing the types which specialize an unknown template `Template`
+        template <typename...>
+        struct GetTemplateArgs
+        { };
+
+        template <template <typename...> typename Template, typename... Args>
+        struct GetTemplateArgs<Template<Args...>>
+        {
+            using type = TypeContainer<Args...>;
+            using template_type = Template;
+            static constexpr size_t size = sizeof...(Args);
+
+            static_assert(size == type::size);
+        };
+
+        static_assert(std::same_as<GetTemplateArgs<std::vector<int>>::type, TypeContainer<int>>);
+        static_assert(std::same_as<GetTemplateArgs<std::list<int>>::type, TypeContainer<int>>);
+        static_assert(std::same_as<GetTemplateArgs<std::vector<int, std::allocator<int>>>::type, TypeContainer<int, std::allocator<int>>>);
+        static_assert(std::same_as<GetTemplateArgs<std::list<int, std::allocator<int>>>::type, TypeContainer<int, std::allocator<int>>>);
+
+        template <typename...>
+        struct IsSpecializedTemplate : std::false_type
+        { };
+
+        template <template <typename...> typename Template, typename... Args>
+        struct IsSpecializedTemplate<Template<Args...>> : std::true_type
+        { };
+
+        template <typename...>
+        struct IsUnspecializedTemplate : std::false_type
+        { };
+
+        template <template <typename...> typename Template>
+        struct IsUnspecializedTemplate<Template> : std::true_type
+        { };
+
+        template <typename... Args>
+        struct IsTemplate : std::conditional_t<std::disjunction_v<IsSpecializedTemplate<Args...>, IsUnspecializedTemplate<Args...>>, std::true_type, std::false_type>
+        { };
+
+        static_assert(IsSpecializedTemplate<std::vector<int>>::value);
+        static_assert(IsSpecializedTemplate<std::list<int>>::value);
+        static_assert(IsSpecializedTemplate<std::vector<int, std::allocator<int>>>::value);
+        static_assert(IsSpecializedTemplate<std::list<int, std::allocator<int>>>::value);
+        static_assert(!IsSpecializedTemplate<int>::value);
+        static_assert(!IsSpecializedTemplate<std::vector>::value);
+        static_assert(!IsSpecializedTemplate<std::list>::value);
+
+        static_assert(IsUnspecializedTemplate<std::vector>::value);
+        static_assert(IsUnspecializedTemplate<std::list>::value);
+        static_assert(!IsUnspecializedTemplate<std::vector<int>>::value);
+        static_assert(!IsUnspecializedTemplate<std::list<int>>::value);
+        static_assert(!IsUnspecializedTemplate<std::vector<int, std::allocator<int>>>::value);
+        static_assert(!IsUnspecializedTemplate<std::list<int, std::allocator<int>>>::value);
+        static_assert(!IsUnspecializedTemplate<int>::value);
+
+        static_assert(IsTemplate<std::vector<int>>::value);
+        static_assert(IsTemplate<std::list<int>>::value);
+        static_assert(IsTemplate<std::vector<int, std::allocator<int>>>::value);
+        static_assert(IsTemplate<std::list<int, std::allocator<int>>>::value);
+        static_assert(IsTemplate<std::vector>::value);
+        static_assert(IsTemplate<std::list>::value);
+        static_assert(!IsTemplate<int>::value);
+
+        template <typename Template, size_t N>
+            requires (IsSpecializedTemplate<Template>::value)
+        // Use `TypeContainer`'s `get` template to get the Nth type of the template `Template`
+        using GetTemplateArgN = typename GetTemplateArgs<Template>::type::template get<N>;
+
+        static_assert(std::same_as<GetTemplateArgN<std::vector<int>, 0>, int>);
+        static_assert(std::same_as<GetTemplateArgN<std::list<int>, 0>, int>);
+        static_assert(std::same_as<GetTemplateArgN<std::vector<int, std::allocator<int>>, 0>, int>);
+        static_assert(std::same_as<GetTemplateArgN<std::list<int, std::allocator<int>>, 0>, int>);
+        static_assert(std::same_as<GetTemplateArgN<std::vector<int, std::allocator<int>>, 1>, std::allocator<int>>);
+        static_assert(std::same_as<GetTemplateArgN<std::list<int, std::allocator<int>>, 1>, std::allocator<int>>);
+
         /**
          * @struct CanConstructFromImpl
          * @brief Check if all types in a type container `T1` are in the second type container `T2` (condition 1),
@@ -678,9 +777,15 @@ namespace SupDef
         static_assert(!IsValidCodeCvt<char32_t, wchar_t>);
 
         // Base template
+#if 0
+        template <typename C1, typename C2>
+            requires (CharacterType<C1> || std::same_as<C1, std::filesystem::path>) && CharacterType<C2>
+        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */);
+#else
         template <typename C1, typename C2>
             requires CharacterType<C1> && CharacterType<C2>
-        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */);
+        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */) = delete;
+#endif
 
                 /* Internal */ /* External */
         template <typename C1, typename C2>
@@ -781,13 +886,41 @@ namespace SupDef
         {
             return std::basic_string<C1>(str);
         }
-
+        
+        // Base template
         template <typename C1>
-            requires CharacterType<C1>
+            requires CharacterType<C1> || std::same_as<C1, std::filesystem::path>
+        inline auto convert(const std::filesystem::path& path) = delete;
+        
+        template <CharacterType C1>
         inline std::basic_string<C1> convert(const std::filesystem::path& path)
         {
             return convert<C1>(path.string());
         }
+
+        template <std::same_as<std::filesystem::path> C1>
+        inline C1 convert(const std::filesystem::path& path)
+        {
+            return path;
+        }
+
+        // Base template
+        template <typename C1, typename C2>
+            requires std::same_as<C1, std::filesystem::path> && CharacterType<C2>
+        inline std::filesystem::path convert(const std::basic_string<C2>& str /* External */)
+        {
+            return std::filesystem::path(convert<char>(str));
+        }
+
+#if 0
+        // Base template
+        template <typename C1, typename C2>
+        inline C1 convert(const std::basic_string<C2>& str /* External */) = delete;
+
+        // Base template
+        template <typename C1, typename C2>
+        inline std::basic_string<C1> convert(const C2& c) = delete;
+#endif
 
         template <typename C1, typename C2>
             requires CharacterType<C1> && CharacterType<C2>
@@ -803,10 +936,42 @@ namespace SupDef
             return convert<C1>(std::basic_string<C2>(1, c));
         }
 
+        // TODO: Make this a convert overload rather than a convert_num overload
+        /* template <typename C1, typename C2>
+            requires CharacterType<C1> && std::is_arithmetic_v<C2> && (!CharacterType<C2>)
+        inline std::basic_string<C1> convert_num(const C2& c)
+        {
+            std::stringstream ss(std::ios_base::in | std::ios_base::out | std::ios_base::binary);
+            ss << c;
+            return convert<C1>(ss.str());
+        } */
+
+        template <typename C1, typename C2>
+            requires std::is_arithmetic_v<C1> && (!CharacterType<C1>) && CharacterType<C2>
+        inline C1 convert_num(const std::basic_string<C2>& str /* External */)
+        {
+            std::stringstream ss(convert<char>(str), std::ios_base::in | std::ios_base::out | std::ios_base::binary);
+            C1 ret;
+            ss >> ret;
+            return ret;
+        }
+
+        template <typename C1, typename C2>
+            requires std::is_arithmetic_v<C1> && (!CharacterType<C1>) && CharacterType<C2>
+        inline C1 convert_num(const C2& c)
+        {
+            return convert_num<C1>(std::basic_string<C2>(1, c));
+        }
+
 #ifdef CONVERT
     #undef CONVERT
 #endif
 #define CONVERT(TYPE, STR_OR_CHAR) ::SupDef::Util::convert<TYPE>(STR_OR_CHAR)
+
+#ifdef CONVERT_NUM
+    #undef CONVERT_NUM
+#endif
+#define CONVERT_NUM(TYPE, STR_OR_NUM) ::SupDef::Util::convert_num<TYPE>(STR_OR_NUM)
 
         template <typename C1, typename C2>
             requires CharacterType<C1> && CharacterType<C2>
@@ -848,16 +1013,34 @@ namespace SupDef
 
         template <typename T>
             requires CharacterType<T>
-        auto remove_whitespaces(const std::basic_string<T>& s, bool rmNL = false) -> std::basic_string<T>
+        static inline auto remove_whitespaces(const std::basic_string<T>& s, bool rm_nl = false, bool only_trailing_and_leading = false) -> std::basic_string<T>
         {
-            std::basic_string<T> res;
-            res.reserve(s.size());
-            for (auto& c : s)
+            if (!only_trailing_and_leading)
             {
-                if (DIFFERENT(c, ' ') && DIFFERENT(c, '\t') && (rmNL ? DIFFERENT(c, '\n') : true))
-                    res += c;
+                std::basic_string<T> res;
+                res.reserve(s.size());
+                for (auto& c : s)
+                {
+                    if (DIFFERENT(c, ' ') && DIFFERENT(c, '\t') && (rm_nl ? DIFFERENT(c, '\n') : true))
+                        res += c;
+                }
+                return res;
             }
-            return res;
+            else
+            {
+                size_t start = 0;
+                size_t end = s.size() - 1;
+                while (start < s.size() && (SAME(s[start], ' ') || SAME(s[start], '\t') || (rm_nl ? SAME(s[start], '\n') : false)))
+                    ++start;
+                while (end > 0 && (SAME(s[end], ' ') || SAME(s[end], '\t') || (rm_nl ? SAME(s[end], '\n') : false)))
+                    --end;
+                return s.substr(start, end - start + 1);
+            }
+        }
+
+        static inline std::filesystem::path remove_whitespaces(const std::filesystem::path& path, bool rm_nl = false, bool only_trailing_and_leading = false)
+        {
+            return std::filesystem::path(remove_whitespaces(path.string(), rm_nl, only_trailing_and_leading));
         }
 
         /**
@@ -1075,7 +1258,173 @@ namespace SupDef
 #endif
 #define IS_NULL(T) ::SupDef::Util::is_null(T)
 
+        template <typename CharType>
+            requires CharacterType<CharType>
+        using pragma_loc_type = typename std::tuple<typename std::basic_string<CharType>, string_size_type<CharType>, string_size_type<CharType>>;
+
+#ifdef DECL_TEST_FUNC_CALLABLE_WITH
+    #undef DECL_TEST_FUNC_CALLABLE_WITH
+#endif
+#define DECL_TEST_FUNC_CALLABLE_WITH(FUNC_NAME)                             \
+    template<typename = void, typename... Args>                             \
+    struct FUNC_NAME##CallableWithImpl : std::false_type {};                \
+                                                                            \
+    template<typename... Args>                                              \
+    struct FUNC_NAME##CallableWithImpl<                                     \
+        std::void_t<decltype(FUNC_NAME(std::declval<Args>()...))>, Args...  \
+    >                                                                       \
+    : std::true_type {};                                                    \
+                                                                            \
+    template<typename... Args>                                              \
+    inline constexpr bool FUNC_NAME##CallableWith =                         \
+                                         FUNC_NAME##CallableWithImpl<       \
+                                            void, Args...                   \
+                                         >::value;
+
+#ifdef DECL_TEST_FUNC_CALLABLE_WITH_IN_STRUCT
+    #undef DECL_TEST_FUNC_CALLABLE_WITH_IN_STRUCT
+#endif
+#define DECL_TEST_FUNC_CALLABLE_WITH_IN_STRUCT(FUNC_NAME)                       \
+    struct FUNC_NAME##CallableWithImpl                                          \
+    {                                                                           \
+        template<typename = void, typename... Args>                             \
+        struct CallableWithImpl : std::false_type {};                           \
+                                                                                \
+        template<typename... Args>                                              \
+        struct CallableWithImpl<                                                \
+            std::void_t<decltype(FUNC_NAME(std::declval<Args>()...))>, Args...  \
+        >                                                                       \
+        : std::true_type {};                                                    \
+                                                                                \
+        template<typename... Args>                                              \
+        static inline constexpr bool CallableWith =                             \
+                                             CallableWithImpl<                  \
+                                                void, Args...                   \
+                                             >::value;                          \
+    };
+
+#ifdef STD_DECLVAL
+    #undef STD_DECLVAL
+#endif
+#define STD_DECLVAL(TYPE) std::declval<TYPE>()
+
+#ifdef CALLABLE_WITH
+    #undef CALLABLE_WITH
+#endif
+#define CALLABLE_WITH(MAC, FUNC_NAME, ...) (requires { FUNC_NAME(MAP_LIST(MAC, __VA_ARGS__)); })
+
+#ifdef CALLABLE_WITH2
+    #undef CALLABLE_WITH2
+#endif
+#define CALLABLE_WITH2(FUNC_NAME, ...) FUNC_NAME##CallableWith<__VA_ARGS__>
+
+#ifdef CALLABLE_WITH3
+    #undef CALLABLE_WITH3
+#endif
+#define CALLABLE_WITH3(FUNC_NAME, ...) FUNC_NAME##CallableWith<__VA_ARGS__>
+
+        template <typename T, typename U>
+            requires (!std::is_array_v<T> && !std::is_array_v<U>)
+        struct IsImpl
+        {
+            static constexpr bool operator()(const T& t, const U& u) const
+            {
+                return SAME_ANY(t, u) && std::same_as<T, U> && std::addressof(t) == std::addressof(u);
+            }
+
+            static constexpr bool operator()(T&& t, U&& u) const
+            {
+                return SAME_ANY(t, u) && std::same_as<T, U>;
+            }
+
+            static constexpr bool operator()(const T& t, U&& u) const
+            {
+                return false;
+            }
+
+            static constexpr bool operator()(T&& t, const U& u) const
+            {
+                return false;
+            }
+        };
+
+#ifdef IS
+    #undef IS
+#endif
+#define IS(OBJ1, OBJ2) ::SupDef::Util::IsImpl<std::remove_cvref_t<decltype(OBJ1)>, std::remove_cvref_t<decltype(OBJ1)>>()(OBJ1, OBJ2)
+
+        // TODO: Add tests for this
+        template <typename T>
+        constexpr std::string_view type_name(bool use_demangler)
+        {
+            std::string_view name;
+            if (use_demangler)
+                name = ::SupDef::Util::demangle(typeid(T).name());
+            else // Use compiler-specific name "printing"
+            {
+                std::string_view prefix, suffix;
+#ifdef __clang__
+                name = __PRETTY_FUNCTION__;
+                prefix = "std::string_view SupDef::Util::type_name(bool)";
+                suffix = "]";
+#elif defined(__GNUC__)
+                name = __PRETTY_FUNCTION__;
+                prefix = "constexpr std::string_view SupDef::Util::type_name(bool) [with T = ";
+                suffix = "; std::string_view = std::basic_string_view<char>]";
+#elif defined(_MSC_VER) && !defined(__clang__)
+                name = __FUNCSIG__;
+                prefix = "class std::basic_string_view<char,struct std::char_traits<char> > __cdecl SupDef::Util::type_name<";
+                suffix = ">(bool)";
+#else
+                return ::SupDef::Util::demangle(typeid(T).name());
+                UNREACHABLE();                
+#endif
+                name.remove_prefix(prefix.size());
+                name.remove_suffix(suffix.size());
+            }
+            return name;
+        }
+
+#ifdef hard_assert
+    #undef hard_assert
+#endif
+#define hard_assert(COND) (static_cast<bool>((COND)) ? (void)0 : ::SupDef::Util::hard_assert_fail((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__))
+
+#ifdef hard_assert_msg
+    #undef hard_assert_msg
+#endif
+#define hard_assert_msg(COND, MSG) (static_cast<bool>((COND)) ? (void)0 : ::SupDef::Util::hard_assert_fail((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__, MSG))
+
+        [[noreturn]]
+        constexpr inline void hard_assert_fail(bool cond, const char* cond_str, const char* file, int line, const char* func)
+        {
+            if (!cond)
+            {
+                std::cerr << "Hard assertion failed: " << cond_str << "\n"
+                          << "File: " << file << "\n"
+                          << "Line: " << line << "\n"
+                          << "Function: " << func << "\n";
+                std::terminate();
+            }
+        }
+
+        [[noreturn]]
+        template <typename T>
+            requires std::convertible_to<T, std::string_view>
+        constexpr inline void hard_assert_fail(bool cond, const char* cond_str, const char* file, int line, const char* func, const T& msg)
+        {
+            if (!cond)
+            {
+                std::cerr << "Hard assertion failed: " << cond_str << " (" << msg << ")\n"
+                          << "File: " << file << "\n"
+                          << "Line: " << line << "\n"
+                          << "Function: " << func << "\n";
+                std::terminate();
+            }
+        }
+
     }
+
     using Util::remove_whitespaces;
 }
 #endif // UTIL_HPP

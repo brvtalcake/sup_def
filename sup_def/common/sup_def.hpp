@@ -31,6 +31,7 @@
 // TODO: Use MAP_LIST macro instead of BOOST_PP_SEQ_FOR_EACH if possible
 // TODO: Move class declarations to different headers as with a one-class-per-header organization
 // TODO: Create a Util namespace and move all the utility / helper functions there
+// TODO: Open all files in binary mode
 
 #if !defined(_GNU_SOURCE)
     #define _GNU_SOURCE 1
@@ -1156,6 +1157,7 @@ namespace SupDef
             }
     };
 
+    // TODO: How to ensure that locale is UTF-8 aware ?
     inline void set_app_locale(void)
     {
         #if defined(_WIN32)
@@ -1315,7 +1317,7 @@ namespace SupDef
             using promise_type = Promise;
             using handle_type = std::coroutine_handle<promise_type>;
             Coro(handle_type handle) : handle(handle), done(false) {}
-            Coro(Coro&& other) : handle(other.handle), done(other.done) { other.handle = nullptr; }
+            Coro(Coro&& other) : handle(std::exchange(other.handle, nullptr)), done(other.done) {}
             Coro(const Coro&) = delete;
             ~Coro() 
             {
@@ -1324,9 +1326,8 @@ namespace SupDef
             }
             Coro& operator=(Coro&& other) 
             {
-                this->handle = other.handle;
+                this->handle = std::exchange(other.handle, nullptr);
                 this->done = other.done;
-                other.handle = nullptr;
                 return *this;
             }
             Coro& operator=(const Coro&) = delete;
@@ -1351,7 +1352,7 @@ namespace SupDef
             }
             inline operator bool() { return !this->is_done(); }
 
-            struct end_iterator {};
+            struct end_iterator : public std::default_sentinel_t {};
 
             class Iterator
             {
@@ -1372,7 +1373,7 @@ namespace SupDef
                     Iterator& operator=(const Iterator&) = default;
                     Iterator& operator=(Iterator&&) = default;
 
-                    inline bool operator==([[maybe_unused]] const end_iterator& other) const noexcept
+                    inline bool operator==(end_iterator) const noexcept
                     {
                         return this->coro ? this->coro->is_iter_end() : true;
                     }
@@ -1422,7 +1423,118 @@ namespace SupDef
         private:
             handle_type handle;
             bool done;
-            end_iterator end_sentinel{};
+    };
+
+    template <typename T>
+    concept IsCoro = SPECIALIZATION_OF(T, Coro);
+
+    // TODO: Finish WorkingThreadPool and WorkingFunctor
+    class WorkingThreadPool;
+
+    template <typename... Args>
+    struct WorkingFunctor { };
+
+    template <typename ResType, typename... Args>
+        requires IsCoro<ResType>
+    struct WorkingFunctor<ResType(Args...)>
+    {
+        public:
+            using FuncType = ResType(Args...);
+            using CoroType = ResType;
+            using CoroValueType = GetTemplateArgN<0, CoroType>;
+            using ResultQueueType = std::queue<CoroValueType>;
+            using ResultQueuePtrType = std::shared_ptr<ResultQueueType>;
+        
+        private:
+            WorkingThreadPool* pool;
+            std::invoke_result_t<FuncType, Args...> coro;
+            
+            std::shared_ptr<void> result_queue_ptr;
+            std::function<void(void*)> result_queue_deleter = [](void* ptr) { delete static_cast<ResultQueueType*>(ptr); };
+            std::atomic<bool> result_queue_created = false;
+
+            std::jthread thread;
+            std::thread::id thread_id;
+            std::latch start_cond{2};
+
+            inline void add_result(CoroValueType&& value)
+            {
+                if (!this->result_queue_created)
+                {
+                    this->result_queue_ptr = std::shared_ptr<ResultQueueType>(new ResultQueueType(), WorkingThreadPool::queue_deleter<CoroValueType>);
+                    this->result_queue_ptr->push(std::move(value));
+                    this->result_queue_deleter = WorkingThreadPool::queue_deleter<CoroValueType>;
+                    this->result_queue_created = true;
+                    std::lock_guard<std::mutex> lock1(this->pool->mtx);
+                    std::lock_guard<std::mutex> lock2(this->pool->queue_mtxs[this->thread_id]);
+                    this->pool->result_queues[this->thread_id] = std::make_pair(this->result_queue_ptr, this->result_queue_deleter);
+                    hard_assert(this->result_queue_ptr.get() == this->pool->result_queues[this->thread_id].first.get());
+                }
+                else
+                {
+                    std::lock_guard<std::mutex> lock(this->pool->queue_mtxs[this->thread_id]);
+                    this->result_queue_ptr->push(std::move(value));
+                }
+            }
+
+            inline void thread_main(void)
+            {
+                this->start_cond.count_down();
+                this->start_cond.wait();
+                for (auto&& value : this->coro)
+                    this->add_result(std::move(value));
+            }
+        public:
+            template <typename PoolT>
+                requires std::same_as<std::remove_cvref_t<std::remove_pointer_t<PoolT&&>>, WorkingThreadPool> 
+                      && (!std::is_rvalue_reference_v<PoolT&&> || std::is_pointer_v<std::remove_cvref_t<PoolT&&>>)
+            WorkingFunctor(PoolT&& pool, FuncType&& coro, Args&&... args)
+                : pool(), coro(std::invoke(std::forward<FuncType>(coro), std::forward<Args>(args)...))
+            {
+                if constexpr (std::is_rvalue_reference_v<PoolT&&>)
+                {
+                    static_assert(std::is_pointer_v<std::remove_cvref_t<PoolT&&>>, "The pool must be passed as a pointer, if an rvalue reference is passed");
+                    this->pool = std::move(pool);
+                }
+                else
+                {
+                    if constexpr (std::is_pointer_v<std::remove_cvref_t<PoolT&&>>)
+                        this->pool = pool;
+                    else
+                        this->pool = &pool;
+                }
+                this->thread = std::jthread([this]() { this->thread_main(); });
+                this->thread_id = this->thread.get_id();
+                this->start_cond.count_down();
+                this->start_cond.wait();
+            }
+
+            template <typename FType>
+                requires std::is_invocable_r_v<CoroValueType, FType, CoroValueType>
+            inline void operator()(FType&& func)
+            {
+                for (auto&& )
+            }
+    };
+
+    class WorkingThreadPool
+        : public std::jthread
+    {
+        private:
+            // To pass as a deleter to the shared_ptr that stores the result queue
+            template <typename T>
+            static inline void queue_deleter(void* ptr)
+            {
+                delete static_cast<std::queue<T>*>(ptr);
+            }
+
+            inline void thread_main(void)
+            { /* TODO */ }
+            friend class WorkingFunctor;
+            // Each pair stores a shared_ptr that stores a std::queue<T> where T is the return type of the (co)routine, and a deleter function
+            std::unordered_map<std::thread::id, std::pair<std::shared_ptr<void>, std::function<void(void*)>> result_queues;
+            std::mutex mtx{};
+            std::unordered_map<std::thread::id, std::mutex> queue_mtxs;
     };
 
     class TmpFile
@@ -1468,52 +1580,127 @@ namespace SupDef
      * #define TEST "This is the body of my super define named MY_SUPER_DEFINE which takes 2 arguments: arg1 and arg2"
      */
 
-    /**
-     * @class PragmaDef
-     * @brief A class representing a SupDef pragma definition
-     * @tparam T The character type of the pragma (char, wchar_t, char8_t, char16_t, char32_t)
-     */
-    template <typename T>
-        requires CharacterType<T>
-    struct PragmaDef
+#if 0
+    enum class PragmaType : uint8_t
     {
-        private:
-            std::shared_ptr<std::basic_string<T>> name;
-            std::vector<std::shared_ptr<std::basic_string<T>>> body_lines;
-            std::vector<std::shared_ptr<std::basic_string<T>>> args;
-
-        public:
-            PragmaDef();
-            PragmaDef(const std::vector<std::basic_string<T>>& full_pragma);
-            ~PragmaDef() noexcept;
-
-            std::shared_ptr<std::basic_string<T>> get_name() const noexcept;
-            std::basic_string<T> get_body() const noexcept;
-            std::vector<std::shared_ptr<std::basic_string<T>>> get_args() const noexcept;
-            typename std::vector<std::shared_ptr<std::basic_string<T>>>::size_type get_argc() const noexcept;
-            std::basic_string<T> substitute() const noexcept;
-            template <typename... Args>
-                requires (std::convertible_to<Args, std::basic_string<T>> && ...)
-            std::basic_string<T> substitute(Args&&... args_parm) noexcept(__cpp_lib_unreachable >= 202202L);
+        INC = 1 << 0,
+        DEF = 1 << 1
     };
 
-    template <typename T, typename U>
-        requires CharacterType<T> && FilePath<U>
-    class SrcFile;
-
-    template <typename T, typename U>
-        requires CharacterType<T> && FilePath<U>
-    struct PragmaInc
+    template <typename CharType = char>
+        requires CharacterType<CharType>
+    class PragmaDefFields
     {
         private:
-            std::shared_ptr<SrcFile<T, U>> included;
+            std::shared_ptr<std::basic_string<CharType>> id;
+            std::shared_ptr<std::basic_string<CharType>> body;
 
         public:
-            PragmaInc() = default;
-            PragmaInc(U path) : included(std::make_shared<SrcFile<T, U>>(path)) {}
-            ~PragmaInc() noexcept = default;
+            PragmaDefFields() = default;
+            
+            template <typename StdStringType1, typename StdStringType2>
+                requires std::same_as<std::remove_cvref_t<StdStringType1>, std::basic_string<CharType>> &&
+                         std::same_as<std::remove_cvref_t<StdStringType2>, std::basic_string<CharType>>
+            PragmaDefFields(StdStringType1&& id, StdStringType2&& body)
+            {
+                if constexpr (std::is_rvalue_reference_v<StdStringType1&&>)
+                    this->id = std::make_shared<std::basic_string<CharType>>(std::move(id));
+                else
+                    this->id = std::make_shared<std::basic_string<CharType>>(id);
+                if constexpr (std::is_rvalue_reference_v<StdStringType2&&>)
+                    this->body = std::make_shared<std::basic_string<CharType>>(std::move(body));
+                else
+                    this->body = std::make_shared<std::basic_string<CharType>>(body);
+            }
+            template <typename StdStringType>
+                requires std::same_as<std::remove_cvref_t<StdStringType>, std::basic_string<CharType>>
+            PragmaDefFields(StdStringType&& id)
+            {
+                if constexpr (std::is_rvalue_reference_v<StdStringType&&>)
+                    this->id = std::make_shared<std::basic_string<CharType>>(std::move(id));
+                else
+                    this->id = std::make_shared<std::basic_string<CharType>>(id);
+            }
 
-            inline std::shared_ptr<SrcFile<T, U>> get_included() const noexcept
+            PragmaDefFields(const PragmaDefFields&) = default;
+            PragmaDefFields(PragmaDefFields&&) = default;
+
+            ~PragmaDefFields() = default;
+
+            PragmaDefFields& operator=(const PragmaDefFields&) = default;
+            PragmaDefFields& operator=(PragmaDefFields&&) = default;
+
+        protected:
+            inline std::shared_ptr<std::basic_string<CharType>> get_id() const noexcept
+            {
+                return this->id;
+            }
+
+            inline std::shared_ptr<std::basic_string<CharType>> get_body() const noexcept
+            {
+                return this->body;
+            }
+
+            inline void set_id(std::shared_ptr<std::basic_string<CharType>> id) noexcept
+            {
+                this->id = id;
+            }
+
+            inline void set_body(std::shared_ptr<std::basic_string<CharType>> body) noexcept
+            {
+                this->body = body;
+            }
+
+            template <typename StdStringType>
+                requires std::same_as<std::remove_cvref_t<StdStringType>, std::basic_string<CharType>>
+            inline void set_id(StdStringType&& id) noexcept
+            {
+                if constexpr (std::is_rvalue_reference_v<StdStringType&&>)
+                    this->id = std::make_shared<std::basic_string<CharType>>(std::move(id));
+                else
+                    this->id = std::make_shared<std::basic_string<CharType>>(id);
+            }
+
+            template <typename StdStringType>
+                requires std::same_as<std::remove_cvref_t<StdStringType>, std::basic_string<CharType>>
+            inline void set_body(StdStringType&& body) noexcept
+            {
+                if constexpr (std::is_rvalue_reference_v<StdStringType&&>)
+                    this->body = std::make_shared<std::basic_string<CharType>>(std::move(body));
+                else
+                    this->body = std::make_shared<std::basic_string<CharType>>(body);
+            }
+
+            inline void set_id(const CharType* id) noexcept
+            {
+                this->id = std::make_shared<std::basic_string<CharType>>(id);
+            }
+
+            inline void set_body(const CharType* body) noexcept
+            {
+                this->body = std::make_shared<std::basic_string<CharType>>(body);
+            }
+    };
+
+    template <typename CharType = char, typename FilePathType = std::filesystem::path>
+        requires CharacterType<CharType> && FilePath<FilePathType>
+    struct PragmaIncFields
+    {
+        private:
+            std::shared_ptr<SrcFile<CharType, FilePathType>> included;
+
+        public:
+            PragmaIncFields() = default;
+            PragmaIncFields(const PragmaIncFields&) = default;
+            PragmaIncFields(PragmaIncFields&&) = default;
+            ~PragmaIncFields() = default;
+
+            PragmaIncFields(FilePathType path) : included(std::make_shared<SrcFile<CharType, FilePathType>>(path)) {}
+
+            PragmaIncFields& operator=(const PragmaIncFields&) = default;
+            PragmaIncFields& operator=(PragmaIncFields&&) = default;
+
+            inline std::shared_ptr<SrcFile<CharType, FilePathType>> get_included() const noexcept
             {
                 return this->included;
             }
@@ -1521,6 +1708,464 @@ namespace SupDef
             inline auto get_path() const noexcept
             {
                 return this->included->get_path();
+            }
+    };
+
+    template <PragmaType PragType, typename CharType = char, typename FilePathType = std::filesystem::path>
+        requires CharacterType<CharType> && FilePath<FilePathType>
+    struct PragmaBase
+    {
+        private:
+            std::shared_ptr<std::basic_string<CharType>> full_pragma;
+            std::shared_ptr<std::tuple<string_size_type<CharType>, string_size_type<CharType>>> pos;
+    };
+
+    template <PragmaType PragType, typename CharType = char, typename FilePathType = std::filesystem::path>
+        requires CharacterType<CharType> && FilePath<FilePathType>
+    struct Pragma : private PragmaDefFields<CharType>
+    {
+        private:
+            std::shared_ptr<std::basic_string<CharType>> full_pragma;
+
+        public:
+            Pragma() = default;
+    };
+#endif
+
+    // TODO: Modify PragmaDef
+    /**
+     * @class PragmaDef
+     * @brief A class representing a SupDef pragma definition
+     * @tparam CharType The character type of the pragma (char, wchar_t, char8_t, char16_t, char32_t)
+     */
+    template <typename CharType>
+        requires CharacterType<CharType>
+    struct PragmaDef
+    {
+        private:
+            std::shared_ptr<std::basic_string<CharType>> id;
+            std::shared_ptr<std::basic_string<CharType>> body;
+            std::shared_ptr<std::tuple<string_size_type<CharType>, string_size_type<CharType>>> pos;
+
+        public:
+            typedef Util::pragma_loc_type<CharType> pragma_loc_type;
+
+            PragmaDef() = default;
+            PragmaDef(const PragmaDef&) = default;
+            PragmaDef(PragmaDef&&) = default;
+            ~PragmaDef() = default;
+
+            template <typename PragLocType>
+                requires std::same_as<std::remove_cvref_t<PragLocType>, pragma_loc_type>
+            PragmaDef(PragLocType&& pragma_loc)
+            {
+                if constexpr (std::is_rvalue_reference_v<PragLocType&&>)
+                {
+                    this->pos = std::make_shared< std::tuple< string_size_type<CharType>, string_size_type<CharType> > >(
+                        std::make_tuple(
+                            std::get<1>(std::move(pragma_loc)),
+                            std::get<2>(std::move(pragma_loc))
+                        )
+                    );
+                    auto first_line = [](const std::basic_string<CharType>& str) -> std::basic_string<CharType>
+                    {
+                        std::basic_string<CharType> result;
+                        for (const CharType& c : str)
+                        {
+                            if (SAME(c, '\n'))
+                                break;
+                            result += c;
+                        }
+                        return result;
+                    }(std::get<0>(std::move(pragma_loc)));
+                    this->id = std::make_shared<std::basic_string<CharType>>(
+                        remove_whitespaces(first_line, true)
+                    );
+                    auto remaining_lines = [](const std::basic_string<CharType>& str) -> std::basic_string<CharType>
+                    {
+                        std::basic_string<CharType> result;
+                        bool is_first_line = true;
+                        for (const CharType& c : str)
+                        {
+                            if (is_first_line)
+                            {
+                                if (SAME(c, '\n'))
+                                    is_first_line = false;
+                            }
+                            else
+                                result += c;
+                        }
+                        return result;
+                    }(std::get<0>(std::move(pragma_loc)));
+                    this->body = std::make_shared<std::basic_string<CharType>>(
+                        remove_whitespaces(remaining_lines, true, true)
+                    );
+                }
+                else
+                {
+                    this->pos = std::make_shared< std::tuple< string_size_type<CharType>, string_size_type<CharType> > >(
+                        std::make_tuple(
+                            std::get<1>(pragma_loc),
+                            std::get<2>(pragma_loc)
+                        )
+                    );
+                    auto first_line = [](const std::basic_string<CharType>& str) -> std::basic_string<CharType>
+                    {
+                        std::basic_string<CharType> result;
+                        for (const CharType& c : str)
+                        {
+                            if (SAME(c, '\n'))
+                                break;
+                            result += c;
+                        }
+                        return result;
+                    }(std::get<0>(pragma_loc));
+                    this->id = std::make_shared<std::basic_string<CharType>>(
+                        remove_whitespaces(first_line, true)
+                    );
+                    auto remaining_lines = [](const std::basic_string<CharType>& str) -> std::basic_string<CharType>
+                    {
+                        std::basic_string<CharType> result;
+                        bool is_first_line = true;
+                        for (const CharType& c : str)
+                        {
+                            if (is_first_line)
+                            {
+                                if (SAME(c, '\n'))
+                                    is_first_line = false;
+                            }
+                            else
+                                result += c;
+                        }
+                        return result;
+                    }(std::get<0>(pragma_loc));
+                    this->body = std::make_shared<std::basic_string<CharType>>(
+                        remove_whitespaces(remaining_lines, true, true)
+                    );
+                }
+            }
+            template <typename StdStringType1, typename StdStringType2, typename PosType>
+                requires std::same_as<std::remove_cvref_t<StdStringType1>, std::basic_string<CharType>> &&
+                         std::same_as<std::remove_cvref_t<StdStringType2>, std::basic_string<CharType>> &&
+                         std::same_as<std::remove_cvref_t<PosType>, std::tuple<string_size_type<CharType>, string_size_type<CharType>>>
+            PragmaDef(StdStringType1&& id, StdStringType2&& body, PosType&& pos = std::tuple<string_size_type<CharType>, string_size_type<CharType>>(0, 0))
+            {
+                if constexpr (std::is_rvalue_reference_v<StdStringType1&&>)
+                    this->id = std::make_shared<std::basic_string<CharType>>(std::move(id));
+                else
+                    this->id = std::make_shared<std::basic_string<CharType>>(id);
+             
+                if constexpr (std::is_rvalue_reference_v<StdStringType2&&>)
+                    this->body = std::make_shared<std::basic_string<CharType>>(std::move(body));
+                else
+                    this->body = std::make_shared<std::basic_string<CharType>>(body);
+             
+                if constexpr (std::is_rvalue_reference_v<PosType&&>)
+                    this->pos = std::make_shared< std::tuple< string_size_type<CharType>, string_size_type<CharType> > >(std::move(pos));
+                else
+                    this->pos = std::make_shared< std::tuple< string_size_type<CharType>, string_size_type<CharType> > >(pos);
+            }
+
+            PragmaDef& operator=(const PragmaDef&) = default;
+            PragmaDef& operator=(PragmaDef&&) = default;
+
+            inline auto get_pos() const noexcept
+            {
+                return this->pos;
+            }
+
+            inline auto get_id() const noexcept
+            {
+                return this->id;
+            }
+
+            inline auto get_body() const noexcept
+            {
+                return this->body;
+            }
+
+            inline string_size_type<CharType> get_start() const noexcept
+            {
+                return std::get<0>(*this->pos);
+            }
+
+            inline string_size_type<CharType> get_end() const noexcept
+            {
+                return std::get<1>(*this->pos);
+            }
+
+            inline void set_pos(
+                std::shared_ptr<std::tuple<string_size_type<CharType>, string_size_type<CharType>>> pos
+            ) noexcept
+            {
+                this->pos = pos;
+            }
+
+            inline void set_id(std::shared_ptr<std::basic_string<CharType>> id) noexcept
+            {
+                this->id = id;
+            }
+
+            inline void set_body(std::shared_ptr<std::basic_string<CharType>> body) noexcept
+            {
+                this->body = body;
+            }
+
+            template <typename StdStringType>
+                requires std::same_as<std::remove_cvref_t<StdStringType>, std::basic_string<CharType>>
+            inline void set_id(StdStringType&& id) noexcept
+            {
+                if constexpr (std::is_rvalue_reference_v<StdStringType&&>)
+                    this->id = std::make_shared<std::basic_string<CharType>>(std::move(id));
+                else
+                    this->id = std::make_shared<std::basic_string<CharType>>(id);
+            }
+
+            template <typename StdStringType>
+                requires std::same_as<std::remove_cvref_t<StdStringType>, std::basic_string<CharType>>
+            inline void set_body(StdStringType&& body) noexcept
+            {
+                if constexpr (std::is_rvalue_reference_v<StdStringType&&>)
+                    this->body = std::make_shared<std::basic_string<CharType>>(std::move(body));
+                else
+                    this->body = std::make_shared<std::basic_string<CharType>>(body);
+            }
+
+            inline void set_id(const CharType* id) noexcept
+            {
+                this->id = std::make_shared<std::basic_string<CharType>>(id);
+            }
+
+            inline void set_body(const CharType* body) noexcept
+            {
+                this->body = std::make_shared<std::basic_string<CharType>>(body);
+            }
+
+            size_t get_argc(void) const noexcept
+            {
+                size_t result = 0;
+                std::vector<uint8_t> curr_num(1);
+                bool in_arg = false;
+                bool reached_first_num = false;
+                string_size_type<CharType> curr_pos = 0;
+                for (const CharType& c : *this->body)
+                {
+                    if (SAME(c, '$'))
+                    {
+                        if (in_arg)
+                            continue;
+                        size_t backslash_count = 0;
+                        for (string_size_type<CharType> i = curr_pos - 1; i >= 0; --i)
+                        {
+                            if (SAME((*this->body)[i], '\\'))
+                                ++backslash_count;
+                            else
+                                break;
+                        }
+                        if (backslash_count % 2 == 0)
+                            in_arg = true;
+                    }
+                    else if (in_arg)
+                    {
+                        auto is_number = [](const CharType& c) -> bool
+                        {
+                            return SAME(c, '0') || SAME(c, '1') || SAME(c, '2') || SAME(c, '3') || SAME(c, '4') || SAME(c, '5') || SAME(c, '6') || SAME(c, '7') || SAME(c, '8') || SAME(c, '9');
+                        };
+                        if (is_number(c))
+                        {
+                            if (!reached_first_num)
+                                reached_first_num = true;
+                            curr_num.push_back(static_cast<uint8_t>(CONVERT_NUM(unsigned short, c)));
+                        }
+                        else
+                        {
+                            if (!reached_first_num)
+                                continue;
+                            curr_num.insert(curr_num.begin(), 0);
+                            result = std::max(result, size_t(std::accumulate(curr_num.begin(), curr_num.end(), 0, [](const uint8_t& a, const uint8_t& b) -> uint8_t { return a * 10 + b; })));
+                            curr_num.clear();
+                            in_arg = false;
+                            reached_first_num = false;
+                        }
+                    }
+                    ++curr_pos;
+                }
+                if (in_arg && reached_first_num)
+                {
+                    curr_num.insert(curr_num.begin(), 0);
+                    result = std::max(result, size_t(std::accumulate(curr_num.begin(), curr_num.end(), 0, [](const uint8_t& a, const uint8_t& b) -> uint8_t { return a * 10 + b; })));
+                }
+                return result;
+            }
+
+            template <typename... Args>
+                requires (std::same_as<std::remove_cvref_t<Args>, std::basic_string<CharType>> && ...)
+            std::basic_string<CharType> substitute(Args&&... args) const
+            {
+                std::basic_string<CharType> result;
+                std::vector<std::basic_string<CharType>> args_vec{ std::forward<Args>(args)... };
+                std::vector<uint8_t> curr_num(1);
+                bool in_arg = false;
+                bool reached_first_num = false;
+                string_size_type<CharType> curr_pos = 0;
+                for (const CharType& c : *this->body)
+                {
+                    if (SAME(c, '$'))
+                    {
+                        if (in_arg)
+                            continue;
+                        size_t backslash_count = 0;
+                        for (string_size_type<CharType> i = curr_pos - 1; i >= 0; --i)
+                        {
+                            if (SAME((*this->body)[i], '\\'))
+                                ++backslash_count;
+                            else
+                                break;
+                        }
+                        if (backslash_count % 2 == 0)
+                            in_arg = true;
+                    }
+                    else if (in_arg)
+                    {
+                        auto is_number = [](const CharType& c) -> bool
+                        {
+                            return SAME(c, '0') || SAME(c, '1') || SAME(c, '2') || SAME(c, '3') || SAME(c, '4') || SAME(c, '5') || SAME(c, '6') || SAME(c, '7') || SAME(c, '8') || SAME(c, '9');
+                        };
+                        if (is_number(c))
+                        {
+                            if (!reached_first_num)
+                                reached_first_num = true;
+                            curr_num.push_back(static_cast<uint8_t>(CONVERT_NUM(unsigned short, c)));
+                        }
+                        else
+                        {
+                            if (!reached_first_num)
+                                continue;
+                            curr_num.insert(curr_num.begin(), 0);
+                            size_t arg_num = std::accumulate(curr_num.begin(), curr_num.end(), 0, [](const uint8_t& a, const uint8_t& b) -> uint8_t { return a * 10 + b; });
+                            if (arg_num > args_vec.size())
+                                throw Exception<CharType, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Invalid argument number in super define " + CONVERT(std::string, *this->id) + " (expected: " + std::to_string(args_vec.size()) + ", got: " + std::to_string(arg_num) + ")");
+                            result += args_vec[arg_num - 1];
+                            curr_num.clear();
+                            in_arg = false;
+                            reached_first_num = false;
+                        }
+                    }
+                    else
+                        result += c;
+                    ++curr_pos;
+                }
+                if (in_arg && reached_first_num)
+                {
+                    curr_num.insert(curr_num.begin(), 0);
+                    size_t arg_num = std::accumulate(curr_num.begin(), curr_num.end(), 0, [](const uint8_t& a, const uint8_t& b) -> uint8_t { return a * 10 + b; });
+                    if (arg_num > args_vec.size())
+                        throw Exception<CharType, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Invalid argument number in super define " + CONVERT(std::string, *this->id) + " (expected: " + std::to_string(args_vec.size()) + ", got: " + std::to_string(arg_num) + ")");
+                    result += args_vec[arg_num - 1];
+                }
+                return result;
+            }
+
+            template <typename... Args>
+                requires (std::same_as<std::remove_cvref_t<Args>, std::basic_string<CharType>> && ...)
+            std::basic_string<CharType> operator()(Args&&... args) const
+            {
+                return this->substitute(std::forward<Args>(args)...);
+            }
+    };
+
+    template <typename T, typename U>
+        requires CharacterType<T> && FilePath<U>
+    class SrcFile;
+
+    // TODO: Modify PragmaInc
+    template <typename CharType, typename FilePathType>
+        requires CharacterType<CharType> && FilePath<FilePathType>
+    struct PragmaInc
+    {
+        private:
+            std::shared_ptr<std::tuple<string_size_type<CharType>, string_size_type<CharType>>> pos;
+            std::shared_ptr<SrcFile<CharType, FilePathType>> included;
+
+        public:
+            typedef Util::pragma_loc_type<CharType> pragma_loc_type;
+            PragmaInc() = default;
+            ~PragmaInc() noexcept;
+            
+            template <typename PragLocType>
+                requires std::same_as<std::remove_cvref_t<PragLocType>, pragma_loc_type>
+            PragmaInc(PragLocType&& pragma_loc)
+            {
+                if constexpr (std::is_rvalue_reference_v<PragLocType&&>)
+                {
+                    this->pos = std::make_shared< std::tuple< string_size_type<CharType>, string_size_type<CharType> > >(
+                        std::make_tuple(
+                            std::get<1>(std::move(pragma_loc)),
+                            std::get<2>(std::move(pragma_loc))
+                        )
+                    );
+                    this->included = std::make_shared<SrcFile<CharType, FilePathType>>(CONVERT(FilePathType, remove_whitespaces(std::get<0>(std::move(pragma_loc)))));
+                }
+                else
+                {
+                    this->pos = std::make_shared< std::tuple< string_size_type<CharType>, string_size_type<CharType> > >(
+                        std::make_tuple(
+                            std::get<1>(pragma_loc),
+                            std::get<2>(pragma_loc)
+                        )
+                    );
+                    this->included = std::make_shared<SrcFile<CharType, FilePathType>>(CONVERT(FilePathType, remove_whitespaces(std::get<0>(pragma_loc))));
+                }
+            }
+            template <typename StdStringType, typename PosType>
+                requires std::same_as<std::remove_cvref_t<StdStringType>, std::basic_string<CharType>> &&
+                         std::same_as<std::remove_cvref_t<PosType>, std::tuple<string_size_type<CharType>, string_size_type<CharType>>>
+            PragmaInc(StdStringType&& path, PosType&& pos)
+            {
+                if constexpr (std::is_rvalue_reference_v<StdStringType&&>)
+                    this->included = std::make_shared<SrcFile<CharType, FilePathType>>(std::move(path));
+                else
+                    this->included = std::make_shared<SrcFile<CharType, FilePathType>>(path);
+                if constexpr (std::is_rvalue_reference_v<PosType&&>)
+                    this->pos = std::make_shared< std::tuple< string_size_type<CharType>, string_size_type<CharType> > >(std::move(pos));
+                else
+                    this->pos = std::make_shared< std::tuple< string_size_type<CharType>, string_size_type<CharType> > >(pos);
+            }
+
+            PragmaInc(const PragmaInc&) = default;
+            PragmaInc(PragmaInc&&) = default;
+
+            PragmaInc& operator=(const PragmaInc&) = default;
+            PragmaInc& operator=(PragmaInc&&) = default;
+
+            inline auto get_pos() const noexcept
+            {
+                return this->pos;
+            }
+            
+            inline auto get_included() const noexcept
+            {
+                return this->included;
+            }
+
+            inline auto get_path() const noexcept
+            {
+                return this->included->get_path();
+            }
+
+            inline string_size_type<CharType> get_start() const noexcept
+            {
+                return std::get<0>(*this->pos);
+            }
+            
+            inline string_size_type<CharType> get_end() const noexcept
+            {
+                return std::get<1>(*this->pos);
+            }
+
+            inline void set_pos(std::shared_ptr<std::tuple<string_size_type<CharType>, string_size_type<CharType>>> pos) noexcept
+            {
+                this->pos = pos;
             }
     };
 
@@ -1555,108 +2200,185 @@ namespace SupDef
     template <typename T>
     concept FileStream = OutputFileStream<T> || InputFileStream<T> || InputOutputStream<T>;
 
-    // TODO: Fix bugs in File and File_StreamOperatorsImpl
+#if 0
+    template <typename T, typename... Args>
+    concept HasGetlineMethod = requires(T&& t, Args&&... args)
+    {
+        { t.getline(std::forward<Args>(args)...) };
+    };
+
+    template <typename T, typename... Args>
+    concept HasGetlineFunction = requires(T&& t, Args&&... args)
+    {
+        { std::getline(std::forward<T>(t), std::forward<Args>(args)...) };
+    };
+
+    // TODO: Fix bugs in File and File_StreamMethodsImpl
     template <typename T>
         requires FileStream<T>
     struct File;
 
+    template <typename T, typename... Args>
+    struct File_StreamMethodsImplHelper {};
+
+    template <FileStream StreamType, typename... Args>
+        requires (!HasGetlineMethod<StreamType, Args...> && !HasGetlineFunction<StreamType, Args...>)
+    struct File_StreamMethodsImplHelper<StreamType, Args...>
+    {
+        // Return type of invoking std::getline(StreamType&, Args...)
+        using ResultOfGetline = void;
+    };
+
+    template <FileStream StreamType, typename... Args>
+        requires HasGetlineMethod<StreamType, Args...>
+    struct File_StreamMethodsImplHelper<StreamType, Args...>
+    {
+        // Return type of invoking std::getline(StreamType&, Args...)
+        using ResultOfGetline = decltype(std::declval<StreamType&>().getline(std::declval<Args>()...));
+    };
+
+    template <FileStream StreamType, typename... Args>
+        requires HasGetlineFunction<StreamType, Args...>
+    struct File_StreamMethodsImplHelper<StreamType, Args...>
+    {
+        // Return type of invoking std::getline(StreamType&, Args...)
+        using ResultOfGetline = decltype(std::getline(std::declval<StreamType&>(), std::declval<Args>()...));
+    };
+
     template <typename T>
-    struct File_StreamOperatorsImpl {};
+    struct File_StreamMethodsImpl {};
 
     template <OutputFileStream StreamType>
-    struct File_StreamOperatorsImpl<StreamType>
+    struct File_StreamMethodsImpl<StreamType>
     {
         protected:
             std::optional<StreamType>* stream_ptr;
             typedef typename StreamType::char_type char_type;
 
         public:
-            File_StreamOperatorsImpl() = default;
-            File_StreamOperatorsImpl(std::optional<StreamType>& stream_ref) : stream_ptr(std::addressof(stream_ref)) {}
-            File_StreamOperatorsImpl(File<StreamType>& file) : stream_ptr(std::addressof(file.get_stream())) {}
-            File_StreamOperatorsImpl(const File_StreamOperatorsImpl&) = default;
-            File_StreamOperatorsImpl(File_StreamOperatorsImpl&&) = default;
-            ~File_StreamOperatorsImpl() = default;
+            File_StreamMethodsImpl() = default;
+            File_StreamMethodsImpl(std::optional<StreamType>& stream_ref) : stream_ptr(std::addressof(stream_ref)) {}
+            File_StreamMethodsImpl(File<StreamType>& file) : stream_ptr(std::addressof(file.get_stream())) {}
+            File_StreamMethodsImpl(const File_StreamMethodsImpl&) = default;
+            File_StreamMethodsImpl(File_StreamMethodsImpl&&) = default;
+            ~File_StreamMethodsImpl() = default;
 
         protected:
             inline StreamType& operator<<(const char_type* str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) << str;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) << str;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) << str;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) << str;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const char_type& c)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) << c;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) << c;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const std::basic_string_view<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) << str;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) << str;
+                return *(*this->stream_ptr);
             }
 
-            // Delete operator>>
+            // Delete operator>> and getline
             template <typename U>
             StreamType& operator>>(U&&) = delete;
+
+            template <typename U>
+            StreamType& getline(U&&) = delete;
     };
 
     template <InputFileStream StreamType>
-    struct File_StreamOperatorsImpl<StreamType>
+    struct File_StreamMethodsImpl<StreamType>
     {
         protected:
             std::optional<StreamType>* stream_ptr;
             typedef typename StreamType::char_type char_type;
 
         public:
-            File_StreamOperatorsImpl() = default;
-            File_StreamOperatorsImpl(std::optional<StreamType>& stream_ref) : stream_ptr(std::addressof(stream_ref)) {}
-            File_StreamOperatorsImpl(File<StreamType>& file) : stream_ptr(std::addressof(file.get_stream())) {}
-            File_StreamOperatorsImpl(const File_StreamOperatorsImpl&) = default;
-            File_StreamOperatorsImpl(File_StreamOperatorsImpl&&) = default;
-            ~File_StreamOperatorsImpl() = default;
+            File_StreamMethodsImpl() = default;
+            File_StreamMethodsImpl(std::optional<StreamType>& stream_ref) : stream_ptr(std::addressof(stream_ref)) {}
+            File_StreamMethodsImpl(File<StreamType>& file) : stream_ptr(std::addressof(file.get_stream())) {}
+            File_StreamMethodsImpl(const File_StreamMethodsImpl&) = default;
+            File_StreamMethodsImpl(File_StreamMethodsImpl&&) = default;
+            ~File_StreamMethodsImpl() = default;
 
         protected:
             inline StreamType& operator>>(char_type* str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) >> str;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) >> str;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator>>(std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) >> str;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) >> str;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator>>(char_type& c)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) >> c;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) >> c;
+                return *(*this->stream_ptr);
             }
+
+            // Same as std::getline
+            inline typename File_StreamMethodsImplHelper<StreamType, char_type*, std::streamsize, char_type>::ResultOfGetline getline(char_type* str, std::streamsize count, char_type delim)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use getline on a File_StreamMethodsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has a closed stream");
+                return (*this->stream_ptr)->getline(str, count, delim);
+            }
+            inline typename File_StreamMethodsImplHelper<StreamType, std::basic_string<char_type>&, char_type>::ResultOfGetline getline(std::basic_string<char_type>& str, char_type delim)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has a closed stream");
+                return std::getline(*(*this->stream_ptr), str, delim);
+            }
+            inline typename File_StreamMethodsImplHelper<StreamType, std::basic_string<char_type>&>::ResultOfGetline getline(std::basic_string<char_type>& str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has a closed stream");
+                return std::getline(*(*this->stream_ptr), str);
+            }
+
 
             // Delete operator<<
             template <typename U>
@@ -1664,85 +2386,116 @@ namespace SupDef
     };
 
     template <InputOutputStream StreamType>
-    struct File_StreamOperatorsImpl<StreamType>
+    struct File_StreamMethodsImpl<StreamType>
     {
         protected:
             std::optional<StreamType>* stream_ptr;
             typedef typename StreamType::char_type char_type;
 
         public:
-            File_StreamOperatorsImpl() = default;
-            File_StreamOperatorsImpl(std::optional<StreamType>& stream_ref) : stream_ptr(std::addressof(stream_ref)) {}
-            File_StreamOperatorsImpl(File<StreamType>& file) : stream_ptr(std::addressof(file.get_stream())) {}
-            File_StreamOperatorsImpl(const File_StreamOperatorsImpl&) = default;
-            File_StreamOperatorsImpl(File_StreamOperatorsImpl&&) = default;
-            ~File_StreamOperatorsImpl() = default;
+            File_StreamMethodsImpl() = default;
+            File_StreamMethodsImpl(std::optional<StreamType>& stream_ref) : stream_ptr(std::addressof(stream_ref)) {}
+            File_StreamMethodsImpl(File<StreamType>& file) : stream_ptr(std::addressof(file.get_stream())) {}
+            File_StreamMethodsImpl(const File_StreamMethodsImpl&) = default;
+            File_StreamMethodsImpl(File_StreamMethodsImpl&&) = default;
+            ~File_StreamMethodsImpl() = default;
 
         protected:
             inline StreamType& operator<<(const char_type* str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) << str;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) << str;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) << str;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) << str;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const char_type& c)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) << c;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) << c;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const std::basic_string_view<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamOperatorsImpl object which has a closed stream");
-                return *(*this->stream_ptr) << str;
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                *(*this->stream_ptr) << str;
+                return *(*this->stream_ptr);
             }
 
             inline StreamType& operator>>(char_type* str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) >> str;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator>>(std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) >> str;
+                return *(*this->stream_ptr);
             }
             inline StreamType& operator>>(char_type& c)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has no stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamOperatorsImpl object which has a closed stream");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) >> c;
+                return *(*this->stream_ptr);
             }
 
-            // No deletion needed
+            // Same as std::getline()
+            inline typename File_StreamMethodsImplHelper<StreamType, char_type*, std::streamsize, char_type>::ResultOfGetline getline(char_type* str, std::streamsize count, char_type delim)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has a closed stream");
+                return (*this->stream_ptr)->getline(str, count, delim);
+            }
+            inline typename File_StreamMethodsImplHelper<StreamType, std::basic_string<char_type>&, char_type>::ResultOfGetline getline(std::basic_string<char_type>& str, char_type delim)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has a closed stream");
+                return std::getline(*(*this->stream_ptr), str, delim);
+            }
+            inline typename File_StreamMethodsImplHelper<StreamType, std::basic_string<char_type>&>::ResultOfGetline getline(std::basic_string<char_type>& str)
+            {
+                if (!(*this->stream_ptr).has_value())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has no stream");
+                if (!(*this->stream_ptr)->is_open())
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has a closed stream");
+                return std::getline(*(*this->stream_ptr), str);
+            }
     };
 
     template <typename T>
         requires FileStream<T>
-    struct File : private File_StreamOperatorsImpl<T>
+    struct File : private File_StreamMethodsImpl<T>
     {
         public:
             typedef T stream_type;
@@ -1753,24 +2506,24 @@ namespace SupDef
             std::optional<stream_type> stream;
 
         public:
-            File() : File_StreamOperatorsImpl<T>(*this), path(), stream(std::nullopt) {}
+            File() : File_StreamMethodsImpl<T>(*this), path(), stream(std::nullopt) {}
             
-            File(std::filesystem::path&& p, std::ios_base::openmode mode) : File_StreamOperatorsImpl<T>(*this), path(std::move(p)), stream(std::in_place, this->path, mode)
+            File(std::filesystem::path&& p, std::ios_base::openmode mode) : File_StreamMethodsImpl<T>(*this), path(std::move(p)), stream(std::in_place, this->path, mode)
             {
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
-            File(std::filesystem::path& p, std::ios_base::openmode mode) : File_StreamOperatorsImpl<T>(*this), path(p), stream(std::in_place, this->path, mode)
+            File(std::filesystem::path& p, std::ios_base::openmode mode) : File_StreamMethodsImpl<T>(*this), path(p), stream(std::in_place, this->path, mode)
             {
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
             
             File(const File& other) = delete;
-            File(File&& other) : File_StreamOperatorsImpl<T>(*this), path(std::move(other.path)), stream(std::move(other.stream))
+            File(File&& other) : File_StreamMethodsImpl<T>(*this), path(std::move(other.path)), stream(std::move(other.stream))
             {
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
 
             File& operator=(const File& other) = delete;
@@ -1780,7 +2533,7 @@ namespace SupDef
                 this->stream = std::move(other.stream);
                 this->stream_ptr = std::addressof(this->stream);
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
                 return *this;
             }
 
@@ -1814,7 +2567,7 @@ namespace SupDef
                 this->stream.reset();
                 this->stream_ptr = std::addressof(this->stream);
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
 
             void restart(std::filesystem::path&& p, std::ios_base::openmode mode)
@@ -1824,13 +2577,117 @@ namespace SupDef
                 this->stream.emplace(this->path, mode);
                 this->stream_ptr = std::addressof(this->stream);
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamOperatorsImpl base class has a reference to a different stream than the one in the File class");
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
 
-            using File_StreamOperatorsImpl<T>::operator<<;
-            using File_StreamOperatorsImpl<T>::operator>>;
-    };
+            void close()
+            {
+                restart();
+            }
 
+            using File_StreamMethodsImpl<T>::operator<<;
+            using File_StreamMethodsImpl<T>::operator>>;
+            using File_StreamMethodsImpl<T>::getline;
+    };
+#else
+    template <typename StreamType, typename FilePathType = std::filesystem::path>
+        requires FileStream<StreamType> && FilePath<FilePathType>
+    class File : public StreamType
+    {
+        private:
+            FilePathType path;
+
+        public:
+            static constexpr bool output_filestream_p = OutputFileStream<StreamType> || InputOutputStream<StreamType>;
+            static constexpr bool input_filestream_p = InputFileStream<StreamType> || InputOutputStream<StreamType>;
+            static constexpr bool inputoutput_filestream_p = InputOutputStream<StreamType>;
+
+            File() : StreamType(), path() {}
+            
+            File(
+                FilePathType&& p,
+                std::ios_base::openmode mode = 
+                    std::conditional_t<
+                        bool(inputoutput_filestream_p),
+                        std::integral_constant<std::ios_base::openmode, std::ios_base::in | std::ios_base::out | std::ios_base::binary>,
+                        std::conditional_t<
+                            bool(output_filestream_p),
+                            std::integral_constant<std::ios_base::openmode, std::ios_base::out | std::ios_base::binary>,
+                            std::integral_constant<std::ios_base::openmode, std::ios_base::in | std::ios_base::binary>
+                        >
+                    >::value
+            ) : StreamType(std::move(p), mode), path(std::move(p))
+            { }
+            File(
+                const FilePathType& p,
+                std::ios_base::openmode mode = 
+                    std::conditional_t<
+                        bool(inputoutput_filestream_p),
+                        std::integral_constant<std::ios_base::openmode, std::ios_base::in | std::ios_base::out | std::ios_base::binary>,
+                        std::conditional_t<
+                            bool(output_filestream_p),
+                            std::integral_constant<std::ios_base::openmode, std::ios_base::out | std::ios_base::binary>,
+                            std::integral_constant<std::ios_base::openmode, std::ios_base::in | std::ios_base::binary>
+                        >
+                    >::value
+            ) : StreamType(p, mode), path(p)
+            { }
+
+            File(const File& other) = delete;
+            File(File&& other) : StreamType(std::move(other)), path(std::move(other.path))
+            { }
+
+            File& operator=(const File& other) = delete;
+            File& operator=(File&& other)
+            {
+                this->path = std::move(other.path);
+                return *this;
+            }
+
+            ~File() noexcept
+            {
+                this->restart();
+            }
+
+        protected:
+            virtual constexpr inline FilePathType& get_path() noexcept
+            {
+                return this->path;
+            }
+
+            virtual constexpr inline StreamType& get_stream() noexcept
+            {
+                return *this;
+            }
+
+        public:
+            virtual void restart()
+            {
+                this->path.clear();
+                if (this->is_open())
+                    this->StreamType::close();
+            }
+
+            virtual void restart(FilePathType&& p, std::ios_base::openmode mode)
+            {
+                this->restart();
+                auto unconverted = std::move(p);
+                this->path = std::move(p);
+                this->open(CONVERT(std::filesystem::path, unconverted), mode);
+            }
+
+            virtual void restart(const FilePathType& p, std::ios_base::openmode mode)
+            {
+                this->restart();
+                auto unconverted = p;
+                this->path = p;
+                this->open(CONVERT(std::filesystem::path, unconverted), mode);
+            }
+    };
+#endif
+
+    // TODO: Modify whole SrcFile implementation to use File as a base class
+#if 0
     template <typename T, typename U>
         requires CharacterType<T> && FilePath<U>
     class SrcFile
@@ -1916,6 +2773,97 @@ namespace SupDef
                 return *this;
             }
     };
+#else
+    template <typename T = char, typename U = std::filesystem::path>
+        requires CharacterType<T> && FilePath<U>
+    class SrcFile : public File<std::basic_ifstream<T>, U>
+    {
+        private:
+            std::vector<PragmaDef<T>> super_defines;
+            std::vector<PragmaInc<T, U>> imports;
+
+        public:
+            SrcFile() : File<std::basic_ifstream<T>, U>(), super_defines(), imports() {}
+
+            template <typename PathType>
+                requires FilePath<PathType> && std::constructible_from<File<std::basic_ifstream<T>, U>, PathType&&, std::ios_base::openmode>
+            SrcFile(
+                PathType&& p,
+                std::ios_base::openmode mode = (std::ios_base::in | std::ios_base::binary)
+            ) : File<std::basic_ifstream<T>, U>(std::forward<PathType>(p), mode), super_defines(), imports()
+            { }
+            
+            SrcFile(SrcFile& other) = delete;
+            SrcFile(SrcFile&& other) noexcept = default;
+            
+            ~SrcFile() noexcept = default;
+            
+            inline std::vector<PragmaDef<T>>& get_super_defines() noexcept
+            {
+                return this->super_defines;
+            }
+            inline std::vector<PragmaInc<T, U>>& get_imports() noexcept
+            {
+                return this->imports;
+            }
+
+            inline void add_super_define(const PragmaDef<T>& super_define) noexcept
+            {
+                this->super_defines.push_back(super_define);
+            }
+            inline void add_include(const PragmaInc<T, U>& import) noexcept
+            {
+                this->imports.push_back(import);
+            }
+
+            inline void restart() override
+            {
+                this->File<std::basic_ifstream<T>, U>::restart();
+                this->super_defines.clear();
+                this->imports.clear();
+            }
+
+            inline void restart(
+                U&& p,
+                std::ios_base::openmode mode = (std::ios_base::in | std::ios_base::binary)
+            ) override
+            {
+                if (mode & std::ios_base::out)
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to open a SrcFile in write mode");
+                this->File<std::basic_ifstream<T>, U>::restart(std::forward<U>(p), mode);
+                this->super_defines.clear();
+                this->imports.clear();
+            }
+
+            inline void restart(
+                const U& p,
+                std::ios_base::openmode mode = (std::ios_base::in | std::ios_base::binary)
+            ) override
+            {
+                if (mode & std::ios_base::out)
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to open a SrcFile in write mode");
+                this->File<std::basic_ifstream<T>, U>::restart(p, mode);
+                this->super_defines.clear();
+                this->imports.clear();
+            }
+
+            inline SrcFile& operator=(SrcFile&& other) noexcept
+            {
+                this->File<std::basic_ifstream<T>, U>::operator=(std::move(other));
+                this->super_defines = other.super_defines;
+                this->imports = other.imports;
+                return *this;
+            }
+            inline SrcFile& operator=(SrcFile& other) = delete;
+
+#if 0
+            inline void close() override
+            {
+                this->restart();
+            }
+#endif
+    };
+#endif
 
     // Must have the same behavior as std::less
     template <typename T>
@@ -1923,15 +2871,179 @@ namespace SupDef
     class PragmaLocCompare
     {
         public:
-            bool operator()(const std::vector<string_size_type<T>>& lhs, const std::vector<string_size_type<T>>& rhs) const noexcept
+            using tuple_type = std::tuple<string_size_type<T>, string_size_type<T>>;
+
+            // Are the two tupled types in U convertible to string_size_type<T>?
+            template <typename U>
+                requires SPECIALIZATION_OF(U, std::tuple)
+            using convertible_tuple = std::conjunction<
+                std::is_convertible<std::tuple_element_t<0, std::remove_cvref_t<U>>, string_size_type<T>>,
+                std::is_convertible<std::tuple_element_t<1, std::remove_cvref_t<U>>, string_size_type<T>>
+            >;
+
+            static_assert(convertible_tuple<std::tuple<string_size_type<char>, string_size_type<char>>>::value);
+            static_assert(convertible_tuple<std::tuple<int, int>>::value);
+            static_assert(convertible_tuple<std::tuple<int, string_size_type<char>>>::value);
+            static_assert(convertible_tuple<std::tuple<string_size_type<char>, int>>::value);
+
+            template <typename U>
+                requires SPECIALIZATION_OF(U, std::tuple)
+            static constexpr bool convertible_tuple_v = convertible_tuple<U>::value;
+            
+            enum : uint8_t
             {
-                auto min = std::min(lhs.size(), rhs.size());
-                for (typename std::vector<string_size_type<T>>::size_type i = 0; i < min; ++i)
-                    if (lhs[i] < rhs[i])
-                        return true;
-                return false;
+                START = 1 << 0,
+                END = 1 << 1,
+                BOTH = START | END
+            };
+
+            template <typename U>
+                requires std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>
+            static constexpr inline bool eq(const U&& lhs, const U&& rhs, uint8_t flags = BOTH) noexcept
+            {
+                if (flags & BOTH)
+                    return std::get<0>(lhs) == std::get<0>(rhs) && std::get<1>(lhs) == std::get<1>(rhs);
+                else if (flags & START)
+                    return std::get<0>(lhs) == std::get<0>(rhs);
+                else if (flags & END)
+                    return std::get<1>(lhs) == std::get<1>(rhs);
+                else
+                    return false;
+            }
+
+            template <typename U>
+                requires std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>
+            static constexpr inline bool lt(const U&& lhs, const U&& rhs, uint8_t flags = BOTH) noexcept
+            {
+                if (flags & BOTH)
+                    return std::get<0>(lhs) < std::get<0>(rhs) && std::get<1>(lhs) < std::get<1>(rhs);
+                else if (flags & START)
+                    return std::get<0>(lhs) < std::get<0>(rhs);
+                else if (flags & END)
+                    return std::get<1>(lhs) < std::get<1>(rhs);
+                else
+                    return false;
+            }
+
+            template <typename U>
+                requires std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>
+            static constexpr inline bool gt(const U&& lhs, const U&& rhs, uint8_t flags = BOTH) noexcept
+            {
+                if (flags & BOTH)
+                    return std::get<0>(lhs) > std::get<0>(rhs) && std::get<1>(lhs) > std::get<1>(rhs);
+                else if (flags & START)
+                    return std::get<0>(lhs) > std::get<0>(rhs);
+                else if (flags & END)
+                    return std::get<1>(lhs) > std::get<1>(rhs);
+                else
+                    return false;
+            }
+
+            template <typename U>
+                requires std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>
+            static constexpr inline bool le(const U&& lhs, const U&& rhs, uint8_t flags = BOTH) noexcept
+            {
+                if (flags & BOTH)
+                    return std::get<0>(lhs) <= std::get<0>(rhs) && std::get<1>(lhs) <= std::get<1>(rhs);
+                else if (flags & START)
+                    return std::get<0>(lhs) <= std::get<0>(rhs);
+                else if (flags & END)
+                    return std::get<1>(lhs) <= std::get<1>(rhs);
+                else
+                    return false;
+            }
+
+            template <typename U>
+                requires std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>
+            static constexpr inline bool ge(const U&& lhs, const U&& rhs, uint8_t flags = BOTH) noexcept
+            {
+                if (flags & BOTH)
+                    return std::get<0>(lhs) >= std::get<0>(rhs) && std::get<1>(lhs) >= std::get<1>(rhs);
+                else if (flags & START)
+                    return std::get<0>(lhs) >= std::get<0>(rhs);
+                else if (flags & END)
+                    return std::get<1>(lhs) >= std::get<1>(rhs);
+                else
+                    return false;
+            }
+
+#if 0
+            template <typename U>
+                requires std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>
+            using helper_func_type1 = bool (*)(const U&&, const U&&, uint8_t);
+
+            template <typename U>
+                requires std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>
+            using helper_func_type2 = std::function<bool(const U&&, const U&&, uint8_t)>;
+#endif
+
+            template <typename U, typename Fn>
+                requires (std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>) && std::invocable<Fn, const U&&, const U&&, uint8_t>
+            constexpr inline bool operator()(Fn&& func, const U&& lhs, const U&& rhs, uint8_t flags = BOTH) const
+                noexcept(
+                    noexcept(func(std::forward<const U>(lhs), std::forward<const U>(rhs), flags))
+                )
+            {
+                return func(std::forward<const U>(lhs), std::forward<const U>(rhs), flags);
+            }
+
+            template <typename U, typename Fn>
+                requires (std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>) && std::invocable<Fn, const U&&, const U&&, uint8_t>
+            struct Comparator
+            {
+                Fn func;
+                uint8_t flags;
+
+                Comparator(Fn&& func, uint8_t flags = BOTH) : func(std::forward<Fn>(func)), flags(flags) {}
+                Comparator(const Fn& func, uint8_t flags = BOTH) : func(func), flags(flags) {}
+
+                constexpr inline bool operator()(const U&& lhs, const U&& rhs) const
+                    noexcept(
+                        noexcept(func(std::forward<const U>(lhs), std::forward<const U>(rhs), flags))
+                    )
+                {
+                    return func(std::forward<const U>(lhs), std::forward<const U>(rhs), flags);
+                }
+            };
+
+            template <typename U, typename Fn>
+                requires (std::same_as<tuple_type, std::remove_cvref_t<U>> || convertible_tuple_v<U>) && std::invocable<Fn, const U&&, const U&&, uint8_t>
+            static constexpr inline Comparator<U, Fn> make_comparator(Fn&& func, uint8_t flags = BOTH)
+            {
+                return Comparator<U, Fn>(std::forward<Fn>(func), flags);
             }
     };
+
+    static_assert(PragmaLocCompare<char>::eq(std::make_tuple(0, 0), std::make_tuple(0, 0)));
+    static_assert(PragmaLocCompare<char>::lt(std::make_tuple(0, 0), std::make_tuple(2, 3)));
+    static_assert(!PragmaLocCompare<char>::gt(std::make_tuple(0, 1), std::make_tuple(0, 0)));
+    static_assert(PragmaLocCompare<char>()([](auto&& lhs, auto&& rhs, uint8_t flags) { return PragmaLocCompare<char>::eq(std::forward<decltype(lhs)>(lhs), std::forward<decltype(rhs)>(rhs), flags); }, std::make_tuple(0, 0), std::make_tuple(0, 0)));
+
+#ifdef PRAGLOC_COMPARE_REL
+    #undef PRAGLOC_COMPARE_REL
+#endif
+#define PRAGLOC_COMPARE_REL(TP, OP, TUPLE1, TUPLE2, ...) (::SupDef::PragmaLocCompare<TP>::OP((TUPLE1), (TUPLE2) __VA_OPT__(,) __VA_ARGS__))
+
+    static_assert(PRAGLOC_COMPARE_REL(char, eq, std::make_tuple(0, 0), std::make_tuple(0, 0)));
+    static_assert(PRAGLOC_COMPARE_REL(char, lt, std::make_tuple(0, 0), std::make_tuple(2, 3)));
+    static_assert(!PRAGLOC_COMPARE_REL(char, gt, std::make_tuple(0, 1), std::make_tuple(0, 0)));
+
+#ifdef PRAGLOC_COMPARE_FN
+    #undef PRAGLOC_COMPARE_FN
+#endif
+#define PRAGLOC_COMPARE_FN(TP, FN, TUPLE1, TUPLE2, ...) (::SupDef::PragmaLocCompare<TP>()((FN), (TUPLE1), (TUPLE2) __VA_OPT__(,) __VA_ARGS__))
+    
+    static_assert(PRAGLOC_COMPARE_FN(char, [](auto&& lhs, auto&& rhs, uint8_t flags) { return PRAGLOC_COMPARE_REL(char, eq, std::forward<decltype(lhs)>(lhs), std::forward<decltype(rhs)>(rhs), flags); }, std::make_tuple(0, 0), std::make_tuple(0, 0)));
+
+#ifdef PRAGLOC_COMPARATOR_FN
+    #undef PRAGLOC_COMPARATOR_FN
+#endif
+#define PRAGLOC_COMPARATOR_FN(TP_CHAR, TP_TUPLED, FN, ...) (::SupDef::PragmaLocCompare<TP_CHAR>::template make_comparator<std::tuple<TP_TUPLED, TP_TUPLED>>((FN) __VA_OPT__(,) __VA_ARGS__))
+
+#ifdef PRAGLOC_COMPARATOR_REL
+    #undef PRAGLOC_COMPARATOR_REL
+#endif
+#define PRAGLOC_COMPARATOR_REL(TP_CHAR, TP_TUPLED, OP, ...) (PRAGLOC_COMPARATOR_FN(TP_CHAR, TP_TUPLED, [](auto&& lhs, auto&& rhs, uint8_t flags) { return PRAGLOC_COMPARE_REL(TP_CHAR, OP, std::forward<decltype(lhs)>(lhs), std::forward<decltype(rhs)>(rhs), flags); } __VA_OPT__(,) __VA_ARGS__))
 
 #if SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR
     template <typename T>
@@ -1958,7 +3070,8 @@ namespace SupDef
             std::vector<std::basic_string<T>> lines_raw;
 
             Parser();
-            Parser(std::filesystem::path file_path);
+            Parser(std::filesystem::path file_path); // Initialize this->file with std::basic_ifstream<T>
+            Parser(std::filesystem::path file_path, std::basic_ifstream<T>& file_stream); // Initialize this->file with std::reference_wrapper<std::basic_ifstream<T>>
             ~Parser() noexcept = default;
 
             std::basic_string<T> slurp_file();
@@ -1974,15 +3087,19 @@ namespace SupDef
             // Search for `#pragma supdef begin ...` and its corresponding `#pragma supdef end` pragmas
             Coro<Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>> search_super_defines(void);
 #if defined(SUPDEF_DEBUG)
-            template <typename Stream>
-            void print_content(Stream& s) const;
+            template <typename Stream = std::ostream>                
+            void print_content(Stream& s = std::cout) const;
 #endif
         private:
             typedef typename std::basic_ifstream<T>::pos_type pos_type;
             typedef typename std::basic_string<T>::size_type location_type;
+            typedef std::basic_ifstream<T> file_stream_type1;
+            typedef std::reference_wrapper<std::basic_ifstream<T>> file_stream_type2;
+            typedef std::variant<file_stream_type1, file_stream_type2> file_stream_variant_type;
 
-            std::unique_ptr<std::basic_ifstream<T>> file;
+            file_stream_variant_type file;
             
+            std::basic_ifstream<T>& get_file_stream(void);
             std::basic_string<T> remove_cstr_lit(void);
 
             // TODO: Implement the following three methods
@@ -2013,16 +3130,17 @@ namespace SupDef
     class Engine : public EngineBase
     {
         private:
-            File<std::basic_ofstream<P1>> tmp_file;
+            File<std::basic_fstream<P1>> tmp_file;
+            std::unordered_map<std::shared_ptr<SrcFile<P1, P2>>, Parser<P1>> parser_pool;
 
         public:
-            SrcFile<P1, P2> src_file;
+            std::shared_ptr<SrcFile<P1, P2>> src_file;
             File<std::basic_ofstream<P1>> dst_file;
             
             Engine();
             template <typename T, typename U>
-                requires FilePath<T> && FilePath<U>
-            Engine(T src_file_name, U dst_file_name);
+                requires FilePath<std::remove_cvref_t<T>> && FilePath<std::remove_cvref_t<U>>
+            Engine(T&& src, U&& dst);
 
             ~Engine() noexcept;
 
@@ -2054,8 +3172,8 @@ namespace SupDef
             void restart();
             
             template <typename T, typename U>
-                requires FilePath<T> && FilePath<U>
-            void restart(T src_file_name, U dst_file_name);
+                requires FilePath<std::remove_cvref_t<T>> && FilePath<std::remove_cvref_t<U>>
+            void restart(T&& src, U&& dst);
     };
 
 #undef NEED_Engine_TEMPLATES

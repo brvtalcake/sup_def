@@ -125,22 +125,26 @@ endif()
 
 if (SUPDEF_BUILD_EXTERNAL)
     message(STATUS "Building external command-line tool")
+else()
+    message(STATUS "Not building external command-line tool")
 endif()
 
 if (SUPDEF_BUILD_GCC_PLUGIN)
     message(STATUS "Building GCC plugin")
+else()
+    message(STATUS "Not building GCC plugin")
 endif()
 
 if (SUPDEF_BUILD_CLANG_PLUGIN)
     message(STATUS "Building Clang plugin")
+else()
+    message(STATUS "Not building Clang plugin")
 endif()
 
 if (SUPDEF_BUILD_TESTS)
     message(STATUS "Building tests")
+else()
+    message(STATUS "Not building tests")
 endif()
 
 add_subdirectory("./sup_def")
-
-if (SUPDEF_BUILD_TESTS)
-    add_subdirectory("./tests")
-endif()

@@ -4,6 +4,7 @@
 
 #include <sup_def/common/config.h>
 
+#if 0
 template <typename T>
     requires CharacterType<T>
 template <typename... Args>
@@ -43,3 +44,4 @@ std::basic_string<T> PragmaDef<T>::substitute(Args&&... args_parm) noexcept(__cp
     }
     return body;
 }
+#endif

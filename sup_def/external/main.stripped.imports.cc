@@ -6,9 +6,9 @@
 #include <sup_def/common/sup_def.hpp>
 #include <sup_def/external/external.hpp>
 #include <experimental/scope>
-namespace SD = SupDef;
-namespace SDU = SupDef::Util;
-namespace SDE = SupDef::External;
+namespace SD = ::SupDef;
+namespace SDU = ::SupDef::Util;
+namespace SDE = ::SupDef::External;
 
 #include <filesystem>
 #include <fstream>
@@ -91,7 +91,7 @@ int main (int argc, char const *argv[ ])
             };
             auto inc = inc_or_err.unwrap_or_else<decltype(unwrap_lambda)>(std::move(unwrap_lambda));
             if (!std::get<0>(inc).empty())
-                std::cout << "Found import: " << std::get<0>(inc) << " starting at line " << std::get<1>(inc) << " and ending at line " << std::get<2>(inc) << std::endl;
+                std::cout << "Found import: " << std::get<0>(inc) << " starting at line " << std::get<1>(inc) << " and ending at line " << std::get<2>(inc) << "\n";
         }
         std::filesystem::remove("./sup_def/external/main.stripped.imports.cc");
         std::ofstream out_file("./sup_def/external/main.stripped.imports.cc");
@@ -116,7 +116,7 @@ int main (int argc, char const *argv[ ])
             };
             auto supdef = supdef_or_err.unwrap_or_else<decltype(unwrap_lambda)>(std::move(unwrap_lambda));
             if (!std::get<0>(supdef).empty())
-                std::cout << "Found super define: " << "\n" << get_first_line(std::get<0>(supdef)) << "\n" << " starting at line " << std::get<1>(supdef) << " and ending at line " << std::get<2>(supdef) << std::endl;
+                std::cout << "Found super define: " << "\n" << get_first_line(std::get<0>(supdef)) << "\n" << " starting at line " << std::get<1>(supdef) << " and ending at line " << std::get<2>(supdef) << "\n";
         }
 #endif
         std::filesystem::remove("./sup_def/external/main.stripped.supdefs.cc");
@@ -135,29 +135,29 @@ int main (int argc, char const *argv[ ])
     }
     catch(...)
     {
-        std::cerr << "Unknown exception" << std::endl;
+        std::cerr << "Unknown exception" << "\n";
         return SDE::main_ret();
     }
 
 
 #if 0
-    std::cout << SD::is_ident_char<char, false>('a') << std::endl;
-    std::cout << SD::is_ident_char<wchar_t, false>(L'a') << std::endl;
-    std::cout << SD::is_ident_char<char8_t, false>(u8'a') << std::endl;
-    std::cout << SD::is_ident_char<char16_t, false>(u'a') << std::endl;
-    std::cout << SD::is_ident_char<char32_t, false>(U'a') << std::endl << std::endl;
+    std::cout << SD::is_ident_char<char, false>('a') << "\n";
+    std::cout << SD::is_ident_char<wchar_t, false>(L'a') << "\n";
+    std::cout << SD::is_ident_char<char8_t, false>(u8'a') << "\n";
+    std::cout << SD::is_ident_char<char16_t, false>(u'a') << "\n";
+    std::cout << SD::is_ident_char<char32_t, false>(U'a') << "\n" << "\n";
 
-    std::cout << SD::is_ident_char<char, false>('$') << std::endl;
-    std::cout << SD::is_ident_char<wchar_t, false>(L'$') << std::endl;
-    std::cout << SD::is_ident_char<char8_t, false>(u8'6') << std::endl;
-    std::cout << SD::is_ident_char<char16_t, false>(u'6') << std::endl;
-    std::cout << SD::is_ident_char<char32_t, false>(U'6') << std::endl << std::endl;
+    std::cout << SD::is_ident_char<char, false>('$') << "\n";
+    std::cout << SD::is_ident_char<wchar_t, false>(L'$') << "\n";
+    std::cout << SD::is_ident_char<char8_t, false>(u8'6') << "\n";
+    std::cout << SD::is_ident_char<char16_t, false>(u'6') << "\n";
+    std::cout << SD::is_ident_char<char32_t, false>(U'6') << "\n" << "\n";
 
-    std::cout << SD::is_ident_char<char, true>('$') << std::endl;
-    std::cout << SD::is_ident_char<wchar_t, true>(L'$') << std::endl;
-    std::cout << SD::is_ident_char<char8_t, true>(u8'6') << std::endl;
-    std::cout << SD::is_ident_char<char16_t, true>(u'6') << std::endl;
-    std::cout << SD::is_ident_char<char32_t, true>(U'6') << std::endl << std::endl;
+    std::cout << SD::is_ident_char<char, true>('$') << "\n";
+    std::cout << SD::is_ident_char<wchar_t, true>(L'$') << "\n";
+    std::cout << SD::is_ident_char<char8_t, true>(u8'6') << "\n";
+    std::cout << SD::is_ident_char<char16_t, true>(u'6') << "\n";
+    std::cout << SD::is_ident_char<char32_t, true>(U'6') << "\n" << "\n";
 #endif
 #endif
 
@@ -200,23 +200,15 @@ int main (int argc, char const *argv[ ])
 
     const Array<int, 1> testarr1(1);
     for (auto i : testarr1)
-        std::cout << demangle(typeid(i).name()) << std::endl;
+        std::cout << demangle(typeid(i).name()) << "\n";
     for (auto&& i : testarr1)
-        std::cout << demangle(typeid(i).name()) << std::endl;
+        std::cout << demangle(typeid(i).name()) << "\n";
     Array<int, 1> testarr2(1);
     for (auto i : testarr2)
-        std::cout << demangle(typeid(i).name()) << std::endl;
+        std::cout << demangle(typeid(i).name()) << "\n";
     for (auto&& i : testarr2)
-        std::cout << demangle(typeid(i).name()) << std::endl;
+        std::cout << demangle(typeid(i).name()) << "\n";
 
-
-    std::cout << demangle(typeid(arr1[0] = 1).name()) << std::endl;
-    std::cout << demangle(typeid(arr1[0]).name()) << std::endl;
-    std::cout << demangle(typeid(decltype(arr1)::reference).name()) << std::endl;
-    std::cout << demangle(typeid(*(arr1.begin())).name()) << std::endl;
-    std::cout << demangle(typeid(*(testarr1.begin())).name()) << std::endl;
-    std::cout << demangle(typeid(*(testarr2.begin())).name()) << std::endl;
-    std::cout << "\n";
 
     [[gnu::unused]]
     std::string test_str1 = "/* test */", test_str2 = "// test";
@@ -227,32 +219,32 @@ int main (int argc, char const *argv[ ])
     ParsedCharString<char> test1("test1\nblah\n");
     auto pos = test1.find("blah");
     auto pch = test1.at(0);
-    std::cout << demangle(typeid(pch).name()) << std::endl;
-    std::cout << pch.val() << std::endl;
-    std::cout << test1.c_str().get() << std::endl;
-    std::cout << pos << std::endl;
+    std::cout << demangle(typeid(pch).name()) << "\n";
+    std::cout << pch.val() << "\n";
+    std::cout << test1.c_str().get() << "\n";
+    std::cout << pos << "\n";
 #endif
     SD::ParsedChar<char> pch('a');
     const SD::ParsedChar<char> const_pch('a');
     static_assert(std::same_as<char&, decltype(pch.val())>);
     static_assert(std::same_as<char, decltype(const_pch.val())>);
-    std::cout << demangle(typeid(pch.val()).name()) << std::endl;
-    std::cout << demangle(typeid(const_pch.val()).name()) << std::endl;
-    std::cout << demangle(typeid(pch).name()) << std::endl;
-    std::cout << demangle(typeid(const_pch).name()) << "\n" << std::endl;
+    std::cout << demangle(typeid(pch.val()).name()) << "\n";
+    std::cout << demangle(typeid(const_pch.val()).name()) << "\n";
+    std::cout << demangle(typeid(pch).name()) << "\n";
+    std::cout << demangle(typeid(const_pch).name()) << "\n" << "\n";
 
     std::cout.imbue(std::locale(""));
-    std::cout << CONVERT(char, L"test 六書 1.0231") << std::endl;
-    std::cout << CONVERT(char, u8"test 六書 1.0231") << std::endl;
-    std::cout << CONVERT(char, u"test 六書 1.0231") << std::endl;
-    std::cout << CONVERT(char, U"test 六書 1.0231") << std::endl;
+    std::cout << CONVERT(char, L"test 六書 1.0231") << "\n";
+    std::cout << CONVERT(char, u8"test 六書 1.0231") << "\n";
+    std::cout << CONVERT(char, u"test 六書 1.0231") << "\n";
+    std::cout << CONVERT(char, U"test 六書 1.0231") << "\n";
 
     std::wcout.imbue(std::locale(""));
-    std::wcout << CONVERT(wchar_t, L"test 六書 1.0231") << std::endl;
-    std::wcout << CONVERT(wchar_t, u8"test 六書 1.0231") << std::endl;
-    std::wcout << CONVERT(wchar_t, u"test 六書 1.0231") << std::endl;
-    std::wcout << CONVERT(wchar_t, U"test 六書 1.0231") << std::endl;
-    std::wcout << L"test 六書 1.0231" << std::endl;
+    std::wcout << CONVERT(wchar_t, L"test 六書 1.0231") << "\n";
+    std::wcout << CONVERT(wchar_t, u8"test 六書 1.0231") << "\n";
+    std::wcout << CONVERT(wchar_t, u"test 六書 1.0231") << "\n";
+    std::wcout << CONVERT(wchar_t, U"test 六書 1.0231") << "\n";
+    std::wcout << L"test 六書 1.0231" << "\n" << "\n";
 
     struct teststruct
     {
@@ -262,13 +254,29 @@ int main (int argc, char const *argv[ ])
     };
     teststruct test{1, 2, 3};
     teststruct& testref = test;
-    std::cout << COMPARE_ANY(test, testref) << std::endl;
+    std::cout << COMPARE_ANY(test, testref) << "\n";
     teststruct* testptr = &testref;
-    std::cout << COMPARE_ANY(test, testptr) << std::endl;
-    std::cout << COMPARE_ANY(testref, testptr) << std::endl;
-    std::cout << COMPARE_ANY(test, *testptr) << std::endl;
-    std::cout << COMPARE_ANY(testref, *testptr) << std::endl;
+    std::cout << COMPARE_ANY(test, testptr) << "\n";
+    std::cout << COMPARE_ANY(testref, testptr) << "\n";
+    std::cout << COMPARE_ANY(test, *testptr) << "\n";
+    std::cout << COMPARE_ANY(testref, *testptr) << "\n";
     teststruct test2{1, 2, 4};
-    std::cout << COMPARE_ANY(test, test2) << std::endl;
+    std::cout << COMPARE_ANY(test, test2) << "\n";
+
+    SD::File<std::ofstream> file("blah.txt", std::ios_base::out);
+    file << "test" << 1 << "\n" << std::string("test") << 2 << "\n";
+    file.close();
+    SD::File<std::ifstream> file2("blah.txt", std::ios_base::in);
+    std::string line;
+    while (std::getline(file2, line))
+        std::cout << line << "\n";
+    file2.close();
+    std::cout << "\n";
+
+     
+
+    std::cerr.flush();
+    std::clog.flush();
+    std::cout.flush();
     return SDE::main_ret();
 }

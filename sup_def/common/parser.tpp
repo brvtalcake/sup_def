@@ -31,8 +31,8 @@
 #if defined(SUPDEF_DEBUG)
 template <typename T>
     requires CharacterType<T>
-template <typename Stream>
-void Parser<T>::print_content(Stream& s) const
+template <typename Stream = std::ostream>
+void Parser<T>::print_content(Stream& s = std::cout) const
 {
     if (this->file_content_raw.empty())
         throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty\n");
@@ -40,12 +40,12 @@ void Parser<T>::print_content(Stream& s) const
     for (auto&& pc : this->file_content)
         content += CONVERT(char, pc.val());
     s << content;
-    if constexpr (std::is_same_v<Stream, std::ostream>)
+    if constexpr (std::same_as<Stream, std::ostream>)
     {
         if (
-            memcmp(&s, &std::cout, std::min(sizeof(s), sizeof(std::cout))) == 0 ||
-            memcmp(&s, &std::cerr, std::min(sizeof(s), sizeof(std::cerr))) == 0 ||
-            memcmp(&s, &std::clog, std::min(sizeof(s), sizeof(std::clog))) == 0
+            SAME_ANY(s, std::cout) ||
+            SAME_ANY(s, std::cerr) ||
+            SAME_ANY(s, std::clog)
         )
             s << "\n";
         s.flush();

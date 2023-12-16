@@ -1,3 +1,5 @@
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/report_target_properties.cmake)
+
 find_package(Boost ${BOOST_VER_NEEDED} REQUIRED)
 
 if (NOT Boost_FOUND)
@@ -14,8 +16,16 @@ target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../
 # Include Boost
 target_include_directories(sdthirdparty INTERFACE "/${Boost_INCLUDE_DIRS}/")
 target_compile_definitions(sdthirdparty INTERFACE SUPDEF_DEBUG=$<IF:$<NOT:$<CONFIG:Release>>,1,0>)
+target_compile_definitions(sdthirdparty INTERFACE SUPDEF_ADDITIONAL_CHECKS=1)
 target_compile_definitions(sdthirdparty INTERFACE SUPDEF_REMOVE_IF_0_BLOCKS=$<IF:$<NOT:$<CONFIG:Release>>,1,0>)
 target_compile_definitions(sdthirdparty INTERFACE _GLIBCXX_CONCEPT_CHECKS=1 _GLIBCXX_ASSERTIONS=1)
+target_compile_definitions(sdthirdparty INTERFACE _GLIBCXX_DEBUG=1)
+target_compile_definitions(sdthirdparty INTERFACE _GNU_SOURCE=1)
+target_compile_definitions(sdthirdparty INTERFACE _FORTIFY_SOURCE=2)
+target_compile_definitions(sdthirdparty INTERFACE _LARGEFILE_SOURCE=1)
+target_compile_definitions(sdthirdparty INTERFACE _LARGEFILE64_SOURCE=1)
+target_compile_definitions(sdthirdparty INTERFACE _FILE_OFFSET_BITS=64)
+target_compile_definitions(sdthirdparty INTERFACE _TIME_BITS=64)
 
 # TODO: Remove this workaround when GCC bug is fixed, and fix other bugs in my own code
 target_compile_definitions(sdthirdparty INTERFACE SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR=0)

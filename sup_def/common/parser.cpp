@@ -57,7 +57,7 @@ namespace SupDef
     {
         try
         {
-            this->file = std::make_unique<std::basic_ifstream<T>>();
+            this->file = std::basic_ifstream<T>();
             this->file_content_raw = std::basic_string<T>();
             this->lines_raw.clear();
             this->file_content.clear();
@@ -75,7 +75,7 @@ namespace SupDef
     {
         try
         {
-            this->file = std::make_unique<std::basic_ifstream<T>>(file_path);
+            this->file = std::basic_ifstream<T>(file_path);
             this->file_content_raw = std::basic_string<T>();
             this->lines_raw.clear();
             this->file_path = file_path;
@@ -90,27 +90,58 @@ namespace SupDef
 
     template <typename T>
         requires CharacterType<T>
-    std::basic_string<T> Parser<T>::slurp_file()
+    Parser<T>::Parser(std::filesystem::path file_path, std::basic_ifstream<T>& file_stream)
     {
-        if (!this->file.get()->is_open())
-            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File is not open\n");
-
-        this->file.get()->seekg(0, std::basic_ios<T>::end);
         try
         {
-            this->file_content_raw.reserve(this->file.get()->tellg());
+            this->file = std::ref(file_stream);
+            this->file_content_raw = std::basic_string<T>();
+            this->lines_raw.clear();
+            this->file_path = file_path;
+            this->file_content.clear();
+            this->lines.clear();
+        }
+        catch (const std::exception& e)
+        {
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to initialize parser: " + std::string(e.what()) + "\n");
+        }
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    std::basic_ifstream<T>& Parser<T>::get_file_stream(void)
+    {
+        if (std::holds_alternative<file_stream_type1>(this->file))
+            return std::get<file_stream_type1>(this->file);
+        else if (std::holds_alternative<file_stream_type2>(this->file))
+            return std::get<file_stream_type2>(this->file).get();
+        else
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Invalid file type\n");
+    }
+
+    template <typename T>
+        requires CharacterType<T>
+    std::basic_string<T> Parser<T>::slurp_file()
+    {
+        if (!this->get_file_stream().is_open())
+            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File is not open\n");
+
+        this->get_file_stream().seekg(0, std::basic_ios<T>::end);
+        try
+        {
+            this->file_content_raw.reserve(this->get_file_stream().tellg());
         }
         catch (const std::exception& e)
         {
             throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to reserve file content: " + std::string(e.what()) + "\n");
         }
-        this->file.get()->seekg(0, std::basic_ios<T>::beg);
+        this->get_file_stream().seekg(0, std::basic_ios<T>::beg);
 
         try
         {
             this->file_content_raw.clear();
             std::basic_ostringstream<T> sstr;
-            sstr << this->file.get()->rdbuf();
+            sstr << this->get_file_stream().rdbuf();
             this->file_content_raw.assign(sstr.str());
         }
         catch (const std::exception& e)
@@ -147,8 +178,7 @@ namespace SupDef
             }
         }
         // Reset file state to freshly opened
-        this->file.get()->clear();
-        this->file.get()->seekg(0, std::basic_ios<T>::beg);
+        this->get_file_stream().seekg(0, std::basic_ios<T>::beg);
 
         return this->file_content_raw;
     }

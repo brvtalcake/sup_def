@@ -23,6 +23,9 @@
  */
 
 #include <sup_def/common/util/util.hpp>
+#include <cstdlib>
+#include <memory>
+#include <cxxabi.h>
 
 namespace SupDef
 {

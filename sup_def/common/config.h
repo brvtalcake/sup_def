@@ -399,3 +399,14 @@
 #if SUPDEF_COMPILER == 1
     #include <bits/stdc++.h>
 #endif
+
+#include <boost/parameter.hpp>
+
+namespace BoostParameterConfig
+{
+    namespace parameter = boost::parameter;
+    BOOST_PARAMETER_NAME(rm_nl);
+    BOOST_PARAMETER_NAME(only_trailing_and_leading);
+}
+
+using namespace BoostParameterConfig;
