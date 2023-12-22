@@ -22,14 +22,33 @@
  * SOFTWARE.
  */
 
-#ifndef TESTS_HPP
-#define TESTS_HPP
+#ifdef TESTFILE_NAME
+    #undef TESTFILE_NAME
+#endif
+#define TESTFILE_NAME supdef/tests/common/thread_safe_queue.ipp
+
+#if !BOOST_TEST_ALREADY_INCLUDED
+    #undef BOOST_TEST_MODULE
+    #define BOOST_TEST_MODULE thread_safe_queue_tests
+    #include <boost/test/included/unit_test.hpp>
+#endif
 
 #include <sup_def/common/sup_def.hpp>
+#include <sup_def/tests/tests.h>
 
-// Test implementations
-#include <sup_def/tests/common/pragloc_comparator.ipp>
-#include <sup_def/tests/common/is.ipp>
-#include <sup_def/tests/common/thread_safe_queue.ipp>
+#line SUPDEF_TEST_FILE_POS
 
-#endif
+BOOST_AUTO_TEST_SUITE(thread_safe_queue,
+    * BoostTest::description("Tests for `SupDef::Util::ThreadSafeQueue`")
+    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+)
+
+BOOST_AUTO_TEST_CASE(test_thread_safe_queue1,
+    * BoostTest::description("First test case for `SupDef::Util::ThreadSafeQueue`")
+    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+)
+{
+    // TODO: Add tests
+}
+
+BOOST_AUTO_TEST_SUITE_END()

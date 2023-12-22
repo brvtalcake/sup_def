@@ -31,8 +31,8 @@
 #if defined(SUPDEF_DEBUG)
 template <typename T>
     requires CharacterType<T>
-template <typename Stream = std::ostream>
-void Parser<T>::print_content(Stream& s = std::cout) const
+template <typename Stream>
+void Parser<T>::print_content(Stream& s) const
 {
     if (this->file_content_raw.empty())
         throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty\n");

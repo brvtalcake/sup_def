@@ -37,4 +37,6 @@
 
 namespace BoostTest = ::boost::unit_test;
 
+#include <bits/stdc++.h>
+
 #endif

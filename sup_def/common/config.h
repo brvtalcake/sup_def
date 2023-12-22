@@ -400,6 +400,17 @@
     #include <bits/stdc++.h>
 #endif
 
+#ifdef GCC_VERSION_AT_LEAST
+    #undef GCC_VERSION_AT_LEAST
+#endif
+#if SUPDEF_COMPILER != 1
+    #define GCC_VERSION_AT_LEAST(major, minor, patch) 0
+#else
+    #define GCC_VERSION_AT_LEAST(major, minor, patch) \
+        (__GNUC__ > major || (__GNUC__ == major && (__GNUC_MINOR__ > minor || (__GNUC_MINOR__ == minor && __GNUC_PATCHLEVEL__ >= patch))))
+#endif
+
+#if 0
 #include <boost/parameter.hpp>
 
 namespace BoostParameterConfig
@@ -410,3 +421,4 @@ namespace BoostParameterConfig
 }
 
 using namespace BoostParameterConfig;
+#endif

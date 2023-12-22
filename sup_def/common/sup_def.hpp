@@ -1428,113 +1428,74 @@ namespace SupDef
     template <typename T>
     concept IsCoro = SPECIALIZATION_OF(T, Coro);
 
-    // TODO: Finish WorkingThreadPool and WorkingFunctor
-    class WorkingThreadPool;
+    template <typename ExceptionType>
+    concept IsHandlableException = SPECIALIZATION_OF(ExceptionType, ::SupDef::Exception)
+                                || SPECIALIZATION_OF(ExceptionType, ::SupDef::Error)
+                                || std::is_base_of_v<std::exception, ExceptionType>;
 
-    template <typename... Args>
-    struct WorkingFunctor { };
+    template <typename ExceptionType>
+    using IsHandlableExceptionPredicate = std::bool_constant<IsHandlableException<ExceptionType>>;
 
-    template <typename ResType, typename... Args>
-        requires IsCoro<ResType>
-    struct WorkingFunctor<ResType(Args...)>
-    {
-        public:
-            using FuncType = ResType(Args...);
-            using CoroType = ResType;
-            using CoroValueType = GetTemplateArgN<0, CoroType>;
-            using ResultQueueType = std::queue<CoroValueType>;
-            using ResultQueuePtrType = std::shared_ptr<ResultQueueType>;
-        
-        private:
-            WorkingThreadPool* pool;
-            std::invoke_result_t<FuncType, Args...> coro;
-            
-            std::shared_ptr<void> result_queue_ptr;
-            std::function<void(void*)> result_queue_deleter = [](void* ptr) { delete static_cast<ResultQueueType*>(ptr); };
-            std::atomic<bool> result_queue_created = false;
+    // TODO: Implement a coroutine wrapper so coroutine results can be stored in a std::future, and launched in a thread pool
+    template <typename...>
+    class PackagedCoro;
 
-            std::jthread thread;
-            std::thread::id thread_id;
-            std::latch start_cond{2};
-
-            inline void add_result(CoroValueType&& value)
-            {
-                if (!this->result_queue_created)
-                {
-                    this->result_queue_ptr = std::shared_ptr<ResultQueueType>(new ResultQueueType(), WorkingThreadPool::queue_deleter<CoroValueType>);
-                    this->result_queue_ptr->push(std::move(value));
-                    this->result_queue_deleter = WorkingThreadPool::queue_deleter<CoroValueType>;
-                    this->result_queue_created = true;
-                    std::lock_guard<std::mutex> lock1(this->pool->mtx);
-                    std::lock_guard<std::mutex> lock2(this->pool->queue_mtxs[this->thread_id]);
-                    this->pool->result_queues[this->thread_id] = std::make_pair(this->result_queue_ptr, this->result_queue_deleter);
-                    hard_assert(this->result_queue_ptr.get() == this->pool->result_queues[this->thread_id].first.get());
-                }
-                else
-                {
-                    std::lock_guard<std::mutex> lock(this->pool->queue_mtxs[this->thread_id]);
-                    this->result_queue_ptr->push(std::move(value));
-                }
-            }
-
-            inline void thread_main(void)
-            {
-                this->start_cond.count_down();
-                this->start_cond.wait();
-                for (auto&& value : this->coro)
-                    this->add_result(std::move(value));
-            }
-        public:
-            template <typename PoolT>
-                requires std::same_as<std::remove_cvref_t<std::remove_pointer_t<PoolT&&>>, WorkingThreadPool> 
-                      && (!std::is_rvalue_reference_v<PoolT&&> || std::is_pointer_v<std::remove_cvref_t<PoolT&&>>)
-            WorkingFunctor(PoolT&& pool, FuncType&& coro, Args&&... args)
-                : pool(), coro(std::invoke(std::forward<FuncType>(coro), std::forward<Args>(args)...))
-            {
-                if constexpr (std::is_rvalue_reference_v<PoolT&&>)
-                {
-                    static_assert(std::is_pointer_v<std::remove_cvref_t<PoolT&&>>, "The pool must be passed as a pointer, if an rvalue reference is passed");
-                    this->pool = std::move(pool);
-                }
-                else
-                {
-                    if constexpr (std::is_pointer_v<std::remove_cvref_t<PoolT&&>>)
-                        this->pool = pool;
-                    else
-                        this->pool = &pool;
-                }
-                this->thread = std::jthread([this]() { this->thread_main(); });
-                this->thread_id = this->thread.get_id();
-                this->start_cond.count_down();
-                this->start_cond.wait();
-            }
-
-            template <typename FType>
-                requires std::is_invocable_r_v<CoroValueType, FType, CoroValueType>
-            inline void operator()(FType&& func)
-            {
-                for (auto&& )
-            }
-    };
-
-    class WorkingThreadPool
-        : public std::jthread
+    // TO BE TESTED
+    class ThreadPool
     {
         private:
-            // To pass as a deleter to the shared_ptr that stores the result queue
+#if 0
+            using function_type = std::move_only_function<void()>;
+#else
+            using function_type = std::function<void()>;
+#endif
             template <typename T>
-            static inline void queue_deleter(void* ptr)
-            {
-                delete static_cast<std::queue<T>*>(ptr);
-            }
+            using queue_type = ::SupDef::Util::ThreadSafeQueue<T>;
 
-            inline void thread_main(void)
-            { /* TODO */ }
-            friend class WorkingFunctor;
-            // Each pair stores a shared_ptr that stores a std::queue<T> where T is the return type of the (co)routine, and a deleter function
-            std::unordered_map<std::thread::id, std::pair<std::shared_ptr<void>, std::function<void(void*)>> result_queues;
-            std::mutex mtx{};
-            std::unordered_map<std::thread::id, std::mutex> queue_mtxs;
+            template <typename T>
+            struct MovableAtomic : public std::atomic<T>
+            {
+                MovableAtomic() = default;
+                MovableAtomic(MovableAtomic&& other) : std::atomic<T>(std::move(other.load())) {}
+                MovableAtomic& operator=(MovableAtomic&& other) { this->store(std::move(other.load())); return *this; }
+
+                // Import all std::atomic<T> constructors and assignment operators
+                using std::atomic<T>::atomic;
+                using std::atomic<T>::operator=;
+            };
+
+            typedef queue_type<function_type> task_queue_t;
+            
+            std::vector< std::pair< std::jthread, MovableAtomic<bool> > > threads;
+            std::unordered_map<std::jthread::id, task_queue_t> task_queues;
+            std::mutex threads_mtx;
+            std::shared_mutex map_mtx;
+
+            std::jthread* get_thread_from_id(std::jthread::id&& id);
+            std::jthread* get_thread_from_id(const std::jthread::id& id);
+            std::jthread::id get_most_busy_thread(bool already_locked);
+            std::jthread::id get_least_busy_thread(bool already_locked);
+
+        public:
+            explicit ThreadPool(const size_t nb_threads = std::jthread::hardware_concurrency());
+            ThreadPool(const ThreadPool&) = delete;
+            ThreadPool(ThreadPool&&) = delete;
+            ~ThreadPool();
+
+            ThreadPool& operator=(const ThreadPool&) = delete;
+            ThreadPool& operator=(ThreadPool&&) = delete;
+
+            // TODO
+            void add_threads(size_t nb_threads);
+            // TODO
+            bool remove_threads(size_t nb_threads);
+            // TODO
+            size_t size(void) const noexcept;
+
+            template <typename FuncType, typename... Args, typename ReturnType = std::invoke_result_t<FuncType&&, Args&&...>>
+                requires std::invocable<FuncType, Args...> && (!IsCoro<ReturnType>)
+            std::future<ReturnType> enqueue(FuncType&& func, Args&&... args);
+
     };
 
     class TmpFile
@@ -3129,14 +3090,19 @@ namespace SupDef
         requires CharacterType<P1> && FilePath<P2>
     class Engine : public EngineBase
     {
+        public:
+            using src_file_t = std::shared_ptr<SrcFile<P1, P2>>;
+            using dst_file_t = File<std::basic_ofstream<P1>>;
+            using tmp_file_t = File<std::basic_fstream<P1>>;
+            
+            using target_t = std::tuple<src_file_t, dst_file_t, tmp_file_t, bool>;
+
         private:
-            File<std::basic_fstream<P1>> tmp_file;
             std::unordered_map<std::shared_ptr<SrcFile<P1, P2>>, Parser<P1>> parser_pool;
+            ThreadPool thread_pool;            
+            std::vector<target_t> targets;
 
         public:
-            std::shared_ptr<SrcFile<P1, P2>> src_file;
-            File<std::basic_ofstream<P1>> dst_file;
-            
             Engine();
             template <typename T, typename U>
                 requires FilePath<std::remove_cvref_t<T>> && FilePath<std::remove_cvref_t<U>>

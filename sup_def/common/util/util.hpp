@@ -33,6 +33,7 @@
 #include <string>
 #include <type_traits>
 #include <concepts>
+#include <compare>
 
 #ifdef __has_include
     
@@ -581,9 +582,29 @@ namespace SupDef
             return std::filesystem::canonical(file_path);
         }
 
+        // To pass as a deleter to a std::shared_ptr<void> that stores a pointer to a type T
+        template <typename T>
+        static void shared_deleter(void* ptr)
+        {
+            delete static_cast<T*>(ptr);
+        }
+
+        // To pass as a deleter to a std::unique_ptr<void> that stores a pointer to a type T
+        template <typename T>
+        static void unique_deleter(void* ptr)
+        {
+            delete static_cast<T*>(ptr);
+        }
+
         template <bool C>
         static constexpr size_t bool_to_size_t = C ? 1 : 0;
         
+        template <typename Type, template <typename> typename Template>
+        concept HasValueField = requires { Template<Type>::value; };
+
+        template <typename Type, template <typename> typename Template>
+        concept ConvertsToBool = std::convertible_to<Template<Type>, bool>;
+
         template <typename... Types>
         struct TypeContainer
         {
@@ -598,9 +619,78 @@ namespace SupDef
             template <typename T>
             static constexpr bool contains = (std::same_as<T, Types> || ...);
             // For each type in Types, apply predicate template T to it
+            template <template <typename> typename T, size_t N>
+            static constexpr bool apply_predicate_to = false;
+
+#if GCC_VERSION_AT_LEAST(14, 0, 0)
+            template <template <typename> typename T, size_t N>
+                requires HasValueField<GetNthType<N, Types...>, T> && (!ConvertsToBool<GetNthType<N, Types...>, T>)
+            static constexpr bool apply_predicate_to<T, N> = T<GetNthType<N, Types...>>::value;
+
+            template <template <typename> typename T, size_t N>
+                requires ConvertsToBool<GetNthType<N, Types...>, T>
+            static constexpr bool apply_predicate_to<T, N> = static_cast<bool>(T<GetNthType<N, Types...>>());
+#endif
+
+#if GCC_VERSION_AT_LEAST(14, 0, 0)
+            template <template <typename> typename T, size_t N = 0>
+            static constexpr bool apply_predicate_conjunction_impl = (apply_predicate_to<T, N> && apply_predicate_conjunction_impl<T, N + 1>);
+
             template <template <typename> typename T>
-            static constexpr bool apply_predicate = (T<Types>::value && ...);
+            static constexpr bool apply_predicate_conjunction_impl<T, size> = true;
+
+            template <template <typename> typename T, size_t N = 0>
+            static constexpr bool apply_predicate_disjunction_impl = (apply_predicate_to<T, N> || apply_predicate_disjunction_impl<T, N + 1>);
+
+            template <template <typename> typename T>
+            static constexpr bool apply_predicate_disjunction_impl<T, size> = false;
+
+            template <template <typename> typename T>
+            static constexpr bool apply_predicate_conjunction = apply_predicate_conjunction_impl<T, 0>;
+
+            template <template <typename> typename T>
+            static constexpr bool apply_predicate_disjunction = apply_predicate_disjunction_impl<T, 0>;
+#else
+            template <template <typename> typename T, size_t N = 0>
+            static consteval bool apply_predicate_conjunction_impl()
+            {
+                if constexpr (N == size)
+                    return true;
+                else
+                    return apply_predicate_to<T, N> && apply_predicate_conjunction_impl<T, N + 1>();
+            }
+
+            template <template <typename> typename T, size_t N = 0>
+            static consteval bool apply_predicate_disjunction_impl()
+            {
+                if constexpr (N == size)
+                    return false;
+                else
+                    return apply_predicate_to<T, N> || apply_predicate_disjunction_impl<T, N + 1>();
+            }
+
+            template <template <typename> typename T>
+            static constexpr bool apply_predicate_conjunction = apply_predicate_conjunction_impl<T, 0>();
+
+            template <template <typename> typename T>
+            static constexpr bool apply_predicate_disjunction = apply_predicate_disjunction_impl<T, 0>();
+#endif
         };
+
+#if !GCC_VERSION_AT_LEAST(14, 0, 0)
+        // Specialize apply_predicate_to etc. out of the class context
+        template <typename... Types>
+        template <template <typename> typename T, size_t N>
+            requires HasValueField<GetNthType<N, Types...>, T> && (!ConvertsToBool<GetNthType<N, Types...>, T>)
+        constexpr bool TypeContainer<Types...>::apply_predicate_to<T, N> = T<GetNthType<N, Types...>>::value;
+
+        template <typename... Types>
+        template <template <typename> typename T, size_t N>
+            requires ConvertsToBool<GetNthType<N, Types...>, T>
+        constexpr bool TypeContainer<Types...>::apply_predicate_to<T, N> = static_cast<bool>(T<GetNthType<N, Types...>>());
+#endif
+
+
 
         template <>
         struct TypeContainer<>
@@ -612,8 +702,16 @@ namespace SupDef
             static constexpr size_t count = 0;
             template <typename T>
             static constexpr bool contains = false;
+            template <template <typename> typename T, size_t N = 0>
+            static constexpr bool apply_predicate_conjunction_impl = false;
+            template <template <typename> typename T, size_t N = 0>
+            static constexpr bool apply_predicate_disjunction_impl = false;
+            template <template <typename> typename T, size_t N = 0>
+            static constexpr bool apply_predicate_to = false;
             template <template <typename> typename T>
-            static constexpr bool apply_predicate = true;
+            static constexpr bool apply_predicate_conjunction = false;
+            template <template <typename> typename T>
+            static constexpr bool apply_predicate_disjunction = false;
         };
 
         // Implement GetTemplateArgs, a TypeContainer alias storing the types which specialize an unknown template `Template`
@@ -625,46 +723,57 @@ namespace SupDef
         struct GetTemplateArgs<Template<Args...>>
         {
             using type = TypeContainer<Args...>;
-            using template_type = Template;
             static constexpr size_t size = sizeof...(Args);
 
             static_assert(size == type::size);
         };
 
-        static_assert(std::same_as<GetTemplateArgs<std::vector<int>>::type, TypeContainer<int>>);
-        static_assert(std::same_as<GetTemplateArgs<std::list<int>>::type, TypeContainer<int>>);
+        static_assert(std::same_as<GetTemplateArgs<std::vector<int>>::type, TypeContainer<int, std::allocator<int>>>);
+        static_assert(std::same_as<GetTemplateArgs<std::list<int>>::type, TypeContainer<int, std::allocator<int>>>);
         static_assert(std::same_as<GetTemplateArgs<std::vector<int, std::allocator<int>>>::type, TypeContainer<int, std::allocator<int>>>);
         static_assert(std::same_as<GetTemplateArgs<std::list<int, std::allocator<int>>>::type, TypeContainer<int, std::allocator<int>>>);
 
         template <typename...>
         struct IsSpecializedTemplate : std::false_type
         { };
-
-        template <template <typename...> typename Template, typename... Args>
+        
+        /* 
+        template <template <typename...> class Template>
+        struct IsSpecializedTemplate : std::false_type
+        { };
+        */
+        
+        template <template <typename...> class Template, typename... Args>
         struct IsSpecializedTemplate<Template<Args...>> : std::true_type
         { };
 
+        template <template <auto...> class Template, auto... Args>
+        struct IsSpecializedTemplate<Template<Args...>> : std::true_type
+        { };
+
+        /*
         template <typename...>
         struct IsUnspecializedTemplate : std::false_type
         { };
 
-        template <template <typename...> typename Template>
-        struct IsUnspecializedTemplate<Template> : std::true_type
+        template <template <typename...> class Template>
+        struct IsUnspecializedTemplate : std::true_type
         { };
 
         template <typename... Args>
         struct IsTemplate : std::conditional_t<std::disjunction_v<IsSpecializedTemplate<Args...>, IsUnspecializedTemplate<Args...>>, std::true_type, std::false_type>
         { };
+        */
 
         static_assert(IsSpecializedTemplate<std::vector<int>>::value);
         static_assert(IsSpecializedTemplate<std::list<int>>::value);
         static_assert(IsSpecializedTemplate<std::vector<int, std::allocator<int>>>::value);
         static_assert(IsSpecializedTemplate<std::list<int, std::allocator<int>>>::value);
         static_assert(!IsSpecializedTemplate<int>::value);
-        static_assert(!IsSpecializedTemplate<std::vector>::value);
-        static_assert(!IsSpecializedTemplate<std::list>::value);
+        /* static_assert(!IsSpecializedTemplate<std::vector>::value);
+        static_assert(!IsSpecializedTemplate<std::list>::value); */
 
-        static_assert(IsUnspecializedTemplate<std::vector>::value);
+        /* static_assert(IsUnspecializedTemplate<std::vector>::value);
         static_assert(IsUnspecializedTemplate<std::list>::value);
         static_assert(!IsUnspecializedTemplate<std::vector<int>>::value);
         static_assert(!IsUnspecializedTemplate<std::list<int>>::value);
@@ -679,7 +788,7 @@ namespace SupDef
         static_assert(IsTemplate<std::vector>::value);
         static_assert(IsTemplate<std::list>::value);
         static_assert(!IsTemplate<int>::value);
-
+ */
         template <typename Template, size_t N>
             requires (IsSpecializedTemplate<Template>::value)
         // Use `TypeContainer`'s `get` template to get the Nth type of the template `Template`
@@ -713,6 +822,11 @@ namespace SupDef
                         return T2::template contains<T>;
                     }
                     static constexpr bool value = check();
+
+                    consteval operator bool()
+                    {
+                        return value;
+                    }
                 };
                 template <typename T>
                 struct CanConstructFromImplHelperCondition2
@@ -722,10 +836,15 @@ namespace SupDef
                         return T2::template count<T> >= T1::template count<T>;
                     }
                     static constexpr bool value = check();
+
+                    consteval operator bool()
+                    {
+                        return value;
+                    }
                 };
             public:
-                static constexpr bool value = T1::template apply_predicate<CanConstructFromImplHelperCondition1> &&
-                                              T1::template apply_predicate<CanConstructFromImplHelperCondition2>;
+                static constexpr bool value = T1::template apply_predicate_conjunction<CanConstructFromImplHelperCondition1> &&
+                                              T1::template apply_predicate_conjunction<CanConstructFromImplHelperCondition2>;
         };
 
 #ifdef CAN_CONSTRUCT_FROM
@@ -1327,22 +1446,22 @@ namespace SupDef
             requires (!std::is_array_v<T> && !std::is_array_v<U>)
         struct IsImpl
         {
-            static constexpr bool operator()(const T& t, const U& u) const
+            constexpr bool operator()(const T& t, const U& u) const
             {
                 return SAME_ANY(t, u) && std::same_as<T, U> && std::addressof(t) == std::addressof(u);
             }
 
-            static constexpr bool operator()(T&& t, U&& u) const
+            constexpr bool operator()(T&& t, U&& u) const
             {
                 return SAME_ANY(t, u) && std::same_as<T, U>;
             }
 
-            static constexpr bool operator()(const T& t, U&& u) const
+            constexpr bool operator()(const T& t, U&& u) const
             {
                 return false;
             }
 
-            static constexpr bool operator()(T&& t, const U& u) const
+            constexpr bool operator()(T&& t, const U& u) const
             {
                 return false;
             }
@@ -1351,7 +1470,7 @@ namespace SupDef
 #ifdef IS
     #undef IS
 #endif
-#define IS(OBJ1, OBJ2) ::SupDef::Util::IsImpl<std::remove_cvref_t<decltype(OBJ1)>, std::remove_cvref_t<decltype(OBJ1)>>()(OBJ1, OBJ2)
+#define IS(OBJ1, OBJ2) (::SupDef::Util::IsImpl<std::remove_cvref_t<decltype(OBJ1)>, std::remove_cvref_t<decltype(OBJ2)>>()(OBJ1, OBJ2))
 
         // TODO: Add tests for this
         template <typename T>
@@ -1408,9 +1527,9 @@ namespace SupDef
             }
         }
 
-        [[noreturn]]
         template <typename T>
             requires std::convertible_to<T, std::string_view>
+        [[noreturn]]
         constexpr inline void hard_assert_fail(bool cond, const char* cond_str, const char* file, int line, const char* func, const T& msg)
         {
             if (!cond)
@@ -1423,10 +1542,246 @@ namespace SupDef
             }
         }
 
+#ifdef GEN_EXC_HANDLER_IMPL
+    #undef GEN_EXC_HANDLER_IMPL
+#endif
+/* 
+ * Use like :
+ *   GEN_EXC_HANDLER_IMPL((<exception type>, {<code to execute>}))
+ */
+#define GEN_EXC_HANDLER_IMPL(TUPLE)        \
+    catch(const TUPLE_FIRST_ARG(TUPLE)& e) \
+    TUPLE_SECOND_ARG(TUPLE)
+
+#ifdef GEN_EXC_HANDLER_ALT
+    #undef GEN_EXC_HANDLER_ALT
+#endif
+/* 
+ * Use like :
+ *   GEN_EXC_HANDLER_ALT({<code to execute by default>}, (<exception type n°1>, {<code to execute n°1>}), (<exception type n°2>, {<code to execute n°2>}), ...)
+ */
+#define GEN_EXC_HANDLER_ALT(DEFAULT_CASE_BODY, ...) \
+    ([](std::exception_ptr eptr) -> void            \
+    {                                               \
+        try                                         \
+        {                                           \
+            std::rethrow_exception(eptr);           \
+        }                                           \
+        MAP(GEN_EXC_HANDLER_IMPL, __VA_ARGS__)      \
+        catch(...)                                  \
+            DEFAULT_CASE_BODY                       \
+                                                    \
+    })                                              \
+/**/
+
+#ifdef GEN_EXC_HANDLER
+    #undef GEN_EXC_HANDLER
+#endif
+/* 
+ * Use like :
+ *   GEN_EXC_HANDLER((<exception type n°1>, {<code to execute n°1>}), (<exception type n°2>, {<code to execute n°2>}), ...)
+ */
+#define GEN_EXC_HANDLER(...)                                            \
+    GEN_EXC_HANDLER_ALT(                                                \
+        {                                                               \
+            std::cerr << "Unhandled exception of type `" <<             \
+            ::SupDef::Util::demangle(                                   \
+                eptr ?                                                  \
+                eptr.__cxa_exception_type()->name() :                   \
+                std::current_exception().__cxa_exception_type()->name() \
+            ) << "`" <<                                                 \
+            std::endl;                                                  \
+            std::terminate();                                           \
+        },                                                              \
+        __VA_ARGS__                                                     \
+    )                                                                   \
+/**/
+
+        template <typename R, typename T>
+        concept ContainerCompatibleRange = std::ranges::input_range<R> &&
+                                           std::convertible_to<std::ranges::range_reference_t<R>, T>;
+
+        static_assert(ContainerCompatibleRange<std::vector<int>, int>);
+
+        template <typename Tp, typename Container = std::deque<Tp>>
+        class ThreadSafeQueue
+        {
+            public:
+                using QueueType = std::queue<Tp, Container>;
+
+                using container_type = typename QueueType::container_type;
+                using value_type = typename QueueType::value_type;
+                using size_type = typename QueueType::size_type;
+                using reference = typename QueueType::reference;
+                using const_reference = typename QueueType::const_reference;
+
+            private:
+                QueueType queue;
+                mutable std::mutex mutex{};
+                mutable std::atomic_flag not_empty = ATOMIC_FLAG_INIT;
+
+            public:
+                ThreadSafeQueue() = default;
+
+                ThreadSafeQueue(const ThreadSafeQueue&) = delete;
+                ThreadSafeQueue(ThreadSafeQueue&& other) : queue(std::move(other.queue))
+                {
+                    if (!this->queue.empty())
+                    {
+                        std::ignore = this->not_empty.test_and_set(std::memory_order::relaxed);
+                        this->not_empty.notify_all();
+                    }
+                    else
+                        this->not_empty.clear(std::memory_order::relaxed);
+                }
+
+                template <typename... Args>
+                    requires std::constructible_from<QueueType, Args...>
+                ThreadSafeQueue(Args&&... args)
+                    : queue(std::forward<Args>(args)...)
+                {
+                    if (!this->queue.empty())
+                    {
+                        std::ignore = this->not_empty.test_and_set(std::memory_order::relaxed);
+                        this->not_empty.notify_all();
+                    }
+                    else
+                        this->not_empty.clear(std::memory_order::relaxed);
+                }
+                template <typename T>
+                    requires std::convertible_to<T, value_type> || std::constructible_from<value_type, T>
+                ThreadSafeQueue(std::initializer_list<T> il)
+                    : queue()
+                {
+                    for (auto& e : il)
+                    {
+                        this->queue.push(value_type(e));
+                        std::ignore = this->not_empty.test_and_set(std::memory_order::relaxed);
+                        this->not_empty.notify_one();
+                    }
+                }
+
+                ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
+                ThreadSafeQueue& operator=(ThreadSafeQueue&&) = default;
+
+                ~ThreadSafeQueue() = default;
+
+                value_type front() const
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    if (this->queue.empty())
+                        throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "ThreadSafeQueue::front(): queue is empty");
+                    return this->queue.front();
+                }
+
+                value_type back() const
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    if (this->queue.empty())
+                        throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "ThreadSafeQueue::back(): queue is empty");
+                    return this->queue.back();
+                }
+
+                [[nodiscard]]
+                bool empty() const
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    return this->queue.empty();
+                }
+
+                size_type size() const
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    return this->queue.size();
+                }
+
+                void push(const value_type& t)
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    this->queue.push(t);
+                    std::ignore = this->not_empty.test_and_set(std::memory_order::release);
+                    this->not_empty.notify_one();
+                }
+
+                void push(value_type&& t)
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    this->queue.push(std::move(t));
+                    std::ignore = this->not_empty.test_and_set(std::memory_order::release);
+                    this->not_empty.notify_one();
+                }
+
+                template <typename... Args>
+                decltype(auto) emplace(Args&&... args)
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    decltype(auto) ret = this->queue.emplace(std::forward<Args>(args)...);
+                    std::ignore = this->not_empty.test_and_set(std::memory_order::release);
+                    this->not_empty.notify_one();
+                    return ret;
+                }
+
+                void pop()
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    if (this->queue.empty())
+                        throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "ThreadSafeQueue::pop(): queue is empty");
+                    this->queue.pop();
+                    if (this->queue.empty())
+                        this->not_empty.clear(std::memory_order::release);
+                }
+
+                void swap(ThreadSafeQueue& other) noexcept(std::is_nothrow_swappable_v<QueueType>)
+                {
+                    if (this != std::addressof(other))
+                    {
+                        std::scoped_lock locker(this->mutex, other.mutex);
+                        std::swap(this->queue, other.queue);
+                    }
+                }
+
+                QueueType& to_unsafe() noexcept
+                {
+                    return this->queue;
+                }
+
+                const QueueType& to_unsafe() const noexcept
+                {
+                    return this->queue;
+                }
+
+                value_type next()
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    if (this->queue.empty())
+                        throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "ThreadSafeQueue::next(): queue is empty");
+                    value_type ret = this->queue.front();
+                    this->queue.pop();
+                    if (this->queue.empty())
+                        this->not_empty.clear(std::memory_order::release);
+                    return ret;
+                }
+
+                // Wait until another thread pushes something (and pray for the implementation to use Linux futexes so it's efficient)
+                value_type wait_for_next()
+                {
+                    this->not_empty.wait(true, std::memory_order::acquire);
+                    return this->next();
+                }
+
+        };
+
     }
 
     using Util::remove_whitespaces;
 }
+
+template <class T, class Container>
+void std::swap(SupDef::Util::ThreadSafeQueue<T, Container>& lhs, SupDef::Util::ThreadSafeQueue<T, Container>& rhs) noexcept(noexcept(lhs.swap(rhs)))
+{
+    lhs.swap(rhs);
+}
+
 #endif // UTIL_HPP
 
 #include <sup_def/common/end_header.h>

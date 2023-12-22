@@ -38,6 +38,27 @@
 
 #line SUPDEF_TEST_FILE_POS
 
+namespace SupDef
+{
+    namespace Tests
+    {
+        namespace IsMacro
+        {
+            template <typename T, typename U>
+            bool is(T&& a, U&& b)
+            {
+                return IS(std::forward<T>(a), std::forward<U>(b));
+            }
+
+            template <typename T, typename U>
+            bool not_is(T&& a, U&& b)
+            {
+                return !is(std::forward<T>(a), std::forward<U>(b));
+            }
+        }
+    }
+}
+
 BOOST_AUTO_TEST_SUITE(is_macro,
     * BoostTest::description("Tests for `IS` macro")
     * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
@@ -48,22 +69,24 @@ BOOST_AUTO_TEST_CASE(is_macro_rvalue_refs,
     * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
 )
 {
+    using namespace ::SupDef::Tests::IsMacro;
+
     struct A { int a; };
     struct B { int a; };
 
-    BOOST_TEST( IS(A{1}, A{1}));
-    BOOST_TEST(!IS(A{1}, A{2}));
-    BOOST_TEST(!IS(A{1}, B{1}));
+    BOOST_TEST(    is(std::move(A{1}), std::move(A{1})));
+    BOOST_TEST(not_is(std::move(A{1}), std::move(A{2})));
+    BOOST_TEST(not_is(std::move(A{1}), std::move(B{1})));
 
-    BOOST_TEST( IS(1, 1));
-    BOOST_TEST(!IS(1, 2));
-    BOOST_TEST(!IS(1, 1.0));
-    BOOST_TEST(!IS(1, 1.0f));
-    BOOST_TEST(!IS(1, 1u));
-    BOOST_TEST(!IS(1, 1ul));
-    BOOST_TEST(!IS(1, 1ull));
-    BOOST_TEST(!IS(1, 1l));
-    BOOST_TEST(!IS(1, 1ll));
+    BOOST_TEST(    is(std::move(1), std::move(1)));
+    BOOST_TEST(not_is(std::move(1), std::move(2)));
+    BOOST_TEST(not_is(std::move(1), std::move(1.0)));
+    BOOST_TEST(not_is(std::move(1), std::move(1.0f)));
+    BOOST_TEST(not_is(std::move(1), std::move(1u)));
+    BOOST_TEST(not_is(std::move(1), std::move(1ul)));
+    BOOST_TEST(not_is(std::move(1), std::move(1ull)));
+    BOOST_TEST(not_is(std::move(1), std::move(1l)));
+    BOOST_TEST(not_is(std::move(1), std::move(1ll)));
 }
 
 BOOST_AUTO_TEST_CASE(is_macros_lvalue_refs,
@@ -71,13 +94,15 @@ BOOST_AUTO_TEST_CASE(is_macros_lvalue_refs,
     * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
 )
 {
+    using namespace ::SupDef::Tests::IsMacro;
+
     std::string  s1 = "Hello";
     std::string  s2 = "Hello";
     std::string& s3 = s1;
 
-    BOOST_TEST(!IS(s1, s2)); // Not the same address and not rvalue refs
-    BOOST_TEST( IS(s1, s1)); // Same address
-    BOOST_TEST( IS(s1, s3)); // Same address
+    BOOST_TEST(not_is(s1, s2)); // Not the same address and not rvalue refs
+    BOOST_TEST(    is(s1, s1)); // Same address
+    BOOST_TEST(    is(s1, s3)); // Same address
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -33,7 +33,7 @@ namespace SupDef
 
     template <typename P1, typename P2>
         requires CharacterType<P1> && FilePath<P2>
-    Engine<P1, P2>::Engine() : EngineBase(), tmp_file(), parser_pool(), src_file(), dst_file()
+    Engine<P1, P2>::Engine() : EngineBase(), parser_pool(), thread_pool(), targets()
     { }
 
     EXP_INST_CLASS(Engine,
