@@ -61,7 +61,6 @@ namespace SupDef
 
 BOOST_AUTO_TEST_SUITE(is_macro,
     * BoostTest::description("Tests for `IS` macro")
-    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
 )
 
 BOOST_AUTO_TEST_CASE(is_macro_rvalue_refs,

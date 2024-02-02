@@ -410,6 +410,199 @@
         (__GNUC__ > major || (__GNUC__ == major && (__GNUC_MINOR__ > minor || (__GNUC_MINOR__ == minor && __GNUC_PATCHLEVEL__ >= patch))))
 #endif
 
+// TODO: PUSH_MACRO and POP_MACRO are already defined under the respective names SAVE_MACRO and RESTORE_MACRO
+#ifdef PUSH_MACRO_IMPL
+    #undef PUSH_MACRO_IMPL
+#endif
+#define PUSH_MACRO_IMPL(MACNAME) _Pragma(PP_STRINGIZE(push_macro(MACNAME)))
+
+#ifdef POP_MACRO_IMPL
+    #undef POP_MACRO_IMPL
+#endif
+#define POP_MACRO_IMPL(MACNAME) _Pragma(PP_STRINGIZE(pop_macro(MACNAME)))
+
+#ifdef PUSH_MACRO
+    #undef PUSH_MACRO
+#endif
+#define PUSH_MACRO(MACNAME) PUSH_MACRO_IMPL(#MACNAME)
+
+#ifdef POP_MACRO
+    #undef POP_MACRO
+#endif
+#define POP_MACRO(MACNAME) POP_MACRO_IMPL(#MACNAME)
+
+#if defined(__cplusplus) && !defined(restrict)
+    #if SUPDEF_COMPILER == 1 // GCC
+        #define restrict __restrict__
+    #elif SUPDEF_COMPILER == 2 // Clang
+        #define restrict __restrict__
+    #elif SUPDEF_COMPILER == 3 // MSVC
+        #define restrict __restrict
+    #else
+        #define restrict
+    #endif
+#endif
+
+#ifndef TODO_DEFAULT_MSG
+    #define TODO_DEFAULT_MSG "\nTODO at line " PP_STRINGIZE(__LINE__) " in file " __FILE__
+#endif
+
+#ifndef STATIC_TODO_RAW
+    #define STATIC_TODO_RAW(...)                                    \
+    PP_IF(                                                          \
+        ISEMPTY(__VA_ARGS__)                                        \
+    )                                                               \
+    (                                                               \
+        _Pragma(PP_STRINGIZE(message (TODO_DEFAULT_MSG)))           \
+    )                                                               \
+    (                                                               \
+        _Pragma(PP_STRINGIZE(message ("\nTODO: " #__VA_ARGS__)))    \
+    );
+#endif
+
+#ifndef STATIC_TODO
+    #define STATIC_TODO(...)                                        \
+    PP_IF(                                                          \
+        ISEMPTY(__VA_ARGS__)                                        \
+    )                                                               \
+    (                                                               \
+        _Pragma(PP_STRINGIZE(message (TODO_DEFAULT_MSG)))           \
+    )                                                               \
+    (                                                               \
+        _Pragma(PP_STRINGIZE(message ("\nTODO: " __VA_ARGS__)))     \
+    );
+#endif
+
+#ifndef TODO_RAW
+    #define TODO_RAW(...)                                                           \
+    PP_IF(                                                                          \
+        ISEMPTY(__VA_ARGS__)                                                        \
+    )                                                                               \
+    (                                                                               \
+        _Pragma(PP_STRINGIZE(message (TODO_DEFAULT_MSG)));                          \
+        UNREACHABLE(                                                                \
+            "Code block around line ",                                              \
+            __LINE__,                                                               \
+            " in file ",                                                            \
+            __FILE__,                                                               \
+            " contains a TODO.",                                                    \
+            " Please fix this before using this function / class / macro / etc. "   \
+        )                                                                           \
+    )                                                                               \
+    (                                                                               \
+        _Pragma(PP_STRINGIZE(message ("\nTODO: " #__VA_ARGS__)));                   \
+        UNREACHABLE(                                                                \
+            "Code block around line ",                                              \
+            __LINE__,                                                               \
+            " in file ",                                                            \
+            __FILE__,                                                               \
+            " contains a TODO.",                                                    \
+            " Please fix this before using this function / class / macro / etc. ",  \
+            "TODO: " #__VA_ARGS__                                                   \
+        )                                                                           \
+    );
+#endif
+
+#ifndef TODO
+    #define TODO(...)                                                               \
+    PP_IF(                                                                          \
+        ISEMPTY(__VA_ARGS__)                                                        \
+    )                                                                               \
+    (                                                                               \
+        _Pragma(PP_STRINGIZE(message (TODO_DEFAULT_MSG)));                          \
+        UNREACHABLE(                                                                \
+            "Code block around line ",                                              \
+            __LINE__,                                                               \
+            " in file ",                                                            \
+            __FILE__,                                                               \
+            " contains a TODO.",                                                    \
+            " Please fix this before using this function / class / macro / etc. "   \
+        )                                                                           \
+    )                                                                               \
+    (                                                                               \
+        _Pragma(PP_STRINGIZE(message ("\nTODO: " __VA_ARGS__)));                    \
+        UNREACHABLE(                                                                \
+            "Code block around line ",                                              \
+            __LINE__,                                                               \
+            " in file ",                                                            \
+            __FILE__,                                                               \
+            " contains a TODO.",                                                    \
+            " Please fix this before using this function / class / macro / etc. ",  \
+            "TODO: " __VA_ARGS__                                                    \
+        )                                                                           \
+    );
+#endif
+
+#undef PP_INVOKE
+#define PP_INVOKE(macro, ...) ID(PP_INVOKE_IMPL(macro, __VA_ARGS__))
+
+#undef PP_INVOKE_IMPL
+#define PP_INVOKE_IMPL(macro, ...) macro (__VA_ARGS__)
+
+#undef MAKE_PP_OPTIONAL
+#define MAKE_PP_OPTIONAL(...) MAKE_PP_OPTIONAL_IMPL(__VA_ARGS__)
+
+#undef MAKE_PP_OPTIONAL_IMPL
+#define MAKE_PP_OPTIONAL_IMPL(...) \
+    PP_IF(                         \
+        ISEMPTY(__VA_ARGS__)       \
+    )                              \
+    (                              \
+        (PP_NULLOPT)               \
+    )                              \
+    (                              \
+        (PP_OPT, (__VA_ARGS__))    \
+    )
+
+#undef PP_GET_OPT
+#define PP_GET_OPT(opt) PP_GET_OPT_IMPL(opt)
+
+#undef PP_GET_OPT_IMPL
+#define PP_GET_OPT_IMPL(opt) EXPAND_ONE_TUPLE(TUPLE_SECOND_ARG(opt))
+
+#undef PP_IS_NULLOPT
+#define PP_IS_NULLOPT(opt) PP_IS_NULLOPT_IMPL(TUPLE_FIRST_ARG(opt))
+
+#undef PP_IS_NULLOPT_IMPL
+#define PP_IS_NULLOPT_IMPL(kw) PP_DETECT(kw, PP_OPTIONAL)
+
+#undef PP_DETECTOR_PP_NULLOPT_PP_OPTIONAL
+#define PP_DETECTOR_PP_NULLOPT_PP_OPTIONAL ~, ~
+
+#undef PP_IF_OPT
+#define PP_IF_OPT(opt, if_true, if_false) PP_IF_OPT_IMPL(opt, if_true, if_false)
+
+#undef PP_IF_OPT_IMPL
+#define PP_IF_OPT_IMPL(opt, if_true, if_false) \
+    PP_IF(                                     \
+        PP_IS_NULLOPT(opt)                     \
+    )                                          \
+    (                                          \
+        if_false                               \
+    )                                          \
+    (                                          \
+        if_true                                \
+    )
+
+#include <boost/contract.hpp>
+
+#ifndef CONTRACT
+    #define CONTRACT(type, ...) ID(PP_INVOKE(PP_CAT(PP_CAT(CONTRACT_, type), _IMPL), MAP_LIST(MAKE_PP_OPTIONAL, __VA_ARGS__)))
+#endif
+#ifndef CONTRACT_FN_IMPL
+    #define CONTRACT_FN_IMPL(opt_check_name, opt_precond, opt_old, opt_postcond, opt_except, ...) /* __VA_ARGS__ ignored */ \
+        boost::contract::check PP_IF_OPT(opt_check_name, PP_GET_OPT(opt_check_name), PP_CAT(contract_check_, __LINE__)) =   \
+            boost::contract::function().precondition(PP_IF_OPT(opt_precond, PP_GET_OPT(opt_precond), [](){}))               \
+                                       .old(PP_IF_OPT(opt_old, PP_GET_OPT(opt_old), [](){}))                                \
+                                       .postcondition(PP_IF_OPT(opt_postcond, PP_GET_OPT(opt_postcond), [](){}))            \
+                                       .except(PP_IF_OPT(opt_except, PP_GET_OPT(opt_except), [](){}))
+#endif
+
+#ifdef SUPDEF_CONTRACT_VIOLATION
+    #undef SUPDEF_CONTRACT_VIOLATION
+#endif
+#define SUPDEF_CONTRACT_VIOLATION(type) (::SupDef::ContractViolation(::SupDef::ContractType::type))
+
 #if 0
 #include <boost/parameter.hpp>
 

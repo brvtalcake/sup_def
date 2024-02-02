@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import datetime
+import shutil
+import subprocess
+from string import Template
+
+def print_yellow(text):
+    """Prints text in yellow in the console"""
+    print('\033[93m' + text + '\033[0m')
+    return
+
+current_working_directory = os.getcwd()
+executable_directory = os.path.dirname(os.path.realpath(__file__))
+main_author = 'Axel PASCON'
+gnulib_build_path = 'gnulib_build'
+
+# Cd to executable directory
+
+os.chdir(executable_directory)
+print_yellow('Changed directory to: ' + executable_directory)
+
+# Clean gnulib_build directory
+
+if os.path.exists(gnulib_build_path):
+    shutil.rmtree(os.path.abspath(gnulib_build_path))
+    print_yellow('Deleted: ' + os.path.abspath(gnulib_build_path) + ' and its content')
+
+# Generate C++ config file for Gnulib namespace
+
+gnulib_namespace_file_content = Template("""
+/* 
+ * MIT License
+ * 
+ * Copyright (c) 2023-${year} ${author}
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#ifndef CXX_CONFIG_H
+#define CXX_CONFIG_H
+
+#undef GNULIB_NAMESPACE
+#define GNULIB_NAMESPACE gnulibcxx
+
+#endif
+""")
+
+gnulib_namespace_file_path = 'cxx_config.h'
+
+if os.path.exists(gnulib_namespace_file_path):
+    os.remove(gnulib_namespace_file_path)
+
+gnulib_namespace_file = open(gnulib_namespace_file_path, 'w')
+gnulib_namespace_file.write(gnulib_namespace_file_content.substitute(year=str(datetime.datetime.now().year), author=main_author))
+gnulib_namespace_file.close()
+
+print_yellow('Generated Gnulib namespace config file')
+
+# Generate Gnulib 'testdir'
+
+needed_modules = sys.argv[1:]
+print_yellow('Needed modules: ' + str(needed_modules))
+
+gnulib_tool_path = '../gnulib/gnulib-tool'
+gnulib_tool_path = os.path.abspath(gnulib_tool_path)
+subprocess.run([gnulib_tool_path, '--create-testdir', '--without-tests', '--dir=' + gnulib_build_path] + needed_modules)
+
+print_yellow('Generated Gnulib testdir')
+
+# Prepend #include "/home/.../cxx_config.h" to gnulib_build/config.h.in
+
+gnulib_config_file_path = os.path.abspath(os.path.join(gnulib_build_path, 'config.h.in'))
+gnulib_config_file_path_old = os.path.abspath(os.path.join(gnulib_build_path, 'config.h.in.old'))
+gnulib_config_file = open(gnulib_config_file_path, 'r')
+gnulib_config_file_content = gnulib_config_file.read()
+gnulib_config_file.close()
+
+if os.path.exists(gnulib_config_file_path_old):
+    os.remove(gnulib_config_file_path_old)
+
+os.rename(gnulib_config_file_path, gnulib_config_file_path_old)
+
+gnulib_config_file_content = '#include "' + os.path.abspath(gnulib_namespace_file_path) + '"\n\n' + gnulib_config_file_content
+
+gnulib_config_file = open(gnulib_config_file_path, 'w')
+gnulib_config_file.write(gnulib_config_file_content)
+gnulib_config_file.close()
+
+print_yellow('Prepended Gnulib namespace config file to Gnulib config file')
+
+# Cd to gnulib_build directory
+
+os.chdir(gnulib_build_path)
+print_yellow('Changed directory to: ' + gnulib_build_path)
+
+# Run ./configure
+
+subprocess.run(['./configure'])
+print_yellow('Ran ./configure')
+
+# Run make all
+
+subprocess.run(['make', 'all'])
+print_yellow('Ran make all')
+
+# Cd back to executable directory
+
+os.chdir(executable_directory)
+print_yellow('Changed directory to: ' + executable_directory)
+
+# For each module, generate a gnulib_<module>.h file, containing :
+# - #include <config.h>
+# - The output of ./gnulib-tool --extract-include-directive <module>
+
+for module in needed_modules:
+    gnulib_module_file_path = 'gnulib_' + module + '.h'
+    if os.path.exists(gnulib_module_file_path):
+        os.remove(gnulib_module_file_path)
+    gnulib_module_file = open(gnulib_module_file_path, 'w')
+    gnulib_module_file.write('#include <config.h>\n\n')
+    gnulib_module_file.close()
+    gnulib_tool_output = subprocess.run([gnulib_tool_path, '--extract-include-directive', module], capture_output=True)
+    gnulib_module_file = open(gnulib_module_file_path, 'a')
+    gnulib_module_file.write(gnulib_tool_output.stdout.decode('utf-8'))
+    gnulib_module_file.close()
+    print_yellow('Generated Gnulib module file for module: ' + module)
+
+# Cd back to current working directory
+
+os.chdir(current_working_directory)
+print_yellow('Changed directory to: ' + current_working_directory)
+
+# End
+
+print_yellow('Done')

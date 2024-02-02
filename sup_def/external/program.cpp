@@ -40,6 +40,11 @@ namespace SupDef
 {
     namespace External
     {
+        static inline auto exit_code(void)
+        {
+            return SupDef::Util::get_errcount() + SupDef::Util::get_warncount();
+        }
+
         SD_EXTERNAL_API
         void init(int argc, char** argv)
         {
@@ -138,13 +143,13 @@ namespace SupDef
         {
             std::cerr << "\033[97m";
 #if defined(COMPILING_EXTERNAL)
-            std::cerr << get_program_name() << " exited with code " << SupDef::Util::get_errcount() << std::endl;
+            std::cerr << get_program_name() << " exited with code " << exit_code() << std::endl;
 #else
-            std::cerr << "Program exited with code " << SupDef::Util::get_errcount() << std::endl;
+            std::cerr << "Program exited with code " << exit_code() << std::endl;
 #endif
             // Reset std::cerr to default
             std::cerr << "\033[0m";
-            return SupDef::Util::get_errcount();
+            return exit_code();
         }
     }
 }

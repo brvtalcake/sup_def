@@ -34,6 +34,17 @@
 #include <type_traits>
 #include <concepts>
 #include <compare>
+#if SUPDEF_COMPILER == 3
+    #include <intrin.h>
+#endif
+#if __STDC_VERSION__ >= 201710L
+    #ifdef __has_include
+        #if __has_include(<stdckdint.h>)
+            #include <stdckdint.h>
+        #endif
+    #endif
+#else
+#endif
 
 #ifdef __has_include
     
@@ -229,7 +240,7 @@ namespace SupDef
             __assume(false); // https://learn.microsoft.com/ka-ge/cpp/intrinsics/assume?view=msvc-150
 #endif
             assert(false); // Fall-back
-            std::terminate();
+            std::terminate(); // TODO: Replace with std::abort() or something else?
         }
 
 #if defined(UNREACHABLE_EMPTY_TEST)
@@ -1523,7 +1534,7 @@ namespace SupDef
                           << "File: " << file << "\n"
                           << "Line: " << line << "\n"
                           << "Function: " << func << "\n";
-                std::terminate();
+                SUPDEF_EXIT();
             }
         }
 
@@ -1538,7 +1549,7 @@ namespace SupDef
                           << "File: " << file << "\n"
                           << "Line: " << line << "\n"
                           << "Function: " << func << "\n";
-                std::terminate();
+                SUPDEF_EXIT();
             }
         }
 
@@ -1603,6 +1614,40 @@ namespace SupDef
 
         static_assert(ContainerCompatibleRange<std::vector<int>, int>);
 
+        template <typename... Args>
+        struct ThreadSafeQueueStopRequired : public std::exception
+        {
+            ThreadSafeQueueStopRequired() = default;
+            ThreadSafeQueueStopRequired(const ThreadSafeQueueStopRequired&) = default;
+            ThreadSafeQueueStopRequired(ThreadSafeQueueStopRequired&&) = default;
+            ThreadSafeQueueStopRequired& operator=(const ThreadSafeQueueStopRequired&) = default;
+            ThreadSafeQueueStopRequired& operator=(ThreadSafeQueueStopRequired&&) = default;
+            ~ThreadSafeQueueStopRequired() = default;
+        
+            const char* what() const noexcept override
+            {
+#if 0
+                static const char* msg = "This wait was interrupted because the associated ThreadSafeQueue was requested to stop";
+                return msg;
+#else
+                static std::array<std::string, sizeof...(Args)> type_names = { std::string(type_name<Args>(true))... };
+                static std::string msg;
+                if constexpr (sizeof...(Args) == 1)
+                {
+                    msg = "This wait was interrupted because the associated ThreadSafeQueue<" + type_names.at(0) + "> was requested to stop";
+                    return msg.c_str();
+                }
+                else if constexpr (sizeof...(Args) > 1)
+                {
+                    msg = "This wait was interrupted because the associated ThreadSafeQueue<" + std::accumulate(type_names.begin() + 1, type_names.end(), type_names.at(0), [](const std::string& acc, const std::string& s) { return acc + ", " + s; }) + "> was requested to stop";
+                    return msg.c_str();
+                }
+                else
+                    return "This wait was interrupted because the associated ThreadSafeQueue was requested to stop";
+#endif
+            }
+        };
+
         template <typename Tp, typename Container = std::deque<Tp>>
         class ThreadSafeQueue
         {
@@ -1619,9 +1664,21 @@ namespace SupDef
                 QueueType queue;
                 mutable std::mutex mutex{};
                 mutable std::atomic_flag not_empty = ATOMIC_FLAG_INIT;
+                mutable std::atomic<bool> stop_required = false;
 
             public:
-                ThreadSafeQueue() = default;
+                using StopRequired = ThreadSafeQueueStopRequired<Tp, Container>;
+
+                ThreadSafeQueue() : queue()
+                {
+                    if (!this->queue.empty())
+                    {
+                        std::ignore = this->not_empty.test_and_set(std::memory_order::relaxed);
+                        this->not_empty.notify_all();
+                    }
+                    else
+                        this->not_empty.clear(std::memory_order::relaxed);
+                }
 
                 ThreadSafeQueue(const ThreadSafeQueue&) = delete;
                 ThreadSafeQueue(ThreadSafeQueue&& other) : queue(std::move(other.queue))
@@ -1662,7 +1719,7 @@ namespace SupDef
                 }
 
                 ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
-                ThreadSafeQueue& operator=(ThreadSafeQueue&&) = default;
+                ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
 
                 ~ThreadSafeQueue() = default;
 
@@ -1765,12 +1822,493 @@ namespace SupDef
                 // Wait until another thread pushes something (and pray for the implementation to use Linux futexes so it's efficient)
                 value_type wait_for_next()
                 {
-                    this->not_empty.wait(true, std::memory_order::acquire);
+                    if (this->stop_required.load(std::memory_order::acquire))
+                        throw StopRequired();
+                    this->not_empty.wait(false, std::memory_order::acquire);
+                    if (this->stop_required.load(std::memory_order::acquire))
+                        throw StopRequired();
                     return this->next();
                 }
 
+                void request_stop() noexcept
+                {
+                    this->stop_required.store(true, std::memory_order::release);
+                    this->not_empty.notify_all();
+                }
         };
 
+        template <typename Tp>
+        static constexpr inline bool is_restricted_ptr_impl = false;
+
+        template <typename Tp>
+        static constexpr inline bool is_restricted_ptr_impl<Tp* restrict> = true;
+
+        template <typename Tp>
+        static constexpr inline bool is_restricted_ptr_impl<Tp* restrict const> = true;
+
+        template <typename Tp>
+        static constexpr inline bool is_restricted_ptr_impl<Tp* restrict volatile> = true;
+
+        template <typename Tp>
+        static constexpr inline bool is_restricted_ptr_impl<Tp* restrict const volatile> = true;
+
+        static_assert(is_restricted_ptr_impl<int* restrict>);
+        static_assert(is_restricted_ptr_impl<int* restrict const>);
+        static_assert(is_restricted_ptr_impl<int* restrict volatile>);
+        static_assert(is_restricted_ptr_impl<int* restrict const volatile>);
+        static_assert(is_restricted_ptr_impl<const int* restrict volatile const>);
+        static_assert(!is_restricted_ptr_impl<int*>);
+        static_assert(!is_restricted_ptr_impl<int* const>);
+        static_assert(!is_restricted_ptr_impl<int* volatile>);
+        static_assert(!is_restricted_ptr_impl<int* const volatile>);
+
+        template <typename Tp>
+        concept RestrictedPtr = is_restricted_ptr_impl<Tp>;
+
+#ifdef IS_RESTRICTED_PTR
+    #undef IS_RESTRICTED_PTR
+#endif
+#define IS_RESTRICTED_PTR(ptr) ::SupDef::Util::RestrictedPtr<decltype(ptr)>
+
+#ifdef IS_RESTRICTED_PTRTYPE
+    #undef IS_RESTRICTED_PTRTYPE
+#endif
+#define IS_RESTRICTED_PTRTYPE(type) ::SupDef::Util::RestrictedPtr<std::type_identity_t<type>>
+
+        template <typename Tp>
+        static constexpr inline bool is_restricted_ref_impl = false;
+
+        template <typename Tp>
+        static constexpr inline bool is_restricted_ref_impl<Tp& restrict> = true;
+
+        static_assert(is_restricted_ref_impl<int& restrict>);
+        static_assert(is_restricted_ref_impl<const int& restrict>);
+        static_assert(is_restricted_ref_impl<volatile int& restrict>);
+        static_assert(is_restricted_ref_impl<const volatile int& restrict>);
+        static_assert(!is_restricted_ref_impl<int&>);
+        static_assert(!is_restricted_ref_impl<const int&>);
+        static_assert(!is_restricted_ref_impl<volatile int&>);
+        static_assert(!is_restricted_ref_impl<const volatile int&>);
+        static_assert(!is_restricted_ref_impl<int* restrict>);
+        static_assert(!is_restricted_ref_impl<int* restrict const>);
+        static_assert(!is_restricted_ref_impl<int* restrict volatile>);
+        static_assert(!is_restricted_ref_impl<int* restrict const volatile>);
+
+
+        template <typename Tp>
+        concept RestrictedRef = is_restricted_ref_impl<Tp>;
+
+#ifdef IS_RESTRICTED_REF
+    #undef IS_RESTRICTED_REF
+#endif
+#define IS_RESTRICTED_REF(ref) ::SupDef::Util::RestrictedRef<decltype(ref)>
+
+#ifdef IS_RESTRICTED_REFTYPE
+    #undef IS_RESTRICTED_REFTYPE
+#endif
+#define IS_RESTRICTED_REFTYPE(type) ::SupDef::Util::RestrictedRef<std::type_identity_t<type>>
+
+#ifdef IS_RESTRICT
+    #undef IS_RESTRICT
+#endif
+#define IS_RESTRICT(ptr_or_ref) (IS_RESTRICTED_PTR(ptr_or_ref) || IS_RESTRICTED_REF(ptr_or_ref))
+
+#ifdef IS_RESTRICT_TYPE
+    #undef IS_RESTRICT_TYPE
+#endif
+#define IS_RESTRICT_TYPE(type) (IS_RESTRICTED_PTRTYPE(type) || IS_RESTRICTED_REFTYPE(type))
+
+        template <typename From, typename To, bool ExactCopy = false>
+        struct CopyStdQualifiersImpl
+        {
+            private:
+                static constexpr inline bool is_from_const    = std::is_const_v<From>;
+                static constexpr inline bool is_from_volatile = std::is_volatile_v<From>;
+
+                template <typename Tp>
+                using treat_const = std::conditional_t<
+                    is_from_const,
+                    std::add_const_t<Tp>,
+                    std::conditional_t<
+                        ExactCopy,
+                        std::remove_const_t<Tp>,
+                        Tp
+                    >
+                >;
+
+                template <typename Tp>
+                using treat_volatile = std::conditional_t<
+                    is_from_volatile,
+                    std::add_volatile_t<Tp>,
+                    std::conditional_t<
+                        ExactCopy,
+                        std::remove_volatile_t<Tp>,
+                        Tp
+                    >
+                >;
+
+                template <typename Tp>
+                using treat_cv = treat_const<treat_volatile<Tp>>;
+
+            public:
+                using type = treat_cv<To>;
+        };
+
+        template <typename From, typename To, bool ExactCopy = false>
+        using CopyStdQualifiers = typename CopyStdQualifiersImpl<From, To, ExactCopy>::type;
+
+        static_assert(std::same_as<CopyStdQualifiers<int, float>, float>);
+        static_assert(std::same_as<CopyStdQualifiers<const int, float>, const float>);
+        static_assert(std::same_as<CopyStdQualifiers<int, const float>, const float>);
+        static_assert(std::same_as<CopyStdQualifiers<int, const float, true>, float>);
+        static_assert(std::same_as<CopyStdQualifiers<const int, const float>, const float>);
+        static_assert(std::same_as<CopyStdQualifiers<const int, const volatile float, true>, const float>);
+        static_assert(std::same_as<CopyStdQualifiers<const int, const volatile float>, const volatile float>);
+        static_assert(std::same_as<CopyStdQualifiers<const int, volatile float>, const volatile float>);
+        static_assert(std::same_as<CopyStdQualifiers<const int, volatile float, true>, const float>);
+
+        template <typename Tp>
+        struct MakeRestrictImpl
+        {
+            using type = Tp;
+        };
+
+        template <typename Tp>
+            requires (std::is_pointer_v<Tp> || std::is_reference_v<Tp>) && (!IS_RESTRICT_TYPE(Tp))
+        struct MakeRestrictImpl<Tp>
+        {
+            using type = Tp restrict;
+        };
+
+        template <typename Tp>
+        using MakeRestrict = typename MakeRestrictImpl<Tp>::type;
+
+        static_assert(std::same_as<MakeRestrict<int>, int>);
+
+        static_assert(!std::same_as<int*, int* restrict>);
+        static_assert(std::same_as<MakeRestrict<int*>, int* restrict>);
+
+        static_assert(!std::same_as<int&, int& restrict>);
+        static_assert(std::same_as<MakeRestrict<int&>, int& restrict>);
+
+        static_assert(!std::same_as<const int*, const int* restrict>);
+        static_assert(std::same_as<MakeRestrict<const int*>, const int* restrict>);
+
+        static_assert(!std::same_as<const int&, const int& restrict>);
+        static_assert(std::same_as<MakeRestrict<const int&>, const int& restrict>);
+
+        static_assert(!std::same_as<volatile int* const, volatile int* const restrict>);
+        static_assert(std::same_as<MakeRestrict<volatile int* const>, volatile int* const restrict>);
+
+        static_assert(!std::same_as<const volatile int&, volatile const int& restrict>);
+        static_assert(std::same_as<MakeRestrict<volatile const int&>, volatile const int& restrict>);
+
+#ifdef MAKE_RESTRICT
+    #undef MAKE_RESTRICT
+#endif
+#define MAKE_RESTRICT(type) ::SupDef::Util::MakeRestrict<std::type_identity_t<type>>
+
+#ifdef MAKE_RESTRICT_TYPEOF
+    #undef MAKE_RESTRICT_TYPEOF
+#endif
+#define MAKE_RESTRICT_TYPEOF(ptr_or_ref) ::SupDef::Util::MakeRestrict<decltype(ptr_or_ref)>        
+
+#ifdef UNALIASED
+    #undef UNALIASED
+#endif
+#define UNALIASED(type, name) ::SupDef::Util::MakeRestrict<std::type_identity_t<type>> name
+
+#ifdef UNALIASED_TYPEOF
+    #undef UNALIASED_TYPEOF
+#endif
+#define UNALIASED_TYPEOF(ptr_or_ref, name) ::SupDef::Util::MakeRestrict<decltype(ptr_or_ref)> name
+
+STATIC_TODO("Write more tests for `restrict` keyword support")
+
+        template <typename Sig>
+        static constexpr Sig* select_overload(Sig* func)
+        {
+          return func;
+        }
+
+        template <typename Sig, typename ClassType>
+        static constexpr auto select_overload(Sig (ClassType::*func)) -> decltype(func)
+        {
+            return func;
+        }
+
+        namespace
+        {
+            template <typename Int>
+                requires std::integral<Int>
+            constexpr static inline Int saturated_add_fallback(Int a, Int b)
+            {
+                if (a > 0 && b > std::numeric_limits<Int>::max() - a)
+                    return std::numeric_limits<Int>::max();
+                else if (a < 0 && b < std::numeric_limits<Int>::min() - a)
+                    return std::numeric_limits<Int>::min();
+                else
+                    return a + b;
+            }
+        }
+
+        template <typename Int>
+            requires std::integral<Int>
+        constexpr static inline Int saturated_add(Int a, Int b)
+        {
+#if SUPDEF_COMPILER == 1 || SUPDEF_COMPILER == 2 // GCC or Clang
+            Int ret;
+            if (__builtin_add_overflow(a, b, &ret))
+                return std::numeric_limits<Int>::max();
+            else
+                return ret;
+#elif SUPDEF_COMPILER == 3 // MSVC
+            // Use _add_overflow_i[8|16|32|64] intrinsic when signed
+            // Use _addcarry_u[8|16|32|64] intrinsic when unsigned
+            using namespace std::string_view_literals;
+            if constexpr (std::unsigned_integral<Int>)
+            {
+                if constexpr (sizeof(Int) == 1)
+                {
+                    hard_assert_msg(std::same_as<Int, uint8_t> || std::same_as<Int, char>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
+                    Int ret;
+                    if (_addcarry_u8(0, a, b, &ret))
+                        return std::numeric_limits<Int>::max();
+                    else
+                        return ret;
+                }
+                else if constexpr (sizeof(Int) == 2)
+                {
+                    hard_assert_msg(std::same_as<Int, uint16_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
+                    Int ret;
+                    if (_addcarry_u16(0, a, b, &ret))
+                        return std::numeric_limits<Int>::max();
+                    else
+                        return ret;
+                }
+                else if constexpr (sizeof(Int) == 4)
+                {
+                    hard_assert_msg(std::same_as<Int, uint32_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
+                    Int ret;
+                    if (_addcarry_u32(0, a, b, &ret))
+                        return std::numeric_limits<Int>::max();
+                    else
+                        return ret;
+                }
+                else if constexpr (sizeof(Int) == 8)
+                {
+                    hard_assert_msg(std::same_as<Int, uint64_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
+                    Int ret;
+                    if (_addcarry_u64(0, a, b, &ret))
+                        return std::numeric_limits<Int>::max();
+                    else
+                        return ret;
+                }
+                else
+                    return saturated_add_fallback(a, b);
+            }
+#if _MSC_VER >= 1937
+            else if constexpr (std::signed_integral<Int>)
+            {
+                if constexpr (sizeof(Int) == 1)
+                {
+                    hard_assert_msg(std::same_as<Int, int8_t> || std::same_as<Int, char>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
+                    Int ret;
+                    if (_add_overflow_i8(0, a, b, &ret))
+                        return std::numeric_limits<Int>::max();
+                    else
+                        return ret;
+                }
+                else if constexpr (sizeof(Int) == 2)
+                {
+                    hard_assert_msg(std::same_as<Int, int16_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
+                    Int ret;
+                    if (_add_overflow_i16(0, a, b, &ret))
+                        return std::numeric_limits<Int>::max();
+                    else
+                        return ret;
+                }
+                else if constexpr (sizeof(Int) == 4)
+                {
+                    hard_assert_msg(std::same_as<Int, int32_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
+                    Int ret;
+                    if (_add_overflow_i32(0, a, b, &ret))
+                        return std::numeric_limits<Int>::max();
+                    else
+                        return ret;
+                }
+                else if constexpr (sizeof(Int) == 8)
+                {
+                    hard_assert_msg(std::same_as<Int, int64_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
+                    Int ret;
+                    if (_add_overflow_i64(0, a, b, &ret))
+                        return std::numeric_limits<Int>::max();
+                    else
+                        return ret;
+                }
+                else
+                    return saturated_add_fallback(a, b);
+            }
+#else
+            // Perform unsigned addition then check if the sign bit is the same as the two inputs' signs
+            else if constexpr (std::signed_integral<Int>)
+            {
+                return saturated_add_fallback(a, b);
+                TODO(
+                    "Implement this for real"
+                );
+            }
+#endif
+            else
+                return saturated_add_fallback(a, b);
+#else
+            return saturated_add_fallback(a, b);
+#endif
+            return saturated_add_fallback(a, b);
+        }
+    }
+
+    // All values here are based on Boost.Contract library failure handlers
+    enum class ContractType : uint8_t
+    {
+        PRECONDITION  = 1 << 0,
+        POSTCONDITION = 1 << 1,
+        EXCEPT        = 1 << 2,
+        INVARIANT     = 1 << 3,
+        OLD           = 1 << 4,
+        CHECK         = 1 << 5,
+
+        OTHER = 1 << 6
+    };
+
+    class ContractViolation : public InternalError
+    {
+        private:
+            ContractType type;            
+
+            [[nodiscard]]
+            std::string get_contract_type_str(ContractType type) const noexcept
+            {
+                using namespace std::string_literals;
+                switch (type)
+                {
+                    case ContractType::PRECONDITION:
+                        return "Precondition violation"s;
+                    
+                    case ContractType::POSTCONDITION:
+                        return "Postcondition violation"s;
+                    
+                    case ContractType::EXCEPT:
+                        return "Exception guarantee violation"s;
+                    
+                    case ContractType::INVARIANT:
+                        return "Invariant violation"s;
+                    
+                    case ContractType::OLD:
+                        return "Old value violation"s;
+                    
+                    case ContractType::CHECK:
+                        return "Check violation"s;
+                    
+                    case ContractType::OTHER:
+                        return "Contract violation"s;
+                    
+                    default:
+                        return "Unknown contract violation"s;
+                }
+            }
+
+        public:
+            ContractViolation()
+                : InternalError(this->get_contract_type_str(ContractType::OTHER) + " detected.", false, false)
+            {
+                this->trace = CURRENT_STACKTRACE(1);
+                this->init_msg();
+            }
+            ContractViolation(ContractType type)
+                : InternalError(this->get_contract_type_str(type) + " detected.", false, false)
+            {
+                this->trace = CURRENT_STACKTRACE(1);
+                this->init_msg();
+            }
+
+            ContractViolation(const ContractViolation&) = default;
+            ContractViolation(ContractViolation&&) = default;
+
+            ContractViolation& operator=(const ContractViolation&) = default;
+            ContractViolation& operator=(ContractViolation&&) = default;
+    };
+
+    STATIC_TODO(
+        "Maybe make this an __attribute__((constructor)) function ?"
+    );
+    static inline void configure_boost_contract(void)
+    {
+        auto precondition_handler = [](boost::contract::from where)
+        {
+            if (where == boost::contract::from_destructor)
+            {
+                decltype(auto) e = SUPDEF_CONTRACT_VIOLATION(PRECONDITION);
+                e.report();
+                SUPDEF_EXIT();
+            }
+            else
+                throw SUPDEF_CONTRACT_VIOLATION(PRECONDITION);
+        };
+        
+        auto postcondition_handler = [](boost::contract::from where)
+        {
+            if (where == boost::contract::from_destructor)
+            {
+                decltype(auto) e = SUPDEF_CONTRACT_VIOLATION(POSTCONDITION);
+                e.report();
+                SUPDEF_EXIT();
+            }
+            else
+                throw SUPDEF_CONTRACT_VIOLATION(POSTCONDITION);
+        };
+        
+        auto exception_garantee_handler = [](boost::contract::from)
+        {
+            SUPDEF_CONTRACT_VIOLATION(EXCEPT).report();
+            SUPDEF_EXIT();
+        };
+
+        auto invariant_handler = [](boost::contract::from where)
+        {
+            if (where == boost::contract::from_destructor)
+            {
+                decltype(auto) e = SUPDEF_CONTRACT_VIOLATION(INVARIANT);
+                e.report();
+                SUPDEF_EXIT();
+            }
+            else
+                throw SUPDEF_CONTRACT_VIOLATION(INVARIANT);
+        };
+
+        auto old_value_handler = [](boost::contract::from where)
+        {
+            if (where == boost::contract::from_destructor)
+            {
+                decltype(auto) e = SUPDEF_CONTRACT_VIOLATION(OLD);
+                e.report();
+                SUPDEF_EXIT();
+            }
+            else
+                throw SUPDEF_CONTRACT_VIOLATION(OLD);
+        };
+
+        auto check_handler = []()
+        {
+            throw SUPDEF_CONTRACT_VIOLATION(CHECK);
+        };
+
+        std::ignore = boost::contract::set_precondition_failure(precondition_handler);
+        std::ignore = boost::contract::set_postcondition_failure(postcondition_handler);
+        std::ignore = boost::contract::set_except_failure(exception_garantee_handler);
+        std::ignore = boost::contract::set_invariant_failure(invariant_handler);
+        std::ignore = boost::contract::set_old_failure(old_value_handler);
+        std::ignore = boost::contract::set_check_failure(check_handler);
     }
 
     using Util::remove_whitespaces;

@@ -27,6 +27,11 @@
 #undef SD_COMMON_API
 #undef SUPDEF_COMPILER 
 
+#if defined(__INTELLISENSE__)
+    #define COMPILING_EXTERNAL 1
+    #define BUILDING_SUPDEF 1
+#endif
+
 #if defined(__GNUC__)
     #define SUPDEF_COMPILER 1
 #elif defined(__clang__)
@@ -69,11 +74,23 @@
     #define SD_COMMON_API __attribute__((__visibility__("default")))
 #endif
 
-#if defined(__INTELLISENSE__)
-    #define COMPILING_EXTERNAL 1
-#endif
-
 #if defined(SD_EXTERNAL_API)
     #undef SD_EXTERNAL_API
 #endif
 #define SD_EXTERNAL_API SD_COMMON_API
+
+#undef SUPDEF_EXIT
+
+#if COMPILING_EXTERNAL
+    #define SUPDEF_EXIT(...) std::exit(::SupDef::External::main_ret())
+#else
+    #define SUPDEF_EXIT(...) STATIC_TODO("SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins")
+#endif
+
+#undef ATTRIBUTE_USED
+
+#if SUPDEF_COMPILER == 3 // MSVC
+    #define ATTRIBUTE_USED STATIC_TODO("ATTRIBUTE_USED is not yet implemented for MSVC");
+#else // GCC-like or Clang-like
+    #define ATTRIBUTE_USED __attribute__((__used__))
+#endif

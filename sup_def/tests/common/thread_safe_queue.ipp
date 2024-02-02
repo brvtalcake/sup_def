@@ -40,15 +40,178 @@
 
 BOOST_AUTO_TEST_SUITE(thread_safe_queue,
     * BoostTest::description("Tests for `SupDef::Util::ThreadSafeQueue`")
-    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
 )
 
 BOOST_AUTO_TEST_CASE(test_thread_safe_queue1,
-    * BoostTest::description("First test case for `SupDef::Util::ThreadSafeQueue`")
+    * BoostTest::description("First test case for `SupDef::Util::ThreadSafeQueue` : tests basic operations in single-threaded environment")
     * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
 )
 {
-    // TODO: Add tests
+    using ::SupDef::Util::ThreadSafeQueue;
+
+    ThreadSafeQueue<int> queue;
+    const std::vector<int> vec{ 1, 2, 3, 4, 5 };
+
+    BOOST_TEST(queue.empty());
+    BOOST_TEST(queue.size() == 0);
+
+    for (auto&& i : vec)
+        queue.push(i);
+    
+    BOOST_TEST(queue.size() == vec.size());
+
+    for (auto&& i : vec)
+        BOOST_TEST(queue.wait_for_next() == i);
+
+    BOOST_TEST(queue.empty());
+    BOOST_TEST(queue.size() == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_thread_safe_queue2,
+    * BoostTest::description("Second test case for `SupDef::Util::ThreadSafeQueue` : tests basic operations in consumer-producer environment")
+    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+)
+{
+    using ::SupDef::Util::ThreadSafeQueue;
+    using namespace std::chrono_literals;
+
+    std::atomic_flag go_flag = ATOMIC_FLAG_INIT;
+    go_flag.clear(std::memory_order::relaxed);
+    ThreadSafeQueue<int> queue;
+    const std::vector<int> vec{ 1, 2, 3, 4, 5 };
+
+    BOOST_TEST(queue.empty());
+    BOOST_TEST(queue.size() == 0);
+
+    std::jthread producer([&queue, &vec, &go_flag]([[maybe_unused]] std::stop_token stoken)
+    {
+        // Wait for the go signal
+        go_flag.wait(false, std::memory_order::acquire);
+        for (auto&& i : vec)
+        {
+            queue.push(i);
+            std::this_thread::sleep_for(10ms);
+        }
+    });
+
+    std::jthread consumer([&queue, &vec, &go_flag]([[maybe_unused]] std::stop_token stoken)
+    {
+        // Wait for the go signal
+        go_flag.wait(false, std::memory_order::acquire);
+        for (auto&& i : vec)
+        {
+            BOOST_TEST(queue.wait_for_next() == i);
+            std::this_thread::sleep_for(10ms);
+        }
+    });
+
+    go_flag.test_and_set(std::memory_order::release);
+    go_flag.notify_all();
+
+    producer.request_stop();
+    consumer.request_stop();
+
+    producer.join();
+    consumer.join();
+
+    BOOST_TEST(queue.empty());
+    BOOST_TEST(queue.size() == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_thread_safe_queue3,
+    * BoostTest::description("Third test case for `SupDef::Util::ThreadSafeQueue` : tests basic operations in multiple-consumer-producer environment")
+    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+)
+{
+    constexpr size_t NB_CONSUMERS = 5;
+    using ::SupDef::Util::ThreadSafeQueue;
+    using namespace std::chrono_literals;
+
+    std::atomic_flag go_flag = ATOMIC_FLAG_INIT;
+    go_flag.clear(std::memory_order::relaxed);
+    std::mutex res_mtx;
+    std::vector<int> res;
+    const std::vector<int> vec{ 1, 2, 3, 4, 5 };
+    ThreadSafeQueue<int> queue;
+
+    BOOST_TEST(queue.empty());
+    BOOST_TEST(queue.size() == 0);
+
+    std::jthread producer([&queue, &vec, &go_flag, &NB_CONSUMERS]([[maybe_unused]] std::stop_token stoken)
+    {
+        // Wait for the go signal
+        go_flag.wait(false, std::memory_order::acquire);
+        for (auto&& i : vec)
+        {
+            queue.push(i);
+            std::this_thread::sleep_for(10ms / NB_CONSUMERS);
+        }
+    });
+
+    auto&& consumer_lambda = [&queue, &res, &res_mtx, &go_flag]([[maybe_unused]] std::stop_token stoken)
+    {
+        // Wait for the go signal
+        go_flag.wait(false, std::memory_order::acquire);
+        while (!stoken.stop_requested())
+        {
+            using val_type = decltype(std::declval<ThreadSafeQueue<int>>().wait_for_next());
+            val_type val;
+            try
+            {
+                val = queue.wait_for_next();
+            }
+            catch (const ThreadSafeQueue<int>::StopRequired& e)
+            {
+                continue;
+            }
+            catch (const std::exception& e)
+            {
+#ifdef ARR_SIZE
+    PUSH_MACRO(ARR_SIZE)
+    #undef ARR_SIZE
+#endif
+#define ARR_SIZE (256 * 2)
+                static char msg[ARR_SIZE] = { 0 };
+                snprintf(msg, ARR_SIZE, "Unexpected exception thrown : %s", e.what());
+                BOOST_TEST(false, msg);
+                break;
+#undef ARR_SIZE
+POP_MACRO(ARR_SIZE)
+            }
+            std::unique_lock<std::mutex> lock(res_mtx);
+            res.push_back(val);
+            lock.unlock();
+            std::this_thread::sleep_for(10ms);
+        }
+    };
+
+    std::vector<std::jthread> consumers;
+    for (size_t i = 0; i < NB_CONSUMERS; ++i)
+        consumers.emplace_back(consumer_lambda);
+
+    go_flag.test_and_set(std::memory_order::release);
+    go_flag.notify_all();
+
+    producer.request_stop();
+    producer.join();
+
+    for (auto&& consumer : consumers)
+        consumer.request_stop();
+    queue.request_stop();
+    for (auto&& consumer : consumers)
+        consumer.join();
+
+    BOOST_TEST(queue.empty());
+    BOOST_TEST(queue.size() == 0);
+    for (auto&& i : vec)
+    {
+        auto&& pos = std::find(res.begin(), res.end(), i);
+        bool found = pos != res.end();
+        BOOST_TEST(found);
+        bool any_other = std::find(pos + 1, res.end(), i) != res.end();
+        BOOST_TEST(!any_other);
+    }
+    BOOST_TEST(res.size() == vec.size());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

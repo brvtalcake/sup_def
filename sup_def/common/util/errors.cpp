@@ -24,6 +24,7 @@
 
 #include <sup_def/common/config.h>
 #include <sup_def/common/util/util.hpp>
+#include <atomic>
 
 namespace SupDef
 {
@@ -34,9 +35,9 @@ namespace SupDef
          * @details This variable is incremented by the `reg_error` function, and is then returned by the `main` function.
          * 
          */
-        static int _error_count = 0;
+        static std::atomic<int> _error_count = ATOMIC_VAR_INIT(0);
 
-        static int _warning_count = 0;
+        static std::atomic<int> _warning_count = ATOMIC_VAR_INIT(0);
         
         SD_COMMON_API
         int reg_error(void)
@@ -47,7 +48,7 @@ namespace SupDef
         SD_COMMON_API
         int get_errcount(void)
         {
-            return _error_count;
+            return _error_count.load(std::memory_order::acquire);
         }
 
         SD_COMMON_API
@@ -59,7 +60,7 @@ namespace SupDef
         SD_COMMON_API
         int get_warncount(void)
         {
-            return _warning_count;
+            return _warning_count.load(std::memory_order::acquire);
         }
     }
 }

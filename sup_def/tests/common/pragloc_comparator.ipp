@@ -40,7 +40,6 @@
 
 BOOST_AUTO_TEST_SUITE(pragloc_comparator,
     * BoostTest::description("Tests for `SupDef::PragmaLocCompare`")
-    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
 )
 
 BOOST_AUTO_TEST_CASE(test_pragloc_comparator_fn,

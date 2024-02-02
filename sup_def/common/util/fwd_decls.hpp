@@ -19,7 +19,7 @@
         #undef CURRENT_STACKTRACE
     #endif
     // Extra parameter to skip the SupDef::Exception constructor
-    #define CURRENT_STACKTRACE std::stacktrace::current(1)
+    #define CURRENT_STACKTRACE(skip) std::stacktrace::current(skip)
 #elif SUPDEF_USE_BOOST_STACKTRACE
     #include <boost/stacktrace.hpp>
     #ifdef SUPDEF_STACKTRACE_TYPE
@@ -30,7 +30,7 @@
         #undef CURRENT_STACKTRACE
     #endif
     // Extra parameters to skip the SupDef::Exception constructor
-    #define CURRENT_STACKTRACE boost::stacktrace::stacktrace(1 , static_cast<std::size_t>(-1))
+    #define CURRENT_STACKTRACE(skip) boost::stacktrace::stacktrace(skip , static_cast<std::size_t>(-1))
 #else
     #error "No stacktrace library defined"
 #endif
@@ -106,15 +106,20 @@ namespace SupDef
         std::optional<U> filepath,
         std::optional<string_size_type<T>> line,
         std::optional<string_size_type<T>> col,
-        std::optional<std::basic_string<T>> context
+        std::optional<std::basic_string<T>> context,
+        int err_or_warn_count
     ) noexcept;
 
 #define INCLUDED_FROM_SUPDEF_SOURCE 1
 #include <sup_def/common/util/exception.hpp>
 #undef INCLUDED_FROM_SUPDEF_SOURCE
 
+    template <typename T, typename U>
+        requires CharacterType<T> && FilePath<U>
+    using Error = Exception<T, U>;
+
+    using InternalError = ::SupDef::InternalException;
+
     namespace Util
-    {
-        
-    };
+    { };
 };

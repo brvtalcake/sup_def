@@ -1,0 +1,3 @@
+[submodule "sup_def/third_party/gnulib"]
+	path = sup_def/third_party/gnulib
+	url = https://git.savannah.gnu.org/git/gnulib.git

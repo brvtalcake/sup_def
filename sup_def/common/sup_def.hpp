@@ -42,6 +42,7 @@
 #endif
 
 #include <coroutine>
+#include <iterator>
 //#include <expected>
 
 #if SUPDEF_COMPILER != 1
@@ -875,14 +876,15 @@ namespace SupDef
         std::optional<U> filepath,
         std::optional<string_size_type<T>> line,
         std::optional<string_size_type<T>> col,
-        std::optional<std::basic_string<T>> context
+        std::optional<std::basic_string<T>> context,
+        int err_or_warn_count
     ) noexcept
     {
         std::string result;
         if (type != ExcType::NO_ERROR)
-            result = FG(BRIGHT_RED) + TXT(BOLD) + "[ ERROR n°" + std::to_string(SupDef::Util::get_errcount()) + " ]" + FG(DEFAULT) + (error_type.has_value() ? "  (error type: " + error_type.value() + ")" : "") + "  " + TXT(RESET) + error_msg + "\n";
+            result = FG(BRIGHT_RED) + TXT(BOLD) + "[ ERROR n°" + std::to_string(err_or_warn_count) + " ]" + FG(DEFAULT) + (error_type.has_value() ? "  (error type: " + error_type.value() + ")" : "") + "  " + TXT(RESET) + error_msg + "\n";
         else
-            result = FG(BRIGHT_MAGENTA) + TXT(BOLD) + "[ WARNING n°" + std::to_string(SupDef::Util::get_warncount()) + " ]" + FG(DEFAULT) + "  " + TXT(RESET) + error_msg + "\n";
+            result = FG(BRIGHT_MAGENTA) + TXT(BOLD) + "[ WARNING n°" + std::to_string(err_or_warn_count) + " ]" + FG(DEFAULT) + "  " + TXT(RESET) + error_msg + "\n";
         if (filepath.has_value())
         {
             result += std::string("In file ") + TXT(BOLD) + std::string(filepath.value());
@@ -973,10 +975,6 @@ namespace SupDef
                                     std::bool_constant<std::is_nothrow_invocable<FuncType, E>::value>,
                                     std::bool_constant<std::is_nothrow_invocable<FuncType, E, Args...>::value>
                                 >::value;
-
-    template <typename T, typename U>
-        requires CharacterType<T> && FilePath<U>
-    using Error = Exception<T, U>;
 
     template <typename T, typename E>
         requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
@@ -1407,23 +1405,25 @@ namespace SupDef
                     }
             };
 
-        typedef Iterator iterator;
+            typedef Iterator iterator;
 
-        inline iterator begin() noexcept
-        {
-            iterator it(this);
-            return ++it;
-        }
+            inline iterator begin() noexcept
+            {
+                iterator it(this);
+                return ++it;
+            }
 
-        inline end_iterator end() noexcept
-        {
-            return end_iterator{};
-        }
+            inline end_iterator end() noexcept
+            {
+                return end_iterator{};
+            }
 
         private:
             handle_type handle;
             bool done;
     };
+
+    static_assert(std::input_iterator<Coro<int>::iterator>);
 
     template <typename T>
     concept IsCoro = SPECIALIZATION_OF(T, Coro);
