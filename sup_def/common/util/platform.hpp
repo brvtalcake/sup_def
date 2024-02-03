@@ -82,7 +82,7 @@
 #undef SUPDEF_EXIT
 
 #if COMPILING_EXTERNAL
-    #define SUPDEF_EXIT(...) std::exit(::SupDef::External::main_ret())
+    #define SUPDEF_EXIT(...) std::exit(::SupDef::Util::main_ret())
 #else
     #define SUPDEF_EXIT(...) STATIC_TODO("SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins")
 #endif

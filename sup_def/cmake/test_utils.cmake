@@ -1,27 +1,5 @@
 include_guard(GLOBAL)
 
-function(get_test_sources_variable var test_suite_name)
-    set(${var} ${test_suite_name}_SOURCES PARENT_SCOPE)
-endfunction()
-
-function(add_sources_to_test_suite test_suite_name)
-    get_test_sources_variable(TEST_CASE_SOURCES ${test_suite_name})
-    foreach(source ${ARGN})
-        list(APPEND ${TEST_CASE_SOURCES} ${source})
-    endforeach()
-    set(${test_suite_name}_SOURCES ${${TEST_CASE_SOURCES}} PARENT_SCOPE)
-endfunction()
-
-# To be called at the end, when all other sources are registered
-function(add_test_suite_target name)
-    get_test_sources_variable(TEST_CASE_SOURCES ${name})
-    add_executable(${name} ${TEST_CASE_SOURCES} ${name}.cpp)
-    target_link_libraries(${name} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
-    target_link_libraries(${name} PUBLIC sdcommon sdthirdparty)
-    target_link_options(${name} PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wl,--gc-sections>)
-    add_test(${name} COMMAND "./${name}")
-endfunction()
-
 function(add_test_foreach_source)
     foreach (test ${SUPDEF_TEST_EXECUTABLES})
         list(APPEND REGISTERED_TEST_EXECUTABLES ${test})

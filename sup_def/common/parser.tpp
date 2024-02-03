@@ -26,8 +26,6 @@
     #error "This file may only be included from a C++ SupDef source file, and may not be compiled directly."
 #endif
 
-#include <sup_def/common/config.h>
-
 #if defined(SUPDEF_DEBUG)
 template <typename T>
     requires CharacterType<T>

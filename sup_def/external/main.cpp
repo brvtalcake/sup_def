@@ -142,12 +142,12 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     catch(const std::exception& e)
     {
         std::cerr << "Exception: " << e.what() << '\n';
-        return SDE::main_ret();
+        return SDU::main_ret();
     }
     catch(...)
     {
         std::cerr << "Unknown exception" << "\n";
-        return SDE::main_ret();
+        return SDU::main_ret();
     }
 
 
@@ -301,7 +301,7 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     std::cerr.flush();
     std::clog.flush();
     std::cout.flush();
-    return SDE::main_ret();
+    return SDU::main_ret();
 }
 /*
 */

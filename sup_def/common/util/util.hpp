@@ -34,6 +34,7 @@
 #include <type_traits>
 #include <concepts>
 #include <compare>
+#include <utility>
 #if SUPDEF_COMPILER == 3
     #include <intrin.h>
 #endif
@@ -70,7 +71,7 @@ namespace SupDef
     concept IsOneOf = std::disjunction_v<std::is_same<Tp, Types>...>;
 };
 
-#if defined(COMPILING_EXTERNAL)
+#if COMPILING_EXTERNAL
     SAVE_MACRO(SUPDEF_WANT_ONLY_DECLS)
     #undef SUPDEF_WANT_ONLY_DECLS
     #define SUPDEF_WANT_ONLY_DECLS 1
@@ -83,6 +84,24 @@ namespace SupDef
     namespace Util
     {
         std::string demangle(std::string s);
+
+        static inline auto exit_code(void)
+        {
+            return SupDef::Util::get_errcount() + SupDef::Util::get_warncount();
+        }
+
+        static inline int main_ret(void)
+        {
+            std::cerr << "\033[97m";
+#if COMPILING_EXTERNAL
+            std::cerr << ::SupDef::External::get_program_name() << " exited with code " << exit_code() << std::endl;
+#else
+            std::cerr << "Program exited with code " << exit_code() << std::endl;
+#endif
+            // Reset std::cerr to default
+            std::cerr << "\033[0m";
+            return exit_code();
+        }
 
         static_assert(IsOneOf<int, int, char, float>);
         static_assert(IsOneOf<int, char, float, int>);
@@ -247,7 +266,7 @@ namespace SupDef
     #undef UNREACHABLE_EMPTY_TEST
 #endif
 /*UNREACHABLE_(ID(MAP_LIST(decltype, __VA_ARGS__)))(__VA_ARGS__)*/
-#define UNREACHABLE_EMPTY_TEST(...) ID(PP_IF(ISEMPTY(__VA_ARGS__))(SupDef::Util::unreachable<>())(ID(UNREACHABLE_(ID(MAP_LIST(decltype, __VA_ARGS__)))(__VA_ARGS__))))
+#define UNREACHABLE_EMPTY_TEST(...) ID(PP_IF(ISEMPTY(__VA_ARGS__))(::SupDef::Util::unreachable<>())(ID(UNREACHABLE_(ID(MAP_LIST(decltype, __VA_ARGS__)))(__VA_ARGS__))))
 
 #if defined(UNREACHABLE)
     #undef UNREACHABLE
@@ -267,7 +286,7 @@ namespace SupDef
 #if defined(UNREACHABLE_)
     #undef UNREACHABLE_
 #endif
-#define UNREACHABLE_(...) SupDef::Util::unreachable<MAP_LIST(MAKE_DECAY, ID(__VA_ARGS__))>
+#define UNREACHABLE_(...) ::SupDef::Util::unreachable<MAP_LIST(MAKE_DECAY, ID(__VA_ARGS__))>
 
 #if 0
         template <typename T, size_t N, typename Allocator = std::allocator<T>>
@@ -566,21 +585,6 @@ namespace SupDef
                 }
         };
 #endif
-
-        inline void exit_program(int exit_code)
-        {
-            // Set std::cerr to bright-white
-            /* std::cerr << "\033[1;97m"; */
-            std::cerr << "\033[97m";
-#if defined(COMPILING_EXTERNAL)
-            std::cerr << SupDef::External::get_program_name() << " exited with code " << exit_code << std::endl;
-#else
-            std::cerr << "Program exited with code " << exit_code << std::endl;
-#endif
-            // Reset std::cerr to default
-            std::cerr << "\033[0m";
-            std::exit(exit_code);
-        }
 
         /**
          * @brief Get the normalized path object
@@ -1515,18 +1519,52 @@ namespace SupDef
             return name;
         }
 
+#ifdef HARD_ASSERT_IMPL
+    #undef HARD_ASSERT_IMPL
+#endif
+#define HARD_ASSERT_IMPL(COND) (static_cast<bool>((COND)) ? ((void)0) : ::SupDef::Util::hard_assert_fail((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__))
+
+#ifdef HARD_ASSERT_IMPL_CONSTEVAL
+    #undef HARD_ASSERT_IMPL_CONSTEVAL
+#endif
+#define HARD_ASSERT_IMPL_CONSTEVAL(COND) (static_cast<bool>((COND)) ? ((void)0) : ::SupDef::Util::hard_assert_fail_consteval((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__))
+
+#ifdef HARD_ASSERT_MSG_IMPL
+    #undef HARD_ASSERT_MSG_IMPL
+#endif
+#define HARD_ASSERT_MSG_IMPL(COND, MSG) (static_cast<bool>((COND)) ? ((void)0) : ::SupDef::Util::hard_assert_fail((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__, (MSG)))
+
+#ifdef HARD_ASSERT_MSG_IMPL_CONSTEVAL
+    #undef HARD_ASSERT_MSG_IMPL_CONSTEVAL
+#endif
+#define HARD_ASSERT_MSG_IMPL_CONSTEVAL(COND, MSG) (static_cast<bool>((COND)) ? ((void)0) : ::SupDef::Util::hard_assert_fail_consteval((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__, (MSG)))
+
 #ifdef hard_assert
     #undef hard_assert
 #endif
-#define hard_assert(COND) (static_cast<bool>((COND)) ? (void)0 : ::SupDef::Util::hard_assert_fail((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__))
+#define hard_assert(COND)                       \
+    do                                          \
+    {                                           \
+        if consteval                            \
+            HARD_ASSERT_IMPL_CONSTEVAL(COND);   \
+        else                                    \
+            HARD_ASSERT_IMPL(COND);             \
+    } while (false)
 
 #ifdef hard_assert_msg
     #undef hard_assert_msg
 #endif
-#define hard_assert_msg(COND, MSG) (static_cast<bool>((COND)) ? (void)0 : ::SupDef::Util::hard_assert_fail((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__, MSG))
+#define hard_assert_msg(COND, MSG)                      \
+    do                                                  \
+    {                                                   \
+        if consteval                                    \
+            HARD_ASSERT_MSG_IMPL_CONSTEVAL(COND, MSG);  \
+        else                                            \
+            HARD_ASSERT_MSG_IMPL(COND, MSG);            \
+    } while (false)
 
         [[noreturn]]
-        constexpr inline void hard_assert_fail(bool cond, const char* cond_str, const char* file, int line, const char* func)
+        static inline void hard_assert_fail(bool cond, const char* cond_str, const char* file, int line, const char* func)
         {
             if (!cond)
             {
@@ -1541,7 +1579,7 @@ namespace SupDef
         template <typename T>
             requires std::convertible_to<T, std::string_view>
         [[noreturn]]
-        constexpr inline void hard_assert_fail(bool cond, const char* cond_str, const char* file, int line, const char* func, const T& msg)
+        static inline void hard_assert_fail(bool cond, const char* cond_str, const char* file, int line, const char* func, const T& msg)
         {
             if (!cond)
             {
@@ -1552,6 +1590,35 @@ namespace SupDef
                 SUPDEF_EXIT();
             }
         }
+
+        STATIC_TODO("Will the `hard_assert_fail_consteval` function below work as expected ?")
+
+        [[noreturn]]
+        consteval static inline void hard_assert_fail_consteval(bool cond, const char* cond_str, const char* file, int line, const char* func)
+        {
+            if (!cond)
+            {
+                throw std::runtime_error("Hard assertion failed: " + std::string(cond_str) + "\n"
+                                        + "File: " + file + "\n"
+                                        + "Line: " + std::to_string(line) + "\n"
+                                        + "Function: " + func + "\n");
+            }
+        }
+
+        template <typename T>
+            requires std::convertible_to<T, std::string_view>
+        [[noreturn]]
+        consteval static inline void hard_assert_fail_consteval(bool cond, const char* cond_str, const char* file, int line, const char* func, const T& msg)
+        {
+            if (!cond)
+            {
+                throw std::runtime_error("Hard assertion failed: " + std::string(cond_str) + " (" + std::string(msg) + ")\n"
+                                        + "File: " + file + "\n"
+                                        + "Line: " + std::to_string(line) + "\n"
+                                        + "Function: " + func + "\n");
+            }
+        }
+
 
 #ifdef GEN_EXC_HANDLER_IMPL
     #undef GEN_EXC_HANDLER_IMPL
@@ -2037,135 +2104,126 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
             return func;
         }
 
+        template <typename T>
+            requires
+                requires(T t1, T t2)
+                {
+                    { t1 > t2 } -> std::convertible_to<bool>;
+                    T(0);
+                }
+        constexpr bool same_sign(T a, T b)
+        {
+            return (a > T(0)) == (b > T(0)) || a == T(0) || b == T(0);
+        }
+
+        static_assert(same_sign(1, 2));
+        static_assert(same_sign(-1, -2));
+
+        static_assert(same_sign(0, 0));
+        static_assert(same_sign(0, -0));
+        
+        static_assert(same_sign(0, 1));
+        static_assert(same_sign(0, -1));
+        static_assert(same_sign(-0, 1));
+        static_assert(same_sign(-0, -1));
+
+        static_assert(!same_sign(1, -2));
+        static_assert(!same_sign(-1, 2));
+
+        static_assert(same_sign(1.0, 2.0));
+        static_assert(same_sign(-1.0, -2.0));
+
+        static_assert(same_sign(0.0, 0.0));
+        static_assert(same_sign(0.0, -0.0));
+        
+        static_assert(same_sign(0.0, 1.0));
+        static_assert(same_sign(0.0, -1.0));
+        static_assert(same_sign(-0.0, 1.0));
+        static_assert(same_sign(-0.0, -1.0));
+
+        static_assert(!same_sign(1.0, -2.0));
+        static_assert(!same_sign(-1.0, 2.0));
+
         namespace
         {
             template <typename Int>
                 requires std::integral<Int>
-            constexpr static inline Int saturated_add_fallback(Int a, Int b)
+            constexpr static inline bool add_exceeds_max(Int a, Int b)
             {
-                if (a > 0 && b > std::numeric_limits<Int>::max() - a)
-                    return std::numeric_limits<Int>::max();
-                else if (a < 0 && b < std::numeric_limits<Int>::min() - a)
-                    return std::numeric_limits<Int>::min();
-                else
-                    return a + b;
+                return a > 0 && b > 0 && a > std::numeric_limits<Int>::max() - b;
             }
-        }
+
+            template <typename Int>
+                requires std::integral<Int>
+            constexpr static inline bool sub_exceeds_max(Int a, Int b)
+            {
+                return a > 0 && b < 0 && a > std::numeric_limits<Int>::max() + b;
+            }
+
+            template <typename Int>
+                requires std::integral<Int>
+            constexpr static inline bool mul_exceeds_max(Int a, Int b)
+            {
+                return same_sign(a, b);
+            }
+        };
 
         template <typename Int>
             requires std::integral<Int>
         constexpr static inline Int saturated_add(Int a, Int b)
         {
-#if SUPDEF_COMPILER == 1 || SUPDEF_COMPILER == 2 // GCC or Clang
-            Int ret;
-            if (__builtin_add_overflow(a, b, &ret))
+            Int res;
+            if (!ckd_add(&res, a, b))
+                return res;
+            else if (add_exceeds_max(a, b))
                 return std::numeric_limits<Int>::max();
             else
-                return ret;
-#elif SUPDEF_COMPILER == 3 // MSVC
-            // Use _add_overflow_i[8|16|32|64] intrinsic when signed
-            // Use _addcarry_u[8|16|32|64] intrinsic when unsigned
-            using namespace std::string_view_literals;
-            if constexpr (std::unsigned_integral<Int>)
-            {
-                if constexpr (sizeof(Int) == 1)
-                {
-                    hard_assert_msg(std::same_as<Int, uint8_t> || std::same_as<Int, char>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
-                    Int ret;
-                    if (_addcarry_u8(0, a, b, &ret))
-                        return std::numeric_limits<Int>::max();
-                    else
-                        return ret;
-                }
-                else if constexpr (sizeof(Int) == 2)
-                {
-                    hard_assert_msg(std::same_as<Int, uint16_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
-                    Int ret;
-                    if (_addcarry_u16(0, a, b, &ret))
-                        return std::numeric_limits<Int>::max();
-                    else
-                        return ret;
-                }
-                else if constexpr (sizeof(Int) == 4)
-                {
-                    hard_assert_msg(std::same_as<Int, uint32_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
-                    Int ret;
-                    if (_addcarry_u32(0, a, b, &ret))
-                        return std::numeric_limits<Int>::max();
-                    else
-                        return ret;
-                }
-                else if constexpr (sizeof(Int) == 8)
-                {
-                    hard_assert_msg(std::same_as<Int, uint64_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
-                    Int ret;
-                    if (_addcarry_u64(0, a, b, &ret))
-                        return std::numeric_limits<Int>::max();
-                    else
-                        return ret;
-                }
-                else
-                    return saturated_add_fallback(a, b);
-            }
-#if _MSC_VER >= 1937
-            else if constexpr (std::signed_integral<Int>)
-            {
-                if constexpr (sizeof(Int) == 1)
-                {
-                    hard_assert_msg(std::same_as<Int, int8_t> || std::same_as<Int, char>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
-                    Int ret;
-                    if (_add_overflow_i8(0, a, b, &ret))
-                        return std::numeric_limits<Int>::max();
-                    else
-                        return ret;
-                }
-                else if constexpr (sizeof(Int) == 2)
-                {
-                    hard_assert_msg(std::same_as<Int, int16_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
-                    Int ret;
-                    if (_add_overflow_i16(0, a, b, &ret))
-                        return std::numeric_limits<Int>::max();
-                    else
-                        return ret;
-                }
-                else if constexpr (sizeof(Int) == 4)
-                {
-                    hard_assert_msg(std::same_as<Int, int32_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
-                    Int ret;
-                    if (_add_overflow_i32(0, a, b, &ret))
-                        return std::numeric_limits<Int>::max();
-                    else
-                        return ret;
-                }
-                else if constexpr (sizeof(Int) == 8)
-                {
-                    hard_assert_msg(std::same_as<Int, int64_t>, "Unsupported type "sv + type_name<Int>(true) + " for saturated_add()"sv);
-                    Int ret;
-                    if (_add_overflow_i64(0, a, b, &ret))
-                        return std::numeric_limits<Int>::max();
-                    else
-                        return ret;
-                }
-                else
-                    return saturated_add_fallback(a, b);
-            }
-#else
-            // Perform unsigned addition then check if the sign bit is the same as the two inputs' signs
-            else if constexpr (std::signed_integral<Int>)
-            {
-                return saturated_add_fallback(a, b);
-                TODO(
-                    "Implement this for real"
-                );
-            }
-#endif
-            else
-                return saturated_add_fallback(a, b);
-#else
-            return saturated_add_fallback(a, b);
-#endif
-            return saturated_add_fallback(a, b);
+                return std::numeric_limits<Int>::min();
         }
+
+        template <typename Int>
+            requires std::integral<Int>
+        constexpr static inline Int saturated_sub(Int a, Int b)
+        {
+            Int res;
+            if (!ckd_sub(&res, a, b))
+                return res;
+            else if (sub_exceeds_max(a, b))
+                return std::numeric_limits<Int>::max();
+            else
+                return std::numeric_limits<Int>::min();
+        }
+
+        template <typename Int>
+            requires std::integral<Int>
+        constexpr static inline Int saturated_mul(Int a, Int b)
+        {
+            Int res;
+            if (!ckd_mul(&res, a, b))
+                return res;
+            else if (mul_exceeds_max(a, b))
+                return std::numeric_limits<Int>::max();
+            else
+                return std::numeric_limits<Int>::min();
+        }
+
+        static_assert(saturated_add(1, 2) == 3);
+        static_assert(saturated_add(std::numeric_limits<int>::max(), int(1)) == std::numeric_limits<int>::max());
+        static_assert(saturated_add(std::numeric_limits<int>::min(), int(-1)) == std::numeric_limits<int>::min());
+        static_assert(saturated_add(std::numeric_limits<int>::max(), int(-1)) == std::numeric_limits<int>::max() - 1);
+        static_assert(saturated_add(std::numeric_limits<int>::min(), int(1)) == std::numeric_limits<int>::min() + 1);
+
+        static_assert(saturated_sub(1, 2) == -1);
+        static_assert(saturated_sub(std::numeric_limits<int>::max(), int(1)) == std::numeric_limits<int>::max() - 1);
+        static_assert(saturated_sub(std::numeric_limits<int>::min(), int(-1)) == std::numeric_limits<int>::min() + 1);
+        static_assert(saturated_sub(std::numeric_limits<int>::max(), int(-1)) == std::numeric_limits<int>::max());
+        static_assert(saturated_sub(std::numeric_limits<int>::min(), int(1)) == std::numeric_limits<int>::min());
+
+        static_assert(saturated_mul(1, 2) == 2);
+        static_assert(saturated_mul(std::numeric_limits<int>::max() / 2, int(5)) == std::numeric_limits<int>::max());
+        static_assert(saturated_mul(std::numeric_limits<int>::min() / 2, int(5)) == std::numeric_limits<int>::min());
+        static_assert(saturated_mul(std::numeric_limits<int>::max() / 2, int(-5)) == std::numeric_limits<int>::min());
+        static_assert(saturated_mul(std::numeric_limits<int>::min() / 2, int(-5)) == std::numeric_limits<int>::max());
     }
 
     // All values here are based on Boost.Contract library failure handlers

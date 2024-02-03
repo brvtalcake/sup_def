@@ -54,6 +54,8 @@ namespace SupDef
 
         SD_COMMON_API
         int get_warncount(void);
+
+        static inline int main_ret(void);
     };
 };
 

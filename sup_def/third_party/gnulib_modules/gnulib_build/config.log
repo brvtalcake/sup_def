@@ -83,38 +83,38 @@ PATH: /home/axel/.ghcup/bin/
 ## Core tests. ##
 ## ----------- ##
 
-configure:3187: looking for aux files: config.guess config.sub compile missing install-sh
-configure:3200:  trying ./build-aux/
-configure:3229:   ./build-aux/config.guess found
-configure:3229:   ./build-aux/config.sub found
-configure:3229:   ./build-aux/compile found
-configure:3229:   ./build-aux/missing found
-configure:3211:   ./build-aux/install-sh found
-configure:3359: checking for a BSD-compatible install
-configure:3432: result: /usr/bin/install -c
-configure:3443: checking whether build environment is sane
-configure:3498: result: yes
-configure:3657: checking for a race-free mkdir -p
-configure:3701: result: /usr/bin/mkdir -p
-configure:3708: checking for gawk
-configure:3729: found /usr/bin/gawk
-configure:3740: result: gawk
-configure:3751: checking whether make sets $(MAKE)
-configure:3774: result: yes
-configure:3804: checking whether make supports nested variables
-configure:3822: result: yes
-configure:4024: checking for gcc
-configure:4045: found /usr/local/bin/gcc
-configure:4056: result: gcc
-configure:4409: checking for C compiler version
-configure:4418: gcc --version >&5
+configure:2242: looking for aux files: config.guess config.sub compile missing install-sh
+configure:2255:  trying ./build-aux/
+configure:2284:   ./build-aux/config.guess found
+configure:2284:   ./build-aux/config.sub found
+configure:2284:   ./build-aux/compile found
+configure:2284:   ./build-aux/missing found
+configure:2266:   ./build-aux/install-sh found
+configure:2414: checking for a BSD-compatible install
+configure:2487: result: /usr/bin/install -c
+configure:2498: checking whether build environment is sane
+configure:2553: result: yes
+configure:2712: checking for a race-free mkdir -p
+configure:2756: result: /usr/bin/mkdir -p
+configure:2763: checking for gawk
+configure:2784: found /usr/bin/gawk
+configure:2795: result: gawk
+configure:2806: checking whether make sets $(MAKE)
+configure:2829: result: yes
+configure:2859: checking whether make supports nested variables
+configure:2877: result: yes
+configure:3079: checking for gcc
+configure:3100: found /usr/local/bin/gcc
+configure:3111: result: gcc
+configure:3464: checking for C compiler version
+configure:3473: gcc --version >&5
 gcc (Intel x86-64-alderlake) 13.2.0
 Copyright (C) 2023 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-configure:4429: $? = 0
-configure:4418: gcc -v >&5
+configure:3484: $? = 0
+configure:3473: gcc -v >&5
 Using built-in specs.
 COLLECT_GCC=gcc
 COLLECT_LTO_WRAPPER=/usr/local/libexec/gcc/x86_64-pc-linux-gnu/13.2.0/lto-wrapper
@@ -123,126 +123,90 @@ Configured with: ../gcc-13.2.0/configure --target=x86_64-pc-linux-gnu --prefix=/
 Thread model: posix
 Supported LTO compression algorithms: zlib zstd
 gcc version 13.2.0 (Intel x86-64-alderlake) 
-configure:4429: $? = 0
-configure:4418: gcc -V >&5
+configure:3484: $? = 0
+configure:3473: gcc -V >&5
 gcc: error: unrecognized command-line option '-V'
 gcc: fatal error: no input files
 compilation terminated.
-configure:4429: $? = 1
-configure:4418: gcc -qversion >&5
+configure:3484: $? = 1
+configure:3473: gcc -qversion >&5
 gcc: error: unrecognized command-line option '-qversion'; did you mean '--version'?
 gcc: fatal error: no input files
 compilation terminated.
-configure:4429: $? = 1
-configure:4418: gcc -version >&5
+configure:3484: $? = 1
+configure:3473: gcc -version >&5
 gcc: error: unrecognized command-line option '-version'
 gcc: fatal error: no input files
 compilation terminated.
-configure:4429: $? = 1
-configure:4449: checking whether the C compiler works
-configure:4471: gcc    conftest.c  >&5
-configure:4475: $? = 0
-configure:4525: result: yes
-configure:4528: checking for C compiler default output file name
-configure:4530: result: a.out
-configure:4536: checking for suffix of executables
-configure:4543: gcc -o conftest    conftest.c  >&5
-configure:4547: $? = 0
-configure:4570: result: 
-configure:4592: checking whether we are cross compiling
-configure:4600: gcc -o conftest    conftest.c  >&5
-configure:4604: $? = 0
-configure:4611: ./conftest
-configure:4615: $? = 0
-configure:4630: result: no
-configure:4635: checking for suffix of object files
-configure:4658: gcc -c   conftest.c >&5
-configure:4662: $? = 0
-configure:4684: result: o
-configure:4688: checking whether the compiler supports GNU C
-configure:4708: gcc -c   conftest.c >&5
-configure:4708: $? = 0
-configure:4718: result: yes
-configure:4729: checking whether gcc accepts -g
-configure:4750: gcc -c -g  conftest.c >&5
-configure:4750: $? = 0
-configure:4794: result: yes
-configure:4814: checking for gcc option to enable C11 features
-configure:4829: gcc  -c -g -O2  conftest.c >&5
-configure:4829: $? = 0
-configure:4847: result: none needed
-configure:4963: checking whether gcc understands -c and -o together
-configure:4986: gcc -c conftest.c -o conftest2.o
-configure:4989: $? = 0
-configure:4986: gcc -c conftest.c -o conftest2.o
-configure:4989: $? = 0
-configure:5001: result: yes
-configure:5019: checking whether the compiler is clang
-configure:5041: gcc -c -g -O2  conftest.c >&5
-configure:5041: $? = 0
-configure:5050: result: no
-configure:5054: checking for compiler option needed when checking for declarations
-configure:5087: result: none
-configure:5099: checking whether make supports the include directive
-configure:5114: make -f confmf.GNU && cat confinc.out
+configure:3484: $? = 1
+configure:3504: checking whether the C compiler works
+configure:3526: gcc    conftest.c  >&5
+configure:3530: $? = 0
+configure:3580: result: yes
+configure:3583: checking for C compiler default output file name
+configure:3585: result: a.out
+configure:3591: checking for suffix of executables
+configure:3598: gcc -o conftest    conftest.c  >&5
+configure:3602: $? = 0
+configure:3625: result: 
+configure:3647: checking whether we are cross compiling
+configure:3655: gcc -o conftest    conftest.c  >&5
+configure:3659: $? = 0
+configure:3666: ./conftest
+configure:3670: $? = 0
+configure:3685: result: no
+configure:3690: checking for suffix of object files
+configure:3713: gcc -c   conftest.c >&5
+configure:3717: $? = 0
+configure:3739: result: o
+configure:3743: checking whether the compiler supports GNU C
+configure:3763: gcc -c   conftest.c >&5
+configure:3763: $? = 0
+configure:3773: result: yes
+configure:3784: checking whether gcc accepts -g
+configure:3805: gcc -c -g  conftest.c >&5
+configure:3805: $? = 0
+configure:3849: result: yes
+configure:3869: checking for gcc option to enable C11 features
+configure:3884: gcc  -c -g -O2  conftest.c >&5
+configure:3884: $? = 0
+configure:3902: result: none needed
+configure:4018: checking whether gcc understands -c and -o together
+configure:4041: gcc -c conftest.c -o conftest2.o
+configure:4044: $? = 0
+configure:4041: gcc -c conftest.c -o conftest2.o
+configure:4044: $? = 0
+configure:4056: result: yes
+configure:4074: checking whether the compiler is clang
+configure:4096: gcc -c -g -O2  conftest.c >&5
+configure:4096: $? = 0
+configure:4105: result: no
+configure:4109: checking for compiler option needed when checking for declarations
+configure:4142: result: none
+configure:4154: checking whether make supports the include directive
+configure:4169: make -f confmf.GNU && cat confinc.out
+make[4]: Entering directory '/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build'
+make[4]: Leaving directory '/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build'
 this is the am__doit target
-configure:5117: $? = 0
-configure:5136: result: yes (GNU style)
-configure:5162: checking dependency style of gcc
-configure:5274: result: gcc3
-configure:5290: checking whether make sets $(MAKE)
-configure:5313: result: yes
-configure:5330: checking build system type
-configure:5345: result: x86_64-pc-linux-gnu
-configure:5365: checking host system type
-configure:5379: result: x86_64-pc-linux-gnu
-configure:5407: checking for stdio.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for stdlib.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for string.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for inttypes.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for stdint.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for strings.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for sys/stat.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for sys/types.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for unistd.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for wchar.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for minix/config.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-conftest.c:49:10: fatal error: minix/config.h: No such file or directory
-   49 | #include <minix/config.h>
-      |          ^~~~~~~~~~~~~~~~
+configure:4172: $? = 0
+configure:4191: result: yes (GNU style)
+configure:4217: checking dependency style of gcc
+configure:4329: result: gcc3
+configure:4345: checking whether make sets $(MAKE)
+configure:4368: result: yes
+configure:4385: checking build system type
+configure:4400: result: x86_64-pc-linux-gnu
+configure:4420: checking host system type
+configure:4434: result: x86_64-pc-linux-gnu
+configure:4463: checking how to run the C preprocessor
+configure:4489: gcc -E  conftest.c
+configure:4489: $? = 0
+configure:4504: gcc -E  conftest.c
+conftest.c:11:10: fatal error: ac_nonexistent.h: No such file or directory
+   11 | #include <ac_nonexistent.h>
+      |          ^~~~~~~~~~~~~~~~~~
 compilation terminated.
-configure:5407: $? = 1
+configure:4504: $? = 1
 configure: failed program was:
 | /* confdefs.h */
 | #define PACKAGE_NAME "dummy"
@@ -253,62 +217,88 @@ configure: failed program was:
 | #define PACKAGE_URL ""
 | #define PACKAGE "dummy"
 | #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
 | /* end confdefs.h.  */
-| #include <stddef.h>
-| #ifdef HAVE_STDIO_H
-| # include <stdio.h>
-| #endif
-| #ifdef HAVE_STDLIB_H
-| # include <stdlib.h>
-| #endif
-| #ifdef HAVE_STRING_H
-| # include <string.h>
-| #endif
-| #ifdef HAVE_INTTYPES_H
-| # include <inttypes.h>
-| #endif
-| #ifdef HAVE_STDINT_H
-| # include <stdint.h>
-| #endif
-| #ifdef HAVE_STRINGS_H
-| # include <strings.h>
-| #endif
-| #ifdef HAVE_SYS_TYPES_H
-| # include <sys/types.h>
-| #endif
-| #ifdef HAVE_SYS_STAT_H
-| # include <sys/stat.h>
-| #endif
-| #ifdef HAVE_UNISTD_H
-| # include <unistd.h>
-| #endif
-| #include <minix/config.h>
-configure:5407: result: no
-configure:5407: checking for limits.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for stdbool.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-configure:5407: $? = 0
-configure:5407: result: yes
-configure:5407: checking for stdckdint.h
-configure:5407: gcc -c -g -O2  conftest.c >&5
-conftest.c:51:10: fatal error: stdckdint.h: No such file or directory
-   51 | #include <stdckdint.h>
+| #include <ac_nonexistent.h>
+configure:4531: result: gcc -E
+configure:4545: gcc -E  conftest.c
+configure:4545: $? = 0
+configure:4560: gcc -E  conftest.c
+conftest.c:11:10: fatal error: ac_nonexistent.h: No such file or directory
+   11 | #include <ac_nonexistent.h>
+      |          ^~~~~~~~~~~~~~~~~~
+compilation terminated.
+configure:4560: $? = 1
+configure: failed program was:
+| /* confdefs.h */
+| #define PACKAGE_NAME "dummy"
+| #define PACKAGE_TARNAME "dummy"
+| #define PACKAGE_VERSION "0"
+| #define PACKAGE_STRING "dummy 0"
+| #define PACKAGE_BUGREPORT ""
+| #define PACKAGE_URL ""
+| #define PACKAGE "dummy"
+| #define VERSION "0"
+| /* end confdefs.h.  */
+| #include <ac_nonexistent.h>
+configure:4591: checking for grep that handles long lines and -e
+configure:4655: result: /usr/bin/grep
+configure:4660: checking for egrep
+configure:4728: result: /usr/bin/grep -E
+configure:4736: checking for Minix Amsterdam compiler
+configure:4762: result: no
+configure:4824: checking for ar
+configure:4845: found /usr/bin/ar
+configure:4856: result: ar
+configure:4936: checking for ranlib
+configure:4957: found /usr/bin/ranlib
+configure:4968: result: ranlib
+configure:5060: checking for stdio.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for stdlib.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for string.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for inttypes.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for stdint.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for strings.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for sys/stat.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for sys/types.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for unistd.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for stdbool.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+configure:5060: $? = 0
+configure:5060: result: yes
+configure:5060: checking for stdckdint.h
+configure:5060: gcc -c -g -O2  conftest.c >&5
+conftest.c:49:10: fatal error: stdckdint.h: No such file or directory
+   49 | #include <stdckdint.h>
       |          ^~~~~~~~~~~~~
 compilation terminated.
-configure:5407: $? = 1
+configure:5060: $? = 1
 configure: failed program was:
 | /* confdefs.h */
 | #define PACKAGE_NAME "dummy"
@@ -328,8 +318,6 @@ configure: failed program was:
 | #define HAVE_SYS_STAT_H 1
 | #define HAVE_SYS_TYPES_H 1
 | #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
 | #define HAVE_STDBOOL_H 1
 | /* end confdefs.h.  */
 | #include <stddef.h>
@@ -361,1146 +349,29 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include <stdckdint.h>
-configure:5407: result: no
-configure:5438: checking whether it is safe to define __EXTENSIONS__
-configure:5457: gcc -c -g -O2  conftest.c >&5
-configure:5457: $? = 0
-configure:5465: result: yes
-configure:5468: checking whether _XOPEN_SOURCE should be defined
-configure:5490: gcc -c -g -O2  conftest.c >&5
-configure:5490: $? = 0
-configure:5517: result: no
-configure:5592: checking how to run the C preprocessor
-configure:5618: gcc -E  conftest.c
-configure:5618: $? = 0
-configure:5633: gcc -E  conftest.c
-conftest.c:41:10: fatal error: ac_nonexistent.h: No such file or directory
-   41 | #include <ac_nonexistent.h>
-      |          ^~~~~~~~~~~~~~~~~~
-compilation terminated.
-configure:5633: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| /* end confdefs.h.  */
-| #include <ac_nonexistent.h>
-configure:5660: result: gcc -E
-configure:5674: gcc -E  conftest.c
-configure:5674: $? = 0
-configure:5689: gcc -E  conftest.c
-conftest.c:41:10: fatal error: ac_nonexistent.h: No such file or directory
-   41 | #include <ac_nonexistent.h>
-      |          ^~~~~~~~~~~~~~~~~~
-compilation terminated.
-configure:5689: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| /* end confdefs.h.  */
-| #include <ac_nonexistent.h>
-configure:5720: checking for grep that handles long lines and -e
-configure:5784: result: /usr/bin/grep
-configure:5789: checking for egrep
-configure:5857: result: /usr/bin/grep -E
-configure:5865: checking for Minix Amsterdam compiler
-configure:5891: result: no
-configure:5953: checking for ar
-configure:5974: found /usr/bin/ar
-configure:5985: result: ar
-configure:6065: checking for ranlib
-configure:6086: found /usr/bin/ranlib
-configure:6097: result: ranlib
-configure:6185: checking for size_t
-configure:6185: gcc -c -g -O2  conftest.c >&5
-configure:6185: $? = 0
-configure:6185: gcc -c -g -O2  conftest.c >&5
-conftest.c: In function 'main':
-conftest.c:72:21: error: expected expression before ')' token
-   72 | if (sizeof ((size_t)))
-      |                     ^
-configure:6185: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| /* end confdefs.h.  */
-| #include <stddef.h>
-| #ifdef HAVE_STDIO_H
-| # include <stdio.h>
-| #endif
-| #ifdef HAVE_STDLIB_H
-| # include <stdlib.h>
-| #endif
-| #ifdef HAVE_STRING_H
-| # include <string.h>
-| #endif
-| #ifdef HAVE_INTTYPES_H
-| # include <inttypes.h>
-| #endif
-| #ifdef HAVE_STDINT_H
-| # include <stdint.h>
-| #endif
-| #ifdef HAVE_STRINGS_H
-| # include <strings.h>
-| #endif
-| #ifdef HAVE_SYS_TYPES_H
-| # include <sys/types.h>
-| #endif
-| #ifdef HAVE_SYS_STAT_H
-| # include <sys/stat.h>
-| #endif
-| #ifdef HAVE_UNISTD_H
-| # include <unistd.h>
-| #endif
-| int
-| main (void)
-| {
-| if (sizeof ((size_t)))
-| 	    return 0;
-|   ;
-|   return 0;
-| }
-configure:6185: result: yes
-configure:6197: checking for working alloca.h
-configure:6215: gcc -o conftest -g -O2   conftest.c  >&5
-configure:6215: $? = 0
-configure:6224: result: yes
-configure:6232: checking for alloca
-configure:6277: result: yes
-configure:6350: checking whether the preprocessor supports include_next
-configure:6389: gcc -c -g -O2  -Iconftestd1b -Iconftestd2 conftest.c >&5
-configure:6389: $? = 0
-configure:6412: result: yes
-configure:6434: checking whether source code line length is unlimited
-configure:6459: result: yes
-configure:6469: checking whether ctype.h defines __header_inline
-configure:6483: gcc -E  conftest.c
-conftest.c:45:28: error: #error "<ctype.h> does not define __header_inline"
-   45 |                           #error "<ctype.h> does not define __header_inline"
-      |                            ^~~~~
-configure:6483: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| /* end confdefs.h.  */
-| #include <ctype.h>
-|                          #ifndef __header_inline
-|                           #error "<ctype.h> does not define __header_inline"
-|                          #endif
-| 
-configure:6491: result: no
-configure:6583: checking whether limits.h has WORD_BIT, BOOL_WIDTH etc.
-configure:6610: gcc -c -g -O2  conftest.c >&5
-configure:6610: $? = 0
-configure:6618: result: yes
-configure:6623: checking whether limits.h has SSIZE_MAX
-configure:6637: gcc -c -g -O2  conftest.c >&5
-configure:6637: $? = 0
-configure:6645: result: yes
-configure:6653: checking for GNU libc compatible malloc
-configure:6685: gcc -o conftest -g -O2   conftest.c  >&5
-configure:6685: $? = 0
-configure:6685: ./conftest
-configure:6685: $? = 0
-configure:6696: result: yes
-configure:6760: checking for memset_explicit
-configure:6760: gcc -o conftest -g -O2   conftest.c  >&5
-/usr/bin/ld: /tmp/cco5adtg.o: in function `main':
-/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/conftest.c:71:(.text.startup+0x7): undefined reference to `memset_explicit'
-collect2: error: ld returned 1 exit status
-configure:6760: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| /* end confdefs.h.  */
-| /* Define memset_explicit to an innocuous variant, in case <limits.h> declares memset_explicit.
-|    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-| #define memset_explicit innocuous_memset_explicit
-| 
-| /* System header to define __stub macros and hopefully few prototypes,
-|    which can conflict with char memset_explicit (); below.  */
-| 
-| #include <limits.h>
-| #undef memset_explicit
-| 
-| /* Override any GCC internal prototype to avoid an error.
-|    Use char because int might match the return type of a GCC
-|    builtin and then its argument prototype would still apply.  */
-| #ifdef __cplusplus
-| extern "C"
-| #endif
-| char memset_explicit ();
-| /* The GNU C library defines this for functions which it implements
-|     to always fail with ENOSYS.  Some functions are actually named
-|     something starting with __ and the normal name is an alias.  */
-| #if defined __stub_memset_explicit || defined __stub___memset_explicit
-| choke me
-| #endif
-| 
-| int
-| main (void)
-| {
-| return memset_explicit ();
-|   ;
-|   return 0;
-| }
-configure:6760: result: no
-configure:6760: checking for memset_s
-configure:6760: gcc -o conftest -g -O2   conftest.c  >&5
-/usr/bin/ld: /tmp/ccpCFBLO.o: in function `main':
-/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/conftest.c:71:(.text.startup+0x7): undefined reference to `memset_s'
-collect2: error: ld returned 1 exit status
-configure:6760: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| /* end confdefs.h.  */
-| /* Define memset_s to an innocuous variant, in case <limits.h> declares memset_s.
-|    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-| #define memset_s innocuous_memset_s
-| 
-| /* System header to define __stub macros and hopefully few prototypes,
-|    which can conflict with char memset_s (); below.  */
-| 
-| #include <limits.h>
-| #undef memset_s
-| 
-| /* Override any GCC internal prototype to avoid an error.
-|    Use char because int might match the return type of a GCC
-|    builtin and then its argument prototype would still apply.  */
-| #ifdef __cplusplus
-| extern "C"
-| #endif
-| char memset_s ();
-| /* The GNU C library defines this for functions which it implements
-|     to always fail with ENOSYS.  Some functions are actually named
-|     something starting with __ and the normal name is an alias.  */
-| #if defined __stub_memset_s || defined __stub___memset_s
-| choke me
-| #endif
-| 
-| int
-| main (void)
-| {
-| return memset_s ();
-|   ;
-|   return 0;
-| }
-configure:6760: result: no
-configure:7244: checking whether the compiler produces multi-arch binaries
-configure:7259: gcc -c -g -O2  conftest.c >&5
-conftest.c:45:13: error: unknown type name 'not'
-   45 |             not a universal capable compiler
-      |             ^~~
-conftest.c:45:19: error: expected '=', ',', ';', 'asm' or '__attribute__' before 'universal'
-   45 |             not a universal capable compiler
-      |                   ^~~~~~~~~
-conftest.c:45:19: error: unknown type name 'universal'
-configure:7259: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| /* end confdefs.h.  */
-| #ifndef __APPLE_CC__
-|             not a universal capable compiler
-|            #endif
-|            typedef int dummy;
-| 
-configure:7287: result: no
-configure:7304: checking for wchar_t
-configure:7322: gcc -c -g -O2  conftest.c >&5
-configure:7322: $? = 0
-configure:7330: result: yes
-configure:7346: checking for good max_align_t
-configure:7383: gcc -c -g -O2  conftest.c >&5
-configure:7383: $? = 0
-configure:7392: result: yes
-configure:7404: checking whether NULL can be used in arbitrary expressions
-configure:7423: gcc -c -g -O2  conftest.c >&5
-configure:7423: $? = 0
-configure:7431: result: yes
-configure:7438: checking for unreachable
-configure:7457: gcc -o conftest -g -O2   conftest.c  >&5
-conftest.c: In function 'main':
-conftest.c:50:1: warning: implicit declaration of function 'unreachable' [-Wimplicit-function-declaration]
-   50 | unreachable ();
-      | ^~~~~~~~~~~
-/usr/bin/ld: /tmp/ccKwMFvD.o: in function `main':
-/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/conftest.c:50:(.text.startup+0x7): undefined reference to `unreachable'
-collect2: error: ld returned 1 exit status
-configure:7457: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| #define HAVE_WCHAR_T 1
-| /* end confdefs.h.  */
-| #include <stddef.h>
-| 
-| int
-| main (void)
-| {
-| unreachable ();
-| 
-|   ;
-|   return 0;
-| }
-configure:7467: result: no
-configure:7551: checking for wint_t
-configure:7569: gcc -c -g -O2  conftest.c >&5
-configure:7569: $? = 0
-configure:7577: result: yes
-configure:7584: checking whether wint_t is large enough
-configure:7603: gcc -c -g -O2  conftest.c >&5
-configure:7603: $? = 0
-configure:7611: result: yes
-configure:7746: checking whether stdint.h conforms to C99
-configure:7926: gcc -c -g -O2  conftest.c >&5
-configure:7926: $? = 0
-configure:8011: gcc -o conftest -g -O2   conftest.c  >&5
-configure:8011: $? = 0
-configure:8011: ./conftest
-configure:8011: $? = 0
-configure:8024: result: yes
-configure:8035: checking whether stdint.h works without ISO C predefines
-configure:8068: gcc -c -g -O2  conftest.c >&5
-configure:8068: $? = 0
-configure:8075: result: yes
-configure:8086: checking whether stdint.h has UINTMAX_WIDTH etc.
-configure:8119: gcc -c -g -O2  conftest.c >&5
-configure:8119: $? = 0
-configure:8125: result: yes
-configure:8442: checking for C/C++ restrict keyword
-configure:8472: gcc -c -g -O2  conftest.c >&5
-configure:8472: $? = 0
-configure:8481: result: __restrict__
-configure:8493: checking for nl_langinfo and CODESET
-configure:8510: gcc -o conftest -g -O2   conftest.c  >&5
-configure:8510: $? = 0
-configure:8520: result: yes
-configure:8531: checking for a french Unicode locale
-configure:8609: gcc -o conftest -g -O2   conftest.c  >&5
-configure:8612: $? = 0
-configure:8660: result: fr_FR.UTF-8
-configure:8690: checking for gcc options needed to detect all undeclared functions
-configure:8712: gcc -c -g -O2   conftest.c >&5
-conftest.c: In function 'main':
-conftest.c:54:8: error: 'strchr' undeclared (first use in this function)
-   54 | (void) strchr;
-      |        ^~~~~~
-conftest.c:1:1: note: 'strchr' is defined in header '<string.h>'; did you forget to '#include <string.h>'?
-    1 | /* confdefs.h */
-conftest.c:54:8: note: each undeclared identifier is reported only once for each function it appears in
-   54 | (void) strchr;
-      |        ^~~~~~
-configure:8712: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| #define HAVE_WCHAR_T 1
-| #define HAVE_WINT_T 1
-| #define HAVE_LONG_LONG_INT 1
-| #define HAVE_UNSIGNED_LONG_LONG_INT 1
-| #define restrict __restrict__
-| #define HAVE_LANGINFO_CODESET 1
-| /* end confdefs.h.  */
-| 
-| int
-| main (void)
-| {
-| (void) strchr;
-|   ;
-|   return 0;
-| }
-configure:8739: gcc -c -g -O2   conftest.c >&5
-configure:8739: $? = 0
-configure:8756: result: none needed
-configure:8770: checking whether ecvt is declared
-configure:8770: gcc -c -g -O2   conftest.c >&5
-configure:8770: $? = 0
-configure:8770: result: yes
-configure:8779: checking whether fcvt is declared
-configure:8779: gcc -c -g -O2   conftest.c >&5
-configure:8779: $? = 0
-configure:8779: result: yes
-configure:8788: checking whether gcvt is declared
-configure:8788: gcc -c -g -O2   conftest.c >&5
-configure:8788: $? = 0
-configure:8788: result: yes
-configure:8880: checking whether MB_CUR_MAX is correct
-configure:8914: gcc -o conftest -g -O2   conftest.c  >&5
-configure:8914: $? = 0
-configure:8914: ./conftest
-configure:8914: $? = 0
-configure:8927: result: yes
-configure:9031: checking for pid_t
-configure:9031: gcc -c -g -O2  conftest.c >&5
-configure:9031: $? = 0
-configure:9031: gcc -c -g -O2  conftest.c >&5
-conftest.c: In function 'main':
-conftest.c:85:20: error: expected expression before ')' token
-   85 | if (sizeof ((pid_t)))
-      |                    ^
-configure:9031: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| #define HAVE_WCHAR_T 1
-| #define HAVE_WINT_T 1
-| #define HAVE_LONG_LONG_INT 1
-| #define HAVE_UNSIGNED_LONG_LONG_INT 1
-| #define restrict __restrict__
-| #define HAVE_LANGINFO_CODESET 1
-| #define HAVE_DECL_ECVT 1
-| #define HAVE_DECL_FCVT 1
-| #define HAVE_DECL_GCVT 1
-| /* end confdefs.h.  */
-| #include <stddef.h>
-| #ifdef HAVE_STDIO_H
-| # include <stdio.h>
-| #endif
-| #ifdef HAVE_STDLIB_H
-| # include <stdlib.h>
-| #endif
-| #ifdef HAVE_STRING_H
-| # include <string.h>
-| #endif
-| #ifdef HAVE_INTTYPES_H
-| # include <inttypes.h>
-| #endif
-| #ifdef HAVE_STDINT_H
-| # include <stdint.h>
-| #endif
-| #ifdef HAVE_STRINGS_H
-| # include <strings.h>
-| #endif
-| #ifdef HAVE_SYS_TYPES_H
-| # include <sys/types.h>
-| #endif
-| #ifdef HAVE_SYS_STAT_H
-| # include <sys/stat.h>
-| #endif
-| #ifdef HAVE_UNISTD_H
-| # include <unistd.h>
-| #endif
-| 
-| int
-| main (void)
-| {
-| if (sizeof ((pid_t)))
-| 	    return 0;
-|   ;
-|   return 0;
-| }
-configure:9031: result: yes
-configure:9067: checking for mode_t
-configure:9067: gcc -c -g -O2  conftest.c >&5
-configure:9067: $? = 0
-configure:9067: gcc -c -g -O2  conftest.c >&5
-conftest.c: In function 'main':
-conftest.c:84:21: error: expected expression before ')' token
-   84 | if (sizeof ((mode_t)))
-      |                     ^
-configure:9067: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| #define HAVE_WCHAR_T 1
-| #define HAVE_WINT_T 1
-| #define HAVE_LONG_LONG_INT 1
-| #define HAVE_UNSIGNED_LONG_LONG_INT 1
-| #define restrict __restrict__
-| #define HAVE_LANGINFO_CODESET 1
-| #define HAVE_DECL_ECVT 1
-| #define HAVE_DECL_FCVT 1
-| #define HAVE_DECL_GCVT 1
-| /* end confdefs.h.  */
-| #include <stddef.h>
-| #ifdef HAVE_STDIO_H
-| # include <stdio.h>
-| #endif
-| #ifdef HAVE_STDLIB_H
-| # include <stdlib.h>
-| #endif
-| #ifdef HAVE_STRING_H
-| # include <string.h>
-| #endif
-| #ifdef HAVE_INTTYPES_H
-| # include <inttypes.h>
-| #endif
-| #ifdef HAVE_STDINT_H
-| # include <stdint.h>
-| #endif
-| #ifdef HAVE_STRINGS_H
-| # include <strings.h>
-| #endif
-| #ifdef HAVE_SYS_TYPES_H
-| # include <sys/types.h>
-| #endif
-| #ifdef HAVE_SYS_STAT_H
-| # include <sys/stat.h>
-| #endif
-| #ifdef HAVE_UNISTD_H
-| # include <unistd.h>
-| #endif
-| int
-| main (void)
-| {
-| if (sizeof ((mode_t)))
-| 	    return 0;
-|   ;
-|   return 0;
-| }
-configure:9067: result: yes
-configure:9280: checking whether execvpe is declared
-configure:9280: gcc -c -g -O2   conftest.c >&5
-configure:9280: $? = 0
-configure:9280: result: yes
-configure:9755: checking for alloca as a compiler built-in
-configure:9781: result: yes
-configure:9836: checking for static_assert
-configure:9874: gcc -c -g -O2  conftest.c >&5
-conftest.c:63:28: error: expected declaration specifiers or '...' before numeric constant
-   63 |             static_assert (2 + 2 == 4, "arithmetic does not work");
-      |                            ^
-conftest.c:63:40: error: expected declaration specifiers or '...' before string constant
-   63 |             static_assert (2 + 2 == 4, "arithmetic does not work");
-      |                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~
-conftest.c:64:28: error: expected declaration specifiers or '...' before numeric constant
-   64 |             static_assert (2 + 2 == 4);
-      |                            ^
-conftest.c: In function 'main':
-conftest.c:70:13: warning: implicit declaration of function 'static_assert' [-Wimplicit-function-declaration]
-   70 |             static_assert (sizeof (char) == 1, "sizeof does not work");
-      |             ^~~~~~~~~~~~~
-configure:9874: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| #define HAVE_WCHAR_T 1
-| #define HAVE_WINT_T 1
-| #define HAVE_LONG_LONG_INT 1
-| #define HAVE_UNSIGNED_LONG_LONG_INT 1
-| #define restrict __restrict__
-| #define HAVE_LANGINFO_CODESET 1
-| #define HAVE_DECL_ECVT 1
-| #define HAVE_DECL_FCVT 1
-| #define HAVE_DECL_GCVT 1
-| #define _USE_STD_STAT 1
-| #define HAVE_DECL_EXECVPE 1
-| #define HAVE_ALLOCA 1
-| /* end confdefs.h.  */
-| #if defined __clang__ && __STDC_VERSION__ < 202311
-|              #pragma clang diagnostic error "-Wc2x-extensions"
-|              #pragma clang diagnostic error "-Wc++1z-extensions"
-|             #endif
-|             #ifdef INCLUDE_ASSERT_H
-|              #include <assert.h>
-|             #endif
-|             static_assert (2 + 2 == 4, "arithmetic does not work");
-|             static_assert (2 + 2 == 4);
-| 
-| int
-| main (void)
-| {
-| 
-|             static_assert (sizeof (char) == 1, "sizeof does not work");
-|             static_assert (sizeof (char) == 1);
-| 
-|   ;
-|   return 0;
-| }
-configure:9874: gcc -c -g -O2 -DINCLUDE_ASSERT_H  conftest.c >&5
-configure:9874: $? = 0
-configure:9885: result: yes, an <assert.h> macro
-configure:10070: checking for explicit_memset
-configure:10070: gcc -o conftest -g -O2   conftest.c  >&5
-/usr/bin/ld: /tmp/ccvVQNIy.o: in function `main':
-/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/conftest.c:83:(.text.startup+0x7): undefined reference to `explicit_memset'
-collect2: error: ld returned 1 exit status
-configure:10070: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "dummy"
-| #define PACKAGE_TARNAME "dummy"
-| #define PACKAGE_VERSION "0"
-| #define PACKAGE_STRING "dummy 0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define PACKAGE "dummy"
-| #define VERSION "0"
-| #define HAVE_STDIO_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
-| #define HAVE_STDBOOL_H 1
-| #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| #define HAVE_WCHAR_T 1
-| #define HAVE_WINT_T 1
-| #define HAVE_LONG_LONG_INT 1
-| #define HAVE_UNSIGNED_LONG_LONG_INT 1
-| #define restrict __restrict__
-| #define HAVE_LANGINFO_CODESET 1
-| #define HAVE_DECL_ECVT 1
-| #define HAVE_DECL_FCVT 1
-| #define HAVE_DECL_GCVT 1
-| #define _USE_STD_STAT 1
-| #define HAVE_DECL_EXECVPE 1
-| #define HAVE_ALLOCA 1
-| /* end confdefs.h.  */
-| /* Define explicit_memset to an innocuous variant, in case <limits.h> declares explicit_memset.
-|    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-| #define explicit_memset innocuous_explicit_memset
-| 
-| /* System header to define __stub macros and hopefully few prototypes,
-|    which can conflict with char explicit_memset (); below.  */
-| 
-| #include <limits.h>
-| #undef explicit_memset
-| 
-| /* Override any GCC internal prototype to avoid an error.
-|    Use char because int might match the return type of a GCC
-|    builtin and then its argument prototype would still apply.  */
-| #ifdef __cplusplus
-| extern "C"
-| #endif
-| char explicit_memset ();
-| /* The GNU C library defines this for functions which it implements
-|     to always fail with ENOSYS.  Some functions are actually named
-|     something starting with __ and the normal name is an alias.  */
-| #if defined __stub_explicit_memset || defined __stub___explicit_memset
-| choke me
-| #endif
-| 
-| int
-| main (void)
-| {
-| return explicit_memset ();
-|   ;
-|   return 0;
-| }
-configure:10070: result: no
-configure:10107: checking for ssize_t
-configure:10125: gcc -c -g -O2  conftest.c >&5
-configure:10125: $? = 0
-configure:10133: result: yes
-configure:10176: checking for bool, true, false
-configure:10191: gcc -c -g -O2  conftest.c >&5
-conftest.c:59:13: error: #error "true == false"
-   59 |            #error "true == false"
+configure:5060: result: no
+configure:5104: checking for bool, true, false
+configure:5119: gcc -c -g -O2  conftest.c >&5
+conftest.c:24:13: error: #error "true == false"
+   24 |            #error "true == false"
       |             ^~~~~
-conftest.c:61:18: error: unknown type name 'bool'
-   61 |           extern bool b;
+conftest.c:26:18: error: unknown type name 'bool'
+   26 |           extern bool b;
       |                  ^~~~
-conftest.c:62:11: error: unknown type name 'bool'
-   62 |           bool b = true == false;
+conftest.c:27:11: error: unknown type name 'bool'
+   27 |           bool b = true == false;
       |           ^~~~
 conftest.c:1:1: note: 'bool' is defined in header '<stdbool.h>'; did you forget to '#include <stdbool.h>'?
     1 | /* confdefs.h */
-conftest.c:62:20: error: 'true' undeclared here (not in a function)
-   62 |           bool b = true == false;
+conftest.c:27:20: error: 'true' undeclared here (not in a function)
+   27 |           bool b = true == false;
       |                    ^~~~
-conftest.c:62:20: note: 'true' is defined in header '<stdbool.h>'; did you forget to '#include <stdbool.h>'?
-conftest.c:62:28: error: 'false' undeclared here (not in a function)
-   62 |           bool b = true == false;
+conftest.c:27:20: note: 'true' is defined in header '<stdbool.h>'; did you forget to '#include <stdbool.h>'?
+conftest.c:27:28: error: 'false' undeclared here (not in a function)
+   27 |           bool b = true == false;
       |                            ^~~~~
-conftest.c:62:28: note: 'false' is defined in header '<stdbool.h>'; did you forget to '#include <stdbool.h>'?
-configure:10191: $? = 1
+conftest.c:27:28: note: 'false' is defined in header '<stdbool.h>'; did you forget to '#include <stdbool.h>'?
+configure:5119: $? = 1
 configure: failed program was:
 | /* confdefs.h */
 | #define PACKAGE_NAME "dummy"
@@ -1520,43 +391,8 @@ configure: failed program was:
 | #define HAVE_SYS_STAT_H 1
 | #define HAVE_SYS_TYPES_H 1
 | #define HAVE_UNISTD_H 1
-| #define HAVE_WCHAR_H 1
-| #define HAVE_LIMITS_H 1
 | #define HAVE_STDBOOL_H 1
 | #define STDC_HEADERS 1
-| #define _ALL_SOURCE 1
-| #define _DARWIN_C_SOURCE 1
-| #define _GNU_SOURCE 1
-| #define _HPUX_ALT_XOPEN_SOCKET_API 1
-| #define _NETBSD_SOURCE 1
-| #define _OPENBSD_SOURCE 1
-| #define _POSIX_PTHREAD_SEMANTICS 1
-| #define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-| #define __STDC_WANT_IEC_60559_EXT__ 1
-| #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-| #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-| #define __STDC_WANT_LIB_EXT2__ 1
-| #define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-| #define _TANDEM_SOURCE 1
-| #define __EXTENSIONS__ 1
-| #define HAVE_ALLOCA_H 1
-| #define HAVE_ALLOCA 1
-| #define MALLOC_0_IS_NONNULL 1
-| #define HAVE_WCHAR_T 1
-| #define HAVE_WINT_T 1
-| #define HAVE_LONG_LONG_INT 1
-| #define HAVE_UNSIGNED_LONG_LONG_INT 1
-| #define restrict __restrict__
-| #define HAVE_LANGINFO_CODESET 1
-| #define HAVE_DECL_ECVT 1
-| #define HAVE_DECL_FCVT 1
-| #define HAVE_DECL_GCVT 1
-| #define _USE_STD_STAT 1
-| #define HAVE_DECL_EXECVPE 1
-| #define HAVE_ALLOCA 1
-| #define GNULIB_TEST_MEMSET_EXPLICIT 1
 | /* end confdefs.h.  */
 | 
 |           #if true == false
@@ -1564,10 +400,10 @@ configure: failed program was:
 |           #endif
 |           extern bool b;
 |           bool b = true == false;
-configure:10199: result: no
-configure:10506: checking that generated files are newer than configure
-configure:10512: result: done
-configure:10566: creating ./config.status
+configure:5127: result: no
+configure:5296: checking that generated files are newer than configure
+configure:5302: result: done
+configure:5356: creating ./config.status
 
 ## ---------------------- ##
 ## Running config.status. ##
@@ -1584,13 +420,15 @@ generated by GNU Autoconf 2.71.  Invocation command line was
 
 on axel-ubuntu
 
-config.status:1392: creating Makefile
-config.status:1392: creating gllib/Makefile
-config.status:1392: creating glm4/Makefile
-config.status:1392: creating config.h
-config.status:1621: executing depfiles commands
-config.status:1698: cd gllib       && sed -e '/# am--include-marker/d' Makefile         | make -f - am--depfiles
-config.status:1703: $? = 0
+config.status:873: creating Makefile
+config.status:873: creating gllib/Makefile
+config.status:873: creating glm4/Makefile
+config.status:873: creating config.h
+config.status:1102: executing depfiles commands
+config.status:1179: cd gllib       && sed -e '/# am--include-marker/d' Makefile         | make -f - am--depfiles
+make[4]: Entering directory '/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/gllib'
+make[4]: Leaving directory '/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/gllib'
+config.status:1184: $? = 0
 
 ## ---------------- ##
 ## Cache variables. ##
@@ -1598,8 +436,6 @@ config.status:1703: $? = 0
 
 ac_cv_build=x86_64-pc-linux-gnu
 ac_cv_c_compiler_gnu=yes
-ac_cv_c_restrict=__restrict__
-ac_cv_c_undeclared_builtin_options='none needed'
 ac_cv_env_CC_set=
 ac_cv_env_CC_value=
 ac_cv_env_CFLAGS_set=
@@ -1618,18 +454,7 @@ ac_cv_env_host_alias_set=
 ac_cv_env_host_alias_value=
 ac_cv_env_target_alias_set=
 ac_cv_env_target_alias_value=
-ac_cv_func_alloca_works=yes
-ac_cv_func_explicit_memset=no
-ac_cv_func_malloc_0_nonnull=yes
-ac_cv_func_memset_explicit=no
-ac_cv_func_memset_s=no
-ac_cv_have_decl_ecvt=yes
-ac_cv_have_decl_execvpe=yes
-ac_cv_have_decl_fcvt=yes
-ac_cv_have_decl_gcvt=yes
 ac_cv_header_inttypes_h=yes
-ac_cv_header_limits_h=yes
-ac_cv_header_minix_config_h=no
 ac_cv_header_stdbool_h=yes
 ac_cv_header_stdckdint_h=no
 ac_cv_header_stdint_h=yes
@@ -1640,7 +465,6 @@ ac_cv_header_strings_h=yes
 ac_cv_header_sys_stat_h=yes
 ac_cv_header_sys_types_h=yes
 ac_cv_header_unistd_h=yes
-ac_cv_header_wchar_h=yes
 ac_cv_host=x86_64-pc-linux-gnu
 ac_cv_objext=o
 ac_cv_path_EGREP='/usr/bin/grep -E'
@@ -1656,56 +480,19 @@ ac_cv_prog_cc_c11=
 ac_cv_prog_cc_g=yes
 ac_cv_prog_cc_stdc=
 ac_cv_prog_make_make_set=yes
-ac_cv_safe_to_define___extensions__=yes
-ac_cv_should_define__xopen_source=no
-ac_cv_type_mode_t=yes
-ac_cv_type_pid_t=yes
-ac_cv_type_size_t=yes
-ac_cv_working_alloca_h=yes
 am_cv_CC_dependencies_compiler_type=gcc3
-am_cv_langinfo_codeset=yes
 am_cv_make_support_nested_variables=yes
 am_cv_prog_cc_c_o=yes
 gl_cv_c_amsterdam_compiler=no
 gl_cv_c_bool=no
-gl_cv_c_multiarch=no
 gl_cv_compiler_check_decl_option=none
 gl_cv_compiler_clang=no
-gl_cv_decl_null_works=yes
-gl_cv_func_malloc_0_nonnull=1
-gl_cv_func_unreachable=no
-gl_cv_have___header_inline=no
-gl_cv_have_include_next=yes
-gl_cv_header_limits_ssize_max=yes
-gl_cv_header_limits_width=yes
-gl_cv_header_stdint_width=yes
-gl_cv_header_stdint_without_STDC_macros=yes
-gl_cv_header_working_stdint_h=yes
-gl_cv_macro_MB_CUR_MAX_good=yes
-gl_cv_next_limits_h='<limits.h>'
-gl_cv_next_stddef_h='<stddef.h>'
-gl_cv_next_stdint_h='<stdint.h>'
-gl_cv_next_stdlib_h='<stdlib.h>'
-gl_cv_next_string_h='<string.h>'
-gl_cv_next_sys_types_h='<sys/types.h>'
-gl_cv_next_unistd_h='<unistd.h>'
-gl_cv_rpl_alloca=yes
-gl_cv_source_line_length_unlimited=yes
-gl_cv_ssize_t=yes
-gl_cv_static_assert='yes, an <assert.h> macro'
-gl_cv_type_max_align_t=yes
-gl_cv_type_wint_t_large_enough=yes
-gt_cv_c_wchar_t=yes
-gt_cv_c_wint_t=yes
-gt_cv_locale_fr_utf8=fr_FR.UTF-8
 
 ## ----------------- ##
 ## Output variables. ##
 ## ----------------- ##
 
 ACLOCAL='${SHELL} '\''/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/build-aux/missing'\'' aclocal-1.16'
-ALLOCA=''
-ALLOCA_H='alloca.h'
 AMDEPBACKSLASH='\'
 AMDEP_FALSE='#'
 AMDEP_TRUE=''
@@ -1714,19 +501,12 @@ AM_BACKSLASH='\'
 AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
 AM_DEFAULT_VERBOSITY='1'
 AM_V='$(V)'
-APPLE_UNIVERSAL_BUILD='0'
 AR='ar'
 ARFLAGS='cr'
-ASSERT_H=''
 AUTOCONF='${SHELL} '\''/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/build-aux/missing'\'' autoconf'
 AUTOHEADER='${SHELL} '\''/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/build-aux/missing'\'' autoheader'
 AUTOMAKE='${SHELL} '\''/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/build-aux/missing'\'' automake-1.16'
 AWK='gawk'
-BITSIZEOF_PTRDIFF_T=''
-BITSIZEOF_SIG_ATOMIC_T=''
-BITSIZEOF_SIZE_T=''
-BITSIZEOF_WCHAR_T=''
-BITSIZEOF_WINT_T=''
 CC='gcc'
 CCDEPMODE='depmode=gcc3'
 CFLAGS='-g -O2'
@@ -1745,370 +525,21 @@ ETAGS='etags'
 EXEEXT=''
 GL_COND_LIBTOOL_FALSE=''
 GL_COND_LIBTOOL_TRUE='#'
-GL_COND_OBJ_MEMSET_EXPLICIT_FALSE='#'
-GL_COND_OBJ_MEMSET_EXPLICIT_TRUE=''
-GL_GENERATE_ALLOCA_H_FALSE='#'
-GL_GENERATE_ALLOCA_H_TRUE=''
-GL_GENERATE_ASSERT_H_FALSE=''
-GL_GENERATE_ASSERT_H_TRUE='#'
-GL_GENERATE_LIMITS_H_FALSE='#'
-GL_GENERATE_LIMITS_H_TRUE=''
 GL_GENERATE_STDCKDINT_H_FALSE='#'
 GL_GENERATE_STDCKDINT_H_TRUE=''
-GL_GENERATE_STDDEF_H_FALSE='#'
-GL_GENERATE_STDDEF_H_TRUE=''
-GL_GENERATE_STDINT_H_FALSE=''
-GL_GENERATE_STDINT_H_TRUE='#'
-GL_GNULIB_ACCESS='0'
-GL_GNULIB_ALIGNED_ALLOC='0'
-GL_GNULIB_ATOLL='0'
-GL_GNULIB_CALLOC_GNU='0'
-GL_GNULIB_CALLOC_POSIX='0'
-GL_GNULIB_CANONICALIZE_FILE_NAME='0'
-GL_GNULIB_CHDIR='0'
-GL_GNULIB_CHOWN='0'
-GL_GNULIB_CLOSE='0'
-GL_GNULIB_COPY_FILE_RANGE='0'
-GL_GNULIB_DUP2='0'
-GL_GNULIB_DUP3='0'
-GL_GNULIB_DUP='0'
-GL_GNULIB_ENVIRON='0'
-GL_GNULIB_EUIDACCESS='0'
-GL_GNULIB_EXECL='0'
-GL_GNULIB_EXECLE='0'
-GL_GNULIB_EXECLP='0'
-GL_GNULIB_EXECV='0'
-GL_GNULIB_EXECVE='0'
-GL_GNULIB_EXECVP='0'
-GL_GNULIB_EXECVPE='0'
-GL_GNULIB_EXPLICIT_BZERO='0'
-GL_GNULIB_FACCESSAT='0'
-GL_GNULIB_FCHDIR='0'
-GL_GNULIB_FCHOWNAT='0'
-GL_GNULIB_FDATASYNC='0'
-GL_GNULIB_FFSL='0'
-GL_GNULIB_FFSLL='0'
-GL_GNULIB_FREE_POSIX='0'
-GL_GNULIB_FSYNC='0'
-GL_GNULIB_FTRUNCATE='0'
-GL_GNULIB_GETCWD='0'
-GL_GNULIB_GETDOMAINNAME='0'
-GL_GNULIB_GETDTABLESIZE='0'
-GL_GNULIB_GETENTROPY='0'
-GL_GNULIB_GETGROUPS='0'
-GL_GNULIB_GETHOSTNAME='0'
-GL_GNULIB_GETLOADAVG='0'
-GL_GNULIB_GETLOGIN='0'
-GL_GNULIB_GETLOGIN_R='0'
-GL_GNULIB_GETOPT_POSIX='0'
-GL_GNULIB_GETPAGESIZE='0'
-GL_GNULIB_GETPASS='0'
-GL_GNULIB_GETPASS_GNU='0'
-GL_GNULIB_GETPROGNAME='0'
-GL_GNULIB_GETSUBOPT='0'
-GL_GNULIB_GETUSERSHELL='0'
-GL_GNULIB_GRANTPT='0'
-GL_GNULIB_GROUP_MEMBER='0'
-GL_GNULIB_ISATTY='0'
-GL_GNULIB_LCHOWN='0'
-GL_GNULIB_LINK='0'
-GL_GNULIB_LINKAT='0'
-GL_GNULIB_LSEEK='0'
-GL_GNULIB_MALLOC_GNU='0'
-GL_GNULIB_MALLOC_POSIX='0'
-GL_GNULIB_MBSCASECMP='0'
-GL_GNULIB_MBSCASESTR='0'
-GL_GNULIB_MBSCHR='0'
-GL_GNULIB_MBSCSPN='0'
-GL_GNULIB_MBSLEN='0'
-GL_GNULIB_MBSNCASECMP='0'
-GL_GNULIB_MBSNLEN='0'
-GL_GNULIB_MBSPBRK='0'
-GL_GNULIB_MBSPCASECMP='0'
-GL_GNULIB_MBSRCHR='0'
-GL_GNULIB_MBSSEP='0'
-GL_GNULIB_MBSSPN='0'
-GL_GNULIB_MBSSTR='0'
-GL_GNULIB_MBSTOK_R='0'
-GL_GNULIB_MBSTOWCS='0'
-GL_GNULIB_MBTOWC='0'
-GL_GNULIB_MDA_ACCESS='1'
-GL_GNULIB_MDA_CHDIR='1'
-GL_GNULIB_MDA_CLOSE='1'
-GL_GNULIB_MDA_DUP2='1'
-GL_GNULIB_MDA_DUP='1'
-GL_GNULIB_MDA_ECVT='1'
-GL_GNULIB_MDA_EXECL='1'
-GL_GNULIB_MDA_EXECLE='1'
-GL_GNULIB_MDA_EXECLP='1'
-GL_GNULIB_MDA_EXECV='1'
-GL_GNULIB_MDA_EXECVE='1'
-GL_GNULIB_MDA_EXECVP='1'
-GL_GNULIB_MDA_EXECVPE='1'
-GL_GNULIB_MDA_FCVT='1'
-GL_GNULIB_MDA_GCVT='1'
-GL_GNULIB_MDA_GETCWD='1'
-GL_GNULIB_MDA_GETPID='1'
-GL_GNULIB_MDA_ISATTY='1'
-GL_GNULIB_MDA_LSEEK='1'
-GL_GNULIB_MDA_MEMCCPY='1'
-GL_GNULIB_MDA_MKTEMP='1'
-GL_GNULIB_MDA_PUTENV='1'
-GL_GNULIB_MDA_READ='1'
-GL_GNULIB_MDA_RMDIR='1'
-GL_GNULIB_MDA_STRDUP='1'
-GL_GNULIB_MDA_SWAB='1'
-GL_GNULIB_MDA_UNLINK='1'
-GL_GNULIB_MDA_WRITE='1'
-GL_GNULIB_MEMCHR='0'
-GL_GNULIB_MEMMEM='0'
-GL_GNULIB_MEMPCPY='0'
-GL_GNULIB_MEMRCHR='0'
-GL_GNULIB_MEMSET_EXPLICIT='1'
-GL_GNULIB_MKDTEMP='0'
-GL_GNULIB_MKOSTEMP='0'
-GL_GNULIB_MKOSTEMPS='0'
-GL_GNULIB_MKSTEMP='0'
-GL_GNULIB_MKSTEMPS='0'
-GL_GNULIB_PIPE2='0'
-GL_GNULIB_PIPE='0'
-GL_GNULIB_POSIX_MEMALIGN='0'
-GL_GNULIB_POSIX_OPENPT='0'
-GL_GNULIB_PREAD='0'
-GL_GNULIB_PTSNAME='0'
-GL_GNULIB_PTSNAME_R='0'
-GL_GNULIB_PUTENV='0'
-GL_GNULIB_PWRITE='0'
-GL_GNULIB_QSORT_R='0'
-GL_GNULIB_RAND='0'
-GL_GNULIB_RANDOM='0'
-GL_GNULIB_RANDOM_R='0'
-GL_GNULIB_RAWMEMCHR='0'
-GL_GNULIB_READ='0'
-GL_GNULIB_READLINK='0'
-GL_GNULIB_READLINKAT='0'
-GL_GNULIB_REALLOCARRAY='0'
-GL_GNULIB_REALLOC_GNU='0'
-GL_GNULIB_REALLOC_POSIX='0'
-GL_GNULIB_REALPATH='0'
-GL_GNULIB_RMDIR='0'
-GL_GNULIB_RPMATCH='0'
-GL_GNULIB_SECURE_GETENV='0'
-GL_GNULIB_SETENV='0'
-GL_GNULIB_SETHOSTNAME='0'
-GL_GNULIB_SIGABBREV_NP='0'
-GL_GNULIB_SIGDESCR_NP='0'
-GL_GNULIB_SLEEP='0'
-GL_GNULIB_STPCPY='0'
-GL_GNULIB_STPNCPY='0'
-GL_GNULIB_STRCASESTR='0'
-GL_GNULIB_STRCHRNUL='0'
-GL_GNULIB_STRDUP='0'
-GL_GNULIB_STRERROR='0'
-GL_GNULIB_STRERRORNAME_NP='0'
-GL_GNULIB_STRERROR_R='0'
-GL_GNULIB_STRNCAT='0'
-GL_GNULIB_STRNDUP='0'
-GL_GNULIB_STRNLEN='0'
-GL_GNULIB_STRPBRK='0'
-GL_GNULIB_STRSEP='0'
-GL_GNULIB_STRSIGNAL='0'
-GL_GNULIB_STRSTR='0'
-GL_GNULIB_STRTOD='0'
-GL_GNULIB_STRTOK_R='0'
-GL_GNULIB_STRTOL='0'
-GL_GNULIB_STRTOLD='0'
-GL_GNULIB_STRTOLL='0'
-GL_GNULIB_STRTOUL='0'
-GL_GNULIB_STRTOULL='0'
-GL_GNULIB_STRVERSCMP='0'
-GL_GNULIB_SYMLINK='0'
-GL_GNULIB_SYMLINKAT='0'
-GL_GNULIB_SYSTEM_POSIX='0'
-GL_GNULIB_TRUNCATE='0'
-GL_GNULIB_TTYNAME_R='0'
-GL_GNULIB_UNISTD_H_GETOPT='0'
-GL_GNULIB_UNISTD_H_NONBLOCKING='0'
-GL_GNULIB_UNISTD_H_SIGPIPE='0'
-GL_GNULIB_UNLINK='0'
-GL_GNULIB_UNLINKAT='0'
-GL_GNULIB_UNLOCKPT='0'
-GL_GNULIB_UNSETENV='0'
-GL_GNULIB_USLEEP='0'
-GL_GNULIB_WCTOMB='0'
-GL_GNULIB_WRITE='0'
-GL_GNULIB__EXIT='0'
-GNULIBHEADERS_OVERRIDE_WINT_T='0'
 GREP='/usr/bin/grep'
-HAVE_ALIGNED_ALLOC='1'
-HAVE_ALLOCA_H='1'
-HAVE_ATOLL='1'
-HAVE_C99_STDINT_H='1'
-HAVE_CANONICALIZE_FILE_NAME='1'
-HAVE_CHOWN='1'
-HAVE_COPY_FILE_RANGE='1'
-HAVE_DECL_ECVT='1'
-HAVE_DECL_ENVIRON='1'
-HAVE_DECL_EXECVPE='1'
-HAVE_DECL_FCHDIR='1'
-HAVE_DECL_FCVT='1'
-HAVE_DECL_FDATASYNC='1'
-HAVE_DECL_GCVT='1'
-HAVE_DECL_GETDOMAINNAME='1'
-HAVE_DECL_GETLOADAVG='1'
-HAVE_DECL_GETLOGIN='1'
-HAVE_DECL_GETLOGIN_R='1'
-HAVE_DECL_GETPAGESIZE='1'
-HAVE_DECL_GETUSERSHELL='1'
-HAVE_DECL_INITSTATE='1'
-HAVE_DECL_MEMMEM='1'
-HAVE_DECL_MEMRCHR='1'
-HAVE_DECL_PROGRAM_INVOCATION_NAME='1'
-HAVE_DECL_SETENV='1'
-HAVE_DECL_SETHOSTNAME='1'
-HAVE_DECL_SETSTATE='1'
-HAVE_DECL_STRDUP='1'
-HAVE_DECL_STRERROR_R='1'
-HAVE_DECL_STRNDUP='1'
-HAVE_DECL_STRNLEN='1'
-HAVE_DECL_STRSIGNAL='1'
-HAVE_DECL_STRTOK_R='1'
-HAVE_DECL_TRUNCATE='1'
-HAVE_DECL_TTYNAME_R='1'
-HAVE_DECL_UNSETENV='1'
-HAVE_DUP3='1'
-HAVE_EUIDACCESS='1'
-HAVE_EXECVPE='1'
-HAVE_EXPLICIT_BZERO='1'
-HAVE_FACCESSAT='1'
-HAVE_FCHDIR='1'
-HAVE_FCHOWNAT='1'
-HAVE_FDATASYNC='1'
-HAVE_FFSL='1'
-HAVE_FFSLL='1'
-HAVE_FSYNC='1'
-HAVE_FTRUNCATE='1'
-HAVE_GETDTABLESIZE='1'
-HAVE_GETENTROPY='1'
-HAVE_GETGROUPS='1'
-HAVE_GETHOSTNAME='1'
-HAVE_GETLOGIN='1'
-HAVE_GETPAGESIZE='1'
-HAVE_GETPASS='1'
-HAVE_GETPROGNAME='1'
-HAVE_GETSUBOPT='1'
-HAVE_GRANTPT='1'
-HAVE_GROUP_MEMBER='1'
-HAVE_INITSTATE='1'
-HAVE_INTTYPES_H='1'
-HAVE_LCHOWN='1'
-HAVE_LINK='1'
-HAVE_LINKAT='1'
-HAVE_MAX_ALIGN_T='1'
-HAVE_MBSLEN='0'
-HAVE_MBTOWC='1'
-HAVE_MEMPCPY='1'
-HAVE_MEMSET_EXPLICIT='0'
-HAVE_MKDTEMP='1'
-HAVE_MKOSTEMP='1'
-HAVE_MKOSTEMPS='1'
-HAVE_MKSTEMP='1'
-HAVE_MKSTEMPS='1'
-HAVE_OS_H='0'
-HAVE_PIPE2='1'
-HAVE_PIPE='1'
-HAVE_POSIX_MEMALIGN='1'
-HAVE_POSIX_OPENPT='1'
-HAVE_PREAD='1'
-HAVE_PTSNAME='1'
-HAVE_PTSNAME_R='1'
-HAVE_PWRITE='1'
-HAVE_QSORT_R='1'
-HAVE_RANDOM='1'
-HAVE_RANDOM_H='1'
-HAVE_RANDOM_R='1'
-HAVE_RAWMEMCHR='1'
-HAVE_READLINK='1'
-HAVE_READLINKAT='1'
-HAVE_REALLOCARRAY='1'
-HAVE_REALPATH='1'
-HAVE_RPMATCH='1'
-HAVE_SECURE_GETENV='1'
-HAVE_SETENV='1'
-HAVE_SETHOSTNAME='1'
-HAVE_SETSTATE='1'
-HAVE_SIGABBREV_NP='1'
-HAVE_SIGDESCR_NP='1'
-HAVE_SIGNED_SIG_ATOMIC_T=''
-HAVE_SIGNED_WCHAR_T=''
-HAVE_SIGNED_WINT_T=''
-HAVE_SLEEP='1'
-HAVE_STDINT_H='1'
-HAVE_STPCPY='1'
-HAVE_STPNCPY='1'
-HAVE_STRCASESTR='1'
-HAVE_STRCHRNUL='1'
-HAVE_STRERRORNAME_NP='1'
-HAVE_STRPBRK='1'
-HAVE_STRSEP='1'
-HAVE_STRTOD='1'
-HAVE_STRTOL='1'
-HAVE_STRTOLD='1'
-HAVE_STRTOLL='1'
-HAVE_STRTOUL='1'
-HAVE_STRTOULL='1'
-HAVE_STRUCT_RANDOM_DATA='1'
-HAVE_STRVERSCMP='1'
-HAVE_SYMLINK='1'
-HAVE_SYMLINKAT='1'
-HAVE_SYS_BITYPES_H='0'
-HAVE_SYS_INTTYPES_H='0'
-HAVE_SYS_LOADAVG_H='0'
-HAVE_SYS_PARAM_H='0'
-HAVE_SYS_TYPES_H='1'
-HAVE_UNISTD_H='1'
-HAVE_UNLINKAT='1'
-HAVE_UNLOCKPT='1'
-HAVE_USLEEP='1'
-HAVE_WCHAR_H='1'
-HAVE_WCHAR_T='1'
-HAVE__EXIT='1'
-INCLUDE_NEXT='include_next'
-INCLUDE_NEXT_AS_FIRST_DIRECTIVE='include_next'
 INSTALL_DATA='${INSTALL} -m 644'
 INSTALL_PROGRAM='${INSTALL}'
 INSTALL_SCRIPT='${INSTALL}'
 INSTALL_STRIP_PROGRAM='$(install_sh) -c -s'
-LC_COLLATE_IMPLEMENTED='true'
-LC_MONETARY_IMPLEMENTED='true'
-LC_NUMERIC_IMPLEMENTED='true'
-LC_TIME_IMPLEMENTED='true'
 LDFLAGS=''
 LIBGNU_LIBDEPS=''
 LIBGNU_LTLIBDEPS=''
 LIBOBJS=''
 LIBS=''
-LIMITS_H='limits.h'
-LOCALE_FR_UTF8='fr_FR.UTF-8'
 LTLIBOBJS=''
 MAKEINFO='${SHELL} '\''/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/build-aux/missing'\'' makeinfo'
 MKDIR_P='/usr/bin/mkdir -p'
-NEXT_ASSERT_H=''
-NEXT_AS_FIRST_DIRECTIVE_ASSERT_H=''
-NEXT_AS_FIRST_DIRECTIVE_LIMITS_H='<limits.h>'
-NEXT_AS_FIRST_DIRECTIVE_STDDEF_H='<stddef.h>'
-NEXT_AS_FIRST_DIRECTIVE_STDINT_H='<stdint.h>'
-NEXT_AS_FIRST_DIRECTIVE_STDLIB_H='<stdlib.h>'
-NEXT_AS_FIRST_DIRECTIVE_STRING_H='<string.h>'
-NEXT_AS_FIRST_DIRECTIVE_SYS_TYPES_H='<sys/types.h>'
-NEXT_AS_FIRST_DIRECTIVE_UNISTD_H='<unistd.h>'
-NEXT_LIMITS_H='<limits.h>'
-NEXT_STDDEF_H='<stddef.h>'
-NEXT_STDINT_H='<stdint.h>'
-NEXT_STDLIB_H='<stdlib.h>'
-NEXT_STRING_H='<string.h>'
-NEXT_SYS_TYPES_H='<sys/types.h>'
-NEXT_UNISTD_H='<unistd.h>'
 OBJEXT='o'
 PACKAGE='dummy'
 PACKAGE_BUGREPORT=''
@@ -2118,138 +549,12 @@ PACKAGE_TARNAME='dummy'
 PACKAGE_URL=''
 PACKAGE_VERSION='0'
 PATH_SEPARATOR=':'
-PRAGMA_COLUMNS=''
-PRAGMA_SYSTEM_HEADER='#pragma GCC system_header'
-PTRDIFF_T_SUFFIX=''
 RANLIB='ranlib'
-REPLACE_ACCESS='0'
-REPLACE_ALIGNED_ALLOC='0'
-REPLACE_CALLOC_FOR_CALLOC_GNU='0'
-REPLACE_CALLOC_FOR_CALLOC_POSIX='0'
-REPLACE_CANONICALIZE_FILE_NAME='0'
-REPLACE_CHOWN='0'
-REPLACE_CLOSE='0'
-REPLACE_COPY_FILE_RANGE='0'
-REPLACE_DUP2='0'
-REPLACE_DUP3='0'
-REPLACE_DUP='0'
-REPLACE_EXECL='0'
-REPLACE_EXECLE='0'
-REPLACE_EXECLP='0'
-REPLACE_EXECV='0'
-REPLACE_EXECVE='0'
-REPLACE_EXECVP='0'
-REPLACE_EXECVPE='0'
-REPLACE_FACCESSAT='0'
-REPLACE_FCHDIR='0'
-REPLACE_FCHOWNAT='0'
-REPLACE_FDATASYNC='0'
-REPLACE_FFSLL='0'
-REPLACE_FREE='0'
-REPLACE_FTRUNCATE='0'
-REPLACE_GETCWD='0'
-REPLACE_GETDOMAINNAME='0'
-REPLACE_GETDTABLESIZE='0'
-REPLACE_GETENTROPY='0'
-REPLACE_GETGROUPS='0'
-REPLACE_GETLOADAVG='0'
-REPLACE_GETLOGIN_R='0'
-REPLACE_GETPAGESIZE='0'
-REPLACE_GETPASS='0'
-REPLACE_GETPASS_FOR_GETPASS_GNU='0'
-REPLACE_GETPROGNAME='0'
-REPLACE_GETSUBOPT='0'
-REPLACE_INITSTATE='0'
-REPLACE_ISATTY='0'
-REPLACE_LCHOWN='0'
-REPLACE_LINK='0'
-REPLACE_LINKAT='0'
-REPLACE_LSEEK='0'
-REPLACE_MALLOC_FOR_MALLOC_GNU='0'
-REPLACE_MALLOC_FOR_MALLOC_POSIX='0'
-REPLACE_MBSTOWCS='0'
-REPLACE_MBTOWC='0'
-REPLACE_MB_CUR_MAX='0'
-REPLACE_MEMCHR='0'
-REPLACE_MEMMEM='0'
-REPLACE_MEMPCPY='0'
-REPLACE_MKOSTEMP='0'
-REPLACE_MKOSTEMPS='0'
-REPLACE_MKSTEMP='0'
-REPLACE_NULL='0'
-REPLACE_PIPE2='0'
-REPLACE_POSIX_MEMALIGN='0'
-REPLACE_POSIX_OPENPT='0'
-REPLACE_PREAD='0'
-REPLACE_PTSNAME='0'
-REPLACE_PTSNAME_R='0'
-REPLACE_PUTENV='0'
-REPLACE_PWRITE='0'
-REPLACE_QSORT_R='0'
-REPLACE_RAND='0'
-REPLACE_RANDOM='0'
-REPLACE_RANDOM_R='0'
-REPLACE_READ='0'
-REPLACE_READLINK='0'
-REPLACE_READLINKAT='0'
-REPLACE_REALLOCARRAY='0'
-REPLACE_REALLOC_FOR_REALLOC_GNU='0'
-REPLACE_REALLOC_FOR_REALLOC_POSIX='0'
-REPLACE_REALPATH='0'
-REPLACE_RMDIR='0'
-REPLACE_SETENV='0'
-REPLACE_SETHOSTNAME='0'
-REPLACE_SETSTATE='0'
-REPLACE_SLEEP='0'
-REPLACE_STPCPY='0'
-REPLACE_STPNCPY='0'
-REPLACE_STRCASESTR='0'
-REPLACE_STRCHRNUL='0'
-REPLACE_STRDUP='0'
-REPLACE_STRERROR='0'
-REPLACE_STRERRORNAME_NP='0'
-REPLACE_STRERROR_R='0'
-REPLACE_STRNCAT='0'
-REPLACE_STRNDUP='0'
-REPLACE_STRNLEN='0'
-REPLACE_STRSIGNAL='0'
-REPLACE_STRSTR='0'
-REPLACE_STRTOD='0'
-REPLACE_STRTOK_R='0'
-REPLACE_STRTOL='0'
-REPLACE_STRTOLD='0'
-REPLACE_STRTOLL='0'
-REPLACE_STRTOUL='0'
-REPLACE_STRTOULL='0'
-REPLACE_STRVERSCMP='0'
-REPLACE_SYMLINK='0'
-REPLACE_SYMLINKAT='0'
-REPLACE_TRUNCATE='0'
-REPLACE_TTYNAME_R='0'
-REPLACE_UNLINK='0'
-REPLACE_UNLINKAT='0'
-REPLACE_UNSETENV='0'
-REPLACE_USLEEP='0'
-REPLACE_WCTOMB='0'
-REPLACE_WRITE='0'
-REPLACE__EXIT='0'
 SET_MAKE=''
 SHELL='/bin/bash'
-SIG_ATOMIC_T_SUFFIX=''
-SIZE_T_SUFFIX=''
 STDCKDINT_H='stdckdint.h'
-STDDEF_H='stddef.h'
-STDINT_H=''
 STRIP=''
-UNDEFINE_STRTOK_R='0'
-UNISTD_H_HAVE_SYS_RANDOM_H='0'
-UNISTD_H_HAVE_WINSOCK2_H='0'
-UNISTD_H_HAVE_WINSOCK2_H_AND_USE_SOCKETS='0'
 VERSION='0'
-WCHAR_T_SUFFIX=''
-WINDOWS_64_BIT_OFF_T='0'
-WINDOWS_STAT_INODES='0'
-WINT_T_SUFFIX=''
 ac_ct_CC='gcc'
 am__EXEEXT_FALSE=''
 am__EXEEXT_TRUE='#'
@@ -2324,42 +629,7 @@ target_alias=''
 #define HAVE_SYS_STAT_H 1
 #define HAVE_SYS_TYPES_H 1
 #define HAVE_UNISTD_H 1
-#define HAVE_WCHAR_H 1
-#define HAVE_LIMITS_H 1
 #define HAVE_STDBOOL_H 1
 #define STDC_HEADERS 1
-#define _ALL_SOURCE 1
-#define _DARWIN_C_SOURCE 1
-#define _GNU_SOURCE 1
-#define _HPUX_ALT_XOPEN_SOCKET_API 1
-#define _NETBSD_SOURCE 1
-#define _OPENBSD_SOURCE 1
-#define _POSIX_PTHREAD_SEMANTICS 1
-#define __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
-#define __STDC_WANT_IEC_60559_BFP_EXT__ 1
-#define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-#define __STDC_WANT_IEC_60559_EXT__ 1
-#define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-#define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-#define __STDC_WANT_LIB_EXT2__ 1
-#define __STDC_WANT_MATH_SPEC_FUNCS__ 1
-#define _TANDEM_SOURCE 1
-#define __EXTENSIONS__ 1
-#define HAVE_ALLOCA_H 1
-#define HAVE_ALLOCA 1
-#define MALLOC_0_IS_NONNULL 1
-#define HAVE_WCHAR_T 1
-#define HAVE_WINT_T 1
-#define HAVE_LONG_LONG_INT 1
-#define HAVE_UNSIGNED_LONG_LONG_INT 1
-#define restrict __restrict__
-#define HAVE_LANGINFO_CODESET 1
-#define HAVE_DECL_ECVT 1
-#define HAVE_DECL_FCVT 1
-#define HAVE_DECL_GCVT 1
-#define _USE_STD_STAT 1
-#define HAVE_DECL_EXECVPE 1
-#define HAVE_ALLOCA 1
-#define GNULIB_TEST_MEMSET_EXPLICIT 1
 
 configure: exit 0

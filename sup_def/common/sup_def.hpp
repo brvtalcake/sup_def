@@ -80,7 +80,7 @@
 #include <sup_def/common/util/util.hpp>
 #include <sup_def/common/util/engine.hpp>
 
-#ifdef COMPILING_EXTERNAL
+#if COMPILING_EXTERNAL
     #include <sup_def/external/external.hpp>
 #endif
 

@@ -10,10 +10,16 @@ add_subdirectory("./empty_macro")
 add_subdirectory("./map")
 add_subdirectory("./gnulib_modules")
 add_library(sdthirdparty INTERFACE)
+add_dependencies(sdthirdparty build_gnulib_modules)
 target_link_libraries(sdthirdparty INTERFACE sdthirdparty_empty_macro sdthirdparty_map)
-target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR})/")
+target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../../")
+
+target_include_directories(sdthirdparty INTERFACE ${GNULIB_INCDIRS})
+target_link_libraries(sdthirdparty INTERFACE ${GNULIB_LIBS})
+target_link_directories(sdthirdparty INTERFACE ${GNULIB_LIBDIRS})
+
 # Include Boost
 target_include_directories(sdthirdparty INTERFACE "/${Boost_INCLUDE_DIRS}/")
 target_compile_definitions(sdthirdparty INTERFACE SUPDEF_DEBUG=$<IF:$<NOT:$<CONFIG:Release>>,1,0>)

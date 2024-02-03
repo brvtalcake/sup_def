@@ -25,7 +25,6 @@
 #ifndef INCLUDED_FROM_SUPDEF_SOURCE
     #error "This file may only be included from a C++ SupDef source file, and may not be compiled directly."
 #endif
-#include <sup_def/common/config.h>
 
 template <typename P1, typename P2>
     requires CharacterType<P1> && FilePath<P2>

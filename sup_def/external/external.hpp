@@ -50,9 +50,6 @@ namespace SupDef
         template <typename T>
         concept StdStrFilePath = FilePath<T> && StdStringType<T>;
 
-        SD_EXTERNAL_API
-        int main_ret(void);
-
         /**
          * @class CmdLine
          * @brief A class representing the command line arguments, and used to parse them

@@ -31,19 +31,15 @@
 #include <vector>
 #include <iostream>
 
-static std::string _prog_name;
-static int _prog_argc;
-static std::vector<std::string> _prog_argv;
 
 
 namespace SupDef
 {
     namespace External
     {
-        static inline auto exit_code(void)
-        {
-            return SupDef::Util::get_errcount() + SupDef::Util::get_warncount();
-        }
+        static std::string _prog_name;
+        static int _prog_argc;
+        static std::vector<std::string> _prog_argv;
 
         SD_EXTERNAL_API
         void init(int argc, char** argv)
@@ -136,20 +132,6 @@ namespace SupDef
                 if (a == arg)
                     return true;
             return false;
-        }
-
-        SD_EXTERNAL_API
-        int main_ret(void)
-        {
-            std::cerr << "\033[97m";
-#if defined(COMPILING_EXTERNAL)
-            std::cerr << get_program_name() << " exited with code " << exit_code() << std::endl;
-#else
-            std::cerr << "Program exited with code " << exit_code() << std::endl;
-#endif
-            // Reset std::cerr to default
-            std::cerr << "\033[0m";
-            return exit_code();
         }
     }
 }

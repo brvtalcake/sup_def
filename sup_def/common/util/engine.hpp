@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #include <sup_def/common/start_header.h>
+#include <sup_def/common/config.h>
 
 #ifndef UTIL_ENGINE_HPP
 #define UTIL_ENGINE_HPP
@@ -32,7 +33,6 @@
 
 namespace SupDef 
 {
-#include <sup_def/common/config.h>
 
     class EngineBaseHelper
     {

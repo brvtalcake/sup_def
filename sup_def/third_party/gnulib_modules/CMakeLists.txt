@@ -2,7 +2,7 @@ include(FindPython3)
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-set(WANTED_GNULIB_MODULES "stdckdint" "alloca" "malloca" "memset_explicit")
+set(WANTED_GNULIB_MODULES "stdckdint" #[[ "alloca" "malloca" "memset_explicit" ]])
 add_custom_target(
     build_gnulib_modules
     ALL
@@ -12,3 +12,6 @@ add_custom_target(
     VERBATIM
     COMMAND_EXPAND_LISTS
 )
+set(GNULIB_INCDIRS ${CMAKE_CURRENT_LIST_DIR}/ ${CMAKE_CURRENT_LIST_DIR}/gnulib_build/ ${CMAKE_CURRENT_LIST_DIR}/gnulib_build/gllib/ PARENT_SCOPE)
+set(GNULIB_LINKDIRS "${CMAKE_CURRENT_LIST_DIR}/gnulib_build/gllib/" PARENT_SCOPE)
+set(GNULIB_LIBS "gnu" PARENT_SCOPE) # libgnu.a

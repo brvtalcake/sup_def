@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
+#include <sup_def/common/config.h>
 #include <cstdarg>
 #include <regex>
 #include <utility>
 
-#include <sup_def/common/config.h>
 
 #if NEED_TPP_INC(Pragmas) == 0
 #include <sup_def/common/sup_def.hpp>

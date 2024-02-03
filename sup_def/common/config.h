@@ -34,6 +34,11 @@
     #define NEED_TPP_INC(...) 0
 #endif
 
+#include <gnulib.h>
+#undef unreachable
+#undef assume
+#undef noreturn
+
 #include <sup_def/common/util/platform.hpp>
 
 #include <sup_def/third_party/map/map.h>
