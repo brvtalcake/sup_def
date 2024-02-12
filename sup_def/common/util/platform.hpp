@@ -33,10 +33,13 @@
 #endif
 
 #if defined(__GNUC__)
+    // GCC style compiler
     #define SUPDEF_COMPILER 1
 #elif defined(__clang__)
+    // Clang style compiler
     #define SUPDEF_COMPILER 2
 #elif defined(_MSC_VER)
+    // MSVC style compiler
     #define SUPDEF_COMPILER 3
 #else
     #define SUPDEF_COMPILER 0

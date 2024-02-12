@@ -18,7 +18,8 @@ target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../
 
 target_include_directories(sdthirdparty INTERFACE ${GNULIB_INCDIRS})
 target_link_libraries(sdthirdparty INTERFACE ${GNULIB_LIBS})
-target_link_directories(sdthirdparty INTERFACE ${GNULIB_LIBDIRS})
+target_link_directories(sdthirdparty INTERFACE ${GNULIB_LINKDIRS})
+#[[ link_directories(BEFORE ${GNULIB_LIBDIRS}) ]]
 
 # Include Boost
 target_include_directories(sdthirdparty INTERFACE "/${Boost_INCLUDE_DIRS}/")

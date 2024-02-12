@@ -1117,7 +1117,9 @@ namespace SupDef
     };
 
     template <typename E>
-        requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
+        requires SPECIALIZATION_OF(E, Error)         || SPECIALIZATION_OF(E, Exception)
+              || std::same_as<E, InternalError>      || std::same_as<E, InternalException>
+              || std::derived_from<E, InternalError> || std::derived_from<E, InternalException>
     class ErrorPrinter : private ErrorPrinterBase
     {
         private:
@@ -1456,8 +1458,8 @@ namespace SupDef
             struct MovableAtomic : public std::atomic<T>
             {
                 MovableAtomic() = default;
-                MovableAtomic(MovableAtomic&& other) : std::atomic<T>(std::move(other.load())) {}
-                MovableAtomic& operator=(MovableAtomic&& other) { this->store(std::move(other.load())); return *this; }
+                MovableAtomic(MovableAtomic&& other) : std::atomic<T>(other.load()) { other.store(T()); }
+                MovableAtomic& operator=(MovableAtomic&& other) { this->exchange(other.load()); other.store(T()); return *this; }
 
                 // Import all std::atomic<T> constructors and assignment operators
                 using std::atomic<T>::atomic;
@@ -1467,9 +1469,12 @@ namespace SupDef
             typedef queue_type<function_type> task_queue_t;
             
             std::vector< std::pair< std::jthread, MovableAtomic<bool> > > threads;
-            std::unordered_map<std::jthread::id, task_queue_t> task_queues;
+            std::unordered_map< std::jthread::id, task_queue_t > task_queues;
             std::mutex threads_mtx;
             std::shared_mutex map_mtx;
+            // In which queue is the thread waiting for a task
+            std::unordered_map< std::jthread::id, std::jthread::id > waiting_locations; 
+            std::shared_mutex waiting_locations_mtx;
 
             std::jthread* get_thread_from_id(std::jthread::id&& id);
             std::jthread* get_thread_from_id(const std::jthread::id& id);
@@ -1488,8 +1493,9 @@ namespace SupDef
             // TODO
             void add_threads(size_t nb_threads);
             // TODO
-            bool remove_threads(size_t nb_threads);
+            void remove_threads(size_t nb_threads);
             // TODO
+            bool try_remove_threads(size_t nb_threads);
             size_t size(void) const noexcept;
 
             template <typename FuncType, typename... Args, typename ReturnType = std::invoke_result_t<FuncType&&, Args&&...>>
@@ -1497,6 +1503,10 @@ namespace SupDef
             std::future<ReturnType> enqueue(FuncType&& func, Args&&... args);
 
     };
+
+#undef NEED_ThreadPool_TEMPLATES
+#define NEED_ThreadPool_TEMPLATES 1
+#include <sup_def/common/thread_pool.cpp>
 
     class TmpFile
     {

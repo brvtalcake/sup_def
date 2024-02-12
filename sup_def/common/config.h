@@ -608,6 +608,111 @@
 #endif
 #define SUPDEF_CONTRACT_VIOLATION(type) (::SupDef::ContractViolation(::SupDef::ContractType::type))
 
+#undef IS_PURE
+#define IS_PURE(expr) \
+    (static_cast<bool>(__builtin_object_size( ( ((void)(expr)), "" ) , 2)))
+
+#ifdef ASSUME
+    #undef ASSUME
+#endif
+#ifdef __has_cpp_attribute
+    #if __has_cpp_attribute(assume)
+        #define ASSUME(expr) [[assume((expr))]]
+    #endif
+#endif
+#ifndef ASSUME
+    #if SUPDEF_COMPILER == 1
+        #ifdef __has_attribute
+            #if __has_attribute(assume)
+                #define ASSUME(expr) __attribute__((assume((expr))))
+            #endif
+        #endif
+        #ifndef ASSUME
+            #define ASSUME(expr)                    \
+                (IS_PURE((expr))                    \
+                    ? ((expr)                       \
+                        ? ((void) 0)                \
+                        : __builtin_unreachable())  \
+                    : UNREACHABLE("Do not use `ASSUME` with non-pure expressions"))
+        #endif
+    #elif SUPDEF_COMPILER == 2
+        #define ASSUME(expr) __builtin_assume((expr))
+    #elif SUPDEF_COMPILER == 3
+        #define ASSUME(expr) __assume((expr))
+    #else
+        #define ASSUME(expr)
+    #endif
+#endif
+
+#ifdef likely_if
+    #undef likely_if
+#endif
+#ifdef __has_cpp_attribute
+    #if __has_cpp_attribute(likely)
+        #define likely_if(expr) if ((expr)) [[likely]]
+    #endif
+#endif
+#ifndef likely_if
+    #if SUPDEF_COMPILER == 1
+        #ifdef __has_builtin
+            #if __has_builtin(__builtin_expect)
+                #define likely_if(expr) if (__builtin_expect(long(bool((expr))), long(true)))
+            #endif
+        #endif
+        #ifndef likely_if
+            #define likely_if(expr) if ((expr))
+        #endif
+    #elif SUPDEF_COMPILER == 2
+        #define likely_if(expr) if (__builtin_expect(long(bool((expr))), long(true)))
+    #elif SUPDEF_COMPILER == 3
+        #define likely_if(expr) if ((expr))
+    #else
+        #define likely_if(expr) if ((expr))
+    #endif
+#endif
+
+#ifdef unlikely_if
+    #undef unlikely_if
+#endif
+#ifdef __has_cpp_attribute
+    #if __has_cpp_attribute(unlikely)
+        #define unlikely_if(expr) if ((expr)) [[unlikely]]
+    #endif
+#endif
+#ifndef unlikely_if
+    #if SUPDEF_COMPILER == 1
+        #ifdef __has_builtin
+            #if __has_builtin(__builtin_expect)
+                #define unlikely_if(expr) if (__builtin_expect(long(bool((expr))), long(false)))
+            #endif
+        #endif
+        #ifndef unlikely_if
+            #define unlikely_if(expr) if ((expr))
+        #endif
+    #elif SUPDEF_COMPILER == 2
+        #define unlikely_if(expr) if (__builtin_expect(long(bool((expr))), long(false)))
+    #elif SUPDEF_COMPILER == 3
+        #define unlikely_if(expr) if ((expr))
+    #else
+        #define unlikely_if(expr) if ((expr))
+    #endif
+#endif
+
+#ifdef probably_if
+    #undef probably_if
+#endif
+#if SUPDEF_COMPILER == 1 || SUPDEF_COMPILER == 2
+    #ifdef __has_builtin
+        #if __has_builtin(__builtin_expect_with_probability)
+            #define probably_if(expr, percentage) if (__builtin_expect_with_probability(long(bool((expr))), long(true), double((percentage) / 100)))
+        #endif
+    #endif
+#endif
+#ifndef probably_if
+    #define probably_if(expr, percentage) if ((expr))
+#endif
+
+
 #if 0
 #include <boost/parameter.hpp>
 

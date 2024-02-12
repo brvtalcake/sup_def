@@ -119,7 +119,66 @@ BOOST_AUTO_TEST_CASE(test_thread_safe_queue2,
 }
 
 BOOST_AUTO_TEST_CASE(test_thread_safe_queue3,
-    * BoostTest::description("Third test case for `SupDef::Util::ThreadSafeQueue` : tests basic operations in multiple-consumer-producer environment")
+    * BoostTest::description("Third test case for `SupDef::Util::ThreadSafeQueue` : tests queue.request_stop()")
+    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+)
+{
+    using ::SupDef::Util::ThreadSafeQueue;
+    using namespace std::chrono_literals;
+
+    std::atomic_flag go_flag = ATOMIC_FLAG_INIT;
+    go_flag.clear(std::memory_order::relaxed);
+    ThreadSafeQueue<int> queue;
+    
+    auto&& dummy_lambda = [&queue, &go_flag]([[maybe_unused]] std::stop_token stoken)
+    {
+        // Wait for the go signal
+        go_flag.wait(false, std::memory_order::acquire);
+        while (!stoken.stop_requested())
+        {
+            try
+            {
+                queue.wait_for_next();
+            }
+            catch (const ThreadSafeQueue<int>::StopRequired& e)
+            {
+                break;
+            }
+            catch (const std::exception& e)
+            {
+#ifdef ARR_SIZE
+    PUSH_MACRO(ARR_SIZE)
+    #undef ARR_SIZE
+#endif
+#define ARR_SIZE (256 * 2)
+                char msg[ARR_SIZE] = { 0 };
+                snprintf(msg, ARR_SIZE, "Unexpected exception thrown : %s", e.what());
+                BOOST_TEST(false, msg);
+                break;
+#undef ARR_SIZE
+POP_MACRO(ARR_SIZE)
+            }
+        }
+    };
+
+    std::vector<std::jthread> test_threads;
+    for (size_t i = 0; i < 5; ++i)
+        test_threads.emplace_back(dummy_lambda);
+
+    go_flag.test_and_set(std::memory_order::release);
+    go_flag.notify_all();
+
+    std::this_thread::sleep_for(10ms);
+
+    for (auto&& thread : test_threads)
+        thread.request_stop();
+    queue.request_stop();
+    for (auto&& thread : test_threads)
+        thread.join();
+}
+
+BOOST_AUTO_TEST_CASE(test_thread_safe_queue4,
+    * BoostTest::description("Fourth test case for `SupDef::Util::ThreadSafeQueue` : tests basic operations in multiple-consumer-producer environment")
     * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
 )
 {
@@ -144,7 +203,7 @@ BOOST_AUTO_TEST_CASE(test_thread_safe_queue3,
         for (auto&& i : vec)
         {
             queue.push(i);
-            std::this_thread::sleep_for(10ms / NB_CONSUMERS);
+            std::this_thread::sleep_for(1ms / NB_CONSUMERS);
         }
     });
 
@@ -171,7 +230,7 @@ BOOST_AUTO_TEST_CASE(test_thread_safe_queue3,
     #undef ARR_SIZE
 #endif
 #define ARR_SIZE (256 * 2)
-                static char msg[ARR_SIZE] = { 0 };
+                char msg[ARR_SIZE] = { 0 };
                 snprintf(msg, ARR_SIZE, "Unexpected exception thrown : %s", e.what());
                 BOOST_TEST(false, msg);
                 break;
@@ -181,7 +240,7 @@ POP_MACRO(ARR_SIZE)
             std::unique_lock<std::mutex> lock(res_mtx);
             res.push_back(val);
             lock.unlock();
-            std::this_thread::sleep_for(10ms);
+            std::this_thread::sleep_for(1ms);
         }
     };
 
@@ -191,6 +250,8 @@ POP_MACRO(ARR_SIZE)
 
     go_flag.test_and_set(std::memory_order::release);
     go_flag.notify_all();
+
+    std::this_thread::sleep_for(10ms);
 
     producer.request_stop();
     producer.join();

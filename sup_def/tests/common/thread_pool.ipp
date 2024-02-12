@@ -1,7 +1,7 @@
 /* 
  * MIT License
  * 
- * Copyright (c) 2023 Axel PASCON
+ * Copyright (c) 2023-2024 Axel PASCON
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,15 +22,34 @@
  * SOFTWARE.
  */
 
-#ifndef TESTS_HPP
-#define TESTS_HPP
+#ifdef TESTFILE_NAME
+    #undef TESTFILE_NAME
+#endif
+#define TESTFILE_NAME supdef/tests/common/thread_pool.ipp
+
+#if !BOOST_TEST_ALREADY_INCLUDED
+    #undef BOOST_TEST_MODULE
+    #define BOOST_TEST_MODULE thread_pool_tests
+    #include <boost/test/included/unit_test.hpp>
+#endif
 
 #include <sup_def/common/sup_def.hpp>
+#include <sup_def/tests/tests.h>
 
-// Test implementations
-#include <sup_def/tests/common/pragloc_comparator.ipp>
-#include <sup_def/tests/common/is.ipp>
-#include <sup_def/tests/common/thread_safe_queue.ipp>
-#include <sup_def/tests/common/thread_pool.ipp>
+#line SUPDEF_TEST_FILE_POS
 
-#endif
+BOOST_AUTO_TEST_SUITE(thread_pool,
+    * BoostTest::description("Tests for `SupDef::ThreadPool`")
+)
+
+BOOST_AUTO_TEST_CASE(test_thread_pool1,
+    * BoostTest::description("First test case for `SupDef::ThreadPool`")
+    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+)
+{
+    using ::SupDef::ThreadPool;
+
+    ThreadPool pool();
+}
+
+BOOST_AUTO_TEST_SUITE_END()

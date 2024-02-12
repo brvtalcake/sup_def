@@ -35,45 +35,72 @@
 
 namespace SupDef
 {
+
+    // TODO: Modify this to use ThreadSafeQueue::StopRequired
     ThreadPool::ThreadPool(const size_t nb_threads)
     {
         using namespace std::string_literals;
+        using task_queue_stop_required = task_queue_t::StopRequired;
 
         if (nb_threads == 0)
             throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Cannot create a thread pool of 0 thread");
 
         std::lock_guard<std::mutex> lock(this->threads_mtx);
 
+        ThreadPool*& this_ptr = const_cast<ThreadPool*>(this);
+
         for (size_t i = 0; i < nb_threads; ++i)
         {
+            TODO("Make both the main thread function and `get_next_task` function a private static member function of `ThreadPool`, instead of a lambda");
             this->threads.emplace_back(std::piecewise_construct, 
             std::forward_as_tuple(std::move(std::jthread(
-                [this, i](std::stop_token stoken)
+                [&this_ptr, i](std::stop_token stoken)
                 {
-                    while (this->threads.at(i).second.load(std::memory_order::acquire) != true); // Wait for the go signal
+                    while (this_ptr->threads.at(i).second.load(std::memory_order::acquire) != true); // Wait for the go signal
                     do
                     {
                         auto get_next_task = 
-                            [this]()
+                            [&this_ptr]() -> task_queue_t::value_type&&
                             {
                                 // If current thread's queue is empty, try to steal a task from another thread
-                                // else, return `this->task_queues[std::this_thread::get_id()].wait_for_next()`
-                                std::shared_lock<std::shared_mutex> lock(this->map_mtx); // Get READ access to the map
-                                if (this->task_queues[std::this_thread::get_id()].empty())
+                                // else, return `this_ptr->task_queues[std::this_thread::get_id()].wait_for_next()`
+                                TODO(
+                                    "Instead of `wait_for_next`, use `wait_for_next_or` with the predicate `!stoken.stop_requested()`"
+                                );
+                                std::shared_lock<std::shared_mutex> lock(this_ptr->map_mtx); // Get READ access to the map
+                                if (this_ptr->task_queues[std::this_thread::get_id()].empty())
                                 {
-                                    std::jthread::id most_busy_thread_id = this->get_most_busy_thread(true);
-                                    if (this->task_queues[most_busy_thread_id].empty())
+                                    std::jthread::id most_busy_thread_id = this_ptr->get_most_busy_thread(true);
+                                    if (this_ptr->task_queues[most_busy_thread_id].empty())
                                         goto just_wait_ours;
                                     else
-                                        return this->task_queues[most_busy_thread_id].wait_for_next(); // Should be instant
+                                    {
+                                        std::unique_lock<std::shared_mutex> lock2(this_ptr->waiting_locations_mtx);
+                                        this_ptr->waiting_locations[std::this_thread::get_id()] = most_busy_thread_id;
+                                        lock2.unlock();
+                                        lock.unlock();
+                                        return std::move(this_ptr->task_queues[most_busy_thread_id].wait_for_next()); // Should be instant
+                                    }
                                 }
                             just_wait_ours:
-                                return this->task_queues[std::this_thread::get_id()].wait_for_next();
+                                std::unique_lock<std::shared_mutex> lock2(this_ptr->waiting_locations_mtx);
+                                waiting_locations[std::this_thread::get_id()] = std::this_thread::get_id();
+                                lock2.unlock();
+                                lock.unlock();
+                                return std::move(this_ptr->task_queues[std::this_thread::get_id()].wait_for_next());
                             };
-                        auto task = get_next_task();
                         try
                         {
+                            // `get_next_task()` will throw `task_queue_stop_required` if the thread should stop
+                            auto&& task = get_next_task();
                             std::invoke(std::move(task));
+                        }
+                        catch (const task_queue_stop_required& e)
+                        {
+                            continue;
+                            // It will stop if the stop token is requested
+                            // If we were waiting on another thread's queue, it will just reenter the loop
+                            // and retry to steal a task
                         }
                         catch (...)
                         {
@@ -97,6 +124,7 @@ namespace SupDef
             this->threads.at(i).second.store(true, std::memory_order::release);
     }
 
+    // TODO: Modify this to use ThreadSafeQueue::request_stop
     ThreadPool::~ThreadPool()
     {
         std::lock_guard<std::mutex> lock1(this->threads_mtx);
@@ -204,11 +232,31 @@ namespace SupDef
         }
         UNREACHABLE();
     }
+
+    size_t ThreadPool::size(void) const noexcept
+    {
+        return this->threads.size();
+    }
+
+    bool ThreadPool::try_remove_threads(size_t nb_threads)
+    {
+        std::lock_guard<std::mutex> lock(this->threads_mtx);
+        if (this->threads.size() < nb_threads)
+            return false;
+        for (size_t i = 0; i < nb_threads; ++i)
+        {
+            this->threads.pop_back();
+        }
+        return true;
+    }
+
+    void ThreadPool::add_threads(size_t nb_threads);
+    void ThreadPool::remove_threads(size_t nb_threads);
 }
 
 #else
 
-template <typename FuncType, typename... Args, typename ReturnType = std::invoke_result_t<FuncType&&, Args&&...>>
+template <typename FuncType, typename... Args, typename ReturnType /* = std::invoke_result_t<FuncType&&, Args&&...> */>
     requires std::invocable<FuncType, Args...> && (!IsCoro<ReturnType>)
 std::future<ReturnType> ThreadPool::enqueue(FuncType&& func, Args&&... args)
 {

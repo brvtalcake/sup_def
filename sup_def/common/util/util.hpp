@@ -1546,22 +1546,32 @@ namespace SupDef
     do                                          \
     {                                           \
         if consteval                            \
-            HARD_ASSERT_IMPL_CONSTEVAL(COND);   \
+        {                                       \
+            HARD_ASSERT_IMPL_CONSTEVAL((COND)); \
+        }                                       \
         else                                    \
-            HARD_ASSERT_IMPL(COND);             \
-    } while (false)
+        {                                       \
+            HARD_ASSERT_IMPL((COND));           \
+        }                                       \
+    } while (false);                            \
+    ASSUME((COND))
 
 #ifdef hard_assert_msg
     #undef hard_assert_msg
 #endif
-#define hard_assert_msg(COND, MSG)                      \
-    do                                                  \
-    {                                                   \
-        if consteval                                    \
-            HARD_ASSERT_MSG_IMPL_CONSTEVAL(COND, MSG);  \
-        else                                            \
-            HARD_ASSERT_MSG_IMPL(COND, MSG);            \
-    } while (false)
+#define hard_assert_msg(COND, MSG)                          \
+    do                                                      \
+    {                                                       \
+        if consteval                                        \
+        {                                                   \
+            HARD_ASSERT_MSG_IMPL_CONSTEVAL((COND), (MSG));  \
+        }                                                   \
+        else                                                \
+        {                                                   \
+            HARD_ASSERT_MSG_IMPL((COND), (MSG));            \
+        }                                                   \
+    } while (false);                                        \
+    ASSUME((COND))
 
         [[noreturn]]
         static inline void hard_assert_fail(bool cond, const char* cond_str, const char* file, int line, const char* func)
@@ -1697,8 +1707,11 @@ namespace SupDef
                 static const char* msg = "This wait was interrupted because the associated ThreadSafeQueue was requested to stop";
                 return msg;
 #else
+                using namespace std::string_literals;
+
                 static std::array<std::string, sizeof...(Args)> type_names = { std::string(type_name<Args>(true))... };
                 static std::string msg;
+                
                 if constexpr (sizeof...(Args) == 1)
                 {
                     msg = "This wait was interrupted because the associated ThreadSafeQueue<" + type_names.at(0) + "> was requested to stop";
@@ -1706,7 +1719,17 @@ namespace SupDef
                 }
                 else if constexpr (sizeof...(Args) > 1)
                 {
-                    msg = "This wait was interrupted because the associated ThreadSafeQueue<" + std::accumulate(type_names.begin() + 1, type_names.end(), type_names.at(0), [](const std::string& acc, const std::string& s) { return acc + ", " + s; }) + "> was requested to stop";
+                    msg = "This wait was interrupted because the associated ThreadSafeQueue<"s
+                        + std::accumulate(
+                            type_names.begin() + 1,
+                            type_names.end(),
+                            type_names.at(0),
+                            [] (const std::string& acc, const std::string& s)
+                            {
+                                return acc + ", " + s;
+                            }
+                        )
+                        + "> was requested to stop"s;
                     return msg.c_str();
                 }
                 else
@@ -1715,6 +1738,32 @@ namespace SupDef
             }
         };
 
+        template <std::integral T>
+        Coro<T> finite_generator(T from, T to)
+        {
+            unlikely_if (to <= from)
+                co_return from;
+            for (T i = from; i < to; ++i)
+                co_yield i;
+            co_return to;
+        }
+
+        template <std::integral T>
+        Coro<T> finite_generator(T to)
+        {
+            unlikely_if (to <= 0)
+                co_return 0;
+            for (T i = 0; i < to; ++i)
+                co_yield i;
+            co_return to;
+        }
+
+#ifdef FINITE_GENERATOR
+    #undef FINITE_GENERATOR
+#endif
+#define FINITE_GENERATOR(type, ...) ::SupDef::Util::finite_generator<type>(__VA_ARGS__)
+
+#if 0
         template <typename Tp, typename Container = std::deque<Tp>>
         class ThreadSafeQueue
         {
@@ -1730,7 +1779,7 @@ namespace SupDef
             private:
                 QueueType queue;
                 mutable std::mutex mutex{};
-                mutable std::atomic_flag not_empty = ATOMIC_FLAG_INIT;
+                mutable std::atomic_flag not_empty_or_need_stop = ATOMIC_FLAG_INIT;
                 mutable std::atomic<bool> stop_required = false;
 
             public:
@@ -1740,11 +1789,11 @@ namespace SupDef
                 {
                     if (!this->queue.empty())
                     {
-                        std::ignore = this->not_empty.test_and_set(std::memory_order::relaxed);
-                        this->not_empty.notify_all();
+                        std::ignore = this->not_empty_or_need_stop.test_and_set(std::memory_order::relaxed);
+                        this->not_empty_or_need_stop.notify_all();
                     }
                     else
-                        this->not_empty.clear(std::memory_order::relaxed);
+                        this->not_empty_or_need_stop.clear(std::memory_order::relaxed);
                 }
 
                 ThreadSafeQueue(const ThreadSafeQueue&) = delete;
@@ -1752,11 +1801,11 @@ namespace SupDef
                 {
                     if (!this->queue.empty())
                     {
-                        std::ignore = this->not_empty.test_and_set(std::memory_order::relaxed);
-                        this->not_empty.notify_all();
+                        std::ignore = this->not_empty_or_need_stop.test_and_set(std::memory_order::relaxed);
+                        this->not_empty_or_need_stop.notify_all();
                     }
                     else
-                        this->not_empty.clear(std::memory_order::relaxed);
+                        this->not_empty_or_need_stop.clear(std::memory_order::relaxed);
                 }
 
                 template <typename... Args>
@@ -1766,11 +1815,11 @@ namespace SupDef
                 {
                     if (!this->queue.empty())
                     {
-                        std::ignore = this->not_empty.test_and_set(std::memory_order::relaxed);
-                        this->not_empty.notify_all();
+                        std::ignore = this->not_empty_or_need_stop.test_and_set(std::memory_order::relaxed);
+                        this->not_empty_or_need_stop.notify_all();
                     }
                     else
-                        this->not_empty.clear(std::memory_order::relaxed);
+                        this->not_empty_or_need_stop.clear(std::memory_order::relaxed);
                 }
                 template <typename T>
                     requires std::convertible_to<T, value_type> || std::constructible_from<value_type, T>
@@ -1780,8 +1829,8 @@ namespace SupDef
                     for (auto& e : il)
                     {
                         this->queue.push(value_type(e));
-                        std::ignore = this->not_empty.test_and_set(std::memory_order::relaxed);
-                        this->not_empty.notify_one();
+                        std::ignore = this->not_empty_or_need_stop.test_and_set(std::memory_order::relaxed);
+                        this->not_empty_or_need_stop.notify_one();
                     }
                 }
 
@@ -1823,16 +1872,16 @@ namespace SupDef
                 {
                     std::lock_guard<std::mutex> lock(this->mutex);
                     this->queue.push(t);
-                    std::ignore = this->not_empty.test_and_set(std::memory_order::release);
-                    this->not_empty.notify_one();
+                    std::ignore = this->not_empty_or_need_stop.test_and_set(std::memory_order::release);
+                    this->not_empty_or_need_stop.notify_one();
                 }
 
                 void push(value_type&& t)
                 {
                     std::lock_guard<std::mutex> lock(this->mutex);
                     this->queue.push(std::move(t));
-                    std::ignore = this->not_empty.test_and_set(std::memory_order::release);
-                    this->not_empty.notify_one();
+                    std::ignore = this->not_empty_or_need_stop.test_and_set(std::memory_order::release);
+                    this->not_empty_or_need_stop.notify_one();
                 }
 
                 template <typename... Args>
@@ -1840,8 +1889,8 @@ namespace SupDef
                 {
                     std::lock_guard<std::mutex> lock(this->mutex);
                     decltype(auto) ret = this->queue.emplace(std::forward<Args>(args)...);
-                    std::ignore = this->not_empty.test_and_set(std::memory_order::release);
-                    this->not_empty.notify_one();
+                    std::ignore = this->not_empty_or_need_stop.test_and_set(std::memory_order::release);
+                    this->not_empty_or_need_stop.notify_one();
                     return ret;
                 }
 
@@ -1852,7 +1901,7 @@ namespace SupDef
                         throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "ThreadSafeQueue::pop(): queue is empty");
                     this->queue.pop();
                     if (this->queue.empty())
-                        this->not_empty.clear(std::memory_order::release);
+                        this->not_empty_or_need_stop.clear(std::memory_order::release);
                 }
 
                 void swap(ThreadSafeQueue& other) noexcept(std::is_nothrow_swappable_v<QueueType>)
@@ -1882,7 +1931,7 @@ namespace SupDef
                     value_type ret = this->queue.front();
                     this->queue.pop();
                     if (this->queue.empty())
-                        this->not_empty.clear(std::memory_order::release);
+                        this->not_empty_or_need_stop.clear(std::memory_order::release);
                     return ret;
                 }
 
@@ -1891,7 +1940,7 @@ namespace SupDef
                 {
                     if (this->stop_required.load(std::memory_order::acquire))
                         throw StopRequired();
-                    this->not_empty.wait(false, std::memory_order::acquire);
+                    this->not_empty_or_need_stop.wait(false, std::memory_order::acquire);
                     if (this->stop_required.load(std::memory_order::acquire))
                         throw StopRequired();
                     return this->next();
@@ -1900,9 +1949,305 @@ namespace SupDef
                 void request_stop() noexcept
                 {
                     this->stop_required.store(true, std::memory_order::release);
-                    this->not_empty.notify_all();
+                    std::ignore = this->not_empty_or_need_stop.test_and_set(std::memory_order::release);
+                    this->not_empty_or_need_stop.notify_all();
+                }
+
+                void restart_after_stop() noexcept
+                {
+                    this->stop_required.store(false, std::memory_order::release);
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    if (!this->queue.empty())
+                    {
+                        std::ignore = this->not_empty_or_need_stop.test_and_set(std::memory_order::release);
+                        for (auto&& i : FINITE_GENERATOR(size_type, this->queue.size()))
+                            this->not_empty_or_need_stop.notify_one();
+                    }
+                    else
+                        this->not_empty_or_need_stop.clear(std::memory_order::release);
                 }
         };
+#else
+        template <typename Tp, typename Container = std::deque<Tp>>
+        class ThreadSafeQueue
+        {
+            public:
+                using QueueType = std::queue<Tp, Container>;
+
+                using container_type = typename QueueType::container_type;
+                using value_type = typename QueueType::value_type;
+                using size_type = typename QueueType::size_type;
+                using reference = typename QueueType::reference;
+                using const_reference = typename QueueType::const_reference;
+
+            private:
+                QueueType queue;
+                std::condition_variable queue_cv{};
+                std::atomic<bool> stop_required = false;
+                std::atomic<bool> empty = true;
+                mutable std::mutex mutex{};
+
+            public:
+                using StopRequired = ThreadSafeQueueStopRequired<Tp, Container>;
+
+                ThreadSafeQueue() : queue()
+                {
+                    likely_if (this->queue.empty())
+                        this->empty.store(true, std::memory_order::relaxed);
+                    else
+                    {
+                        this->empty.store(false, std::memory_order::relaxed);
+                        this->queue_cv.notify_all();
+                    }
+                }
+
+                ThreadSafeQueue(const ThreadSafeQueue&) = delete;
+                ThreadSafeQueue(ThreadSafeQueue&& other) : queue(std::move(other.queue))
+                {
+                    if (this->queue.empty())
+                        this->empty.store(true, std::memory_order::relaxed);
+                    else
+                    {
+                        this->empty.store(false, std::memory_order::relaxed);
+                        this->queue_cv.notify_all();
+                    }
+                }
+
+                template <typename... Args>
+                    requires std::constructible_from<QueueType, Args...>
+                ThreadSafeQueue(Args&&... args)
+                    : queue(std::forward<Args>(args)...)
+                {
+                    probably_if (this->queue.empty(), (sizeof...(Args) == 0 ? 100 : 5))
+                        this->empty.store(true, std::memory_order::relaxed);
+                    else
+                    {
+                        this->empty.store(false, std::memory_order::relaxed);
+                        this->queue_cv.notify_all();
+                    }
+                }
+                template <typename T>
+                    requires std::convertible_to<T, value_type> || std::constructible_from<value_type, T>
+                ThreadSafeQueue(std::initializer_list<T> il)
+                    : queue()
+                {
+                    for (auto& e : il)
+                        this->queue.push(value_type(e));
+                    probably_if (this->queue.empty(), (il.size() == 0 ? 100 : 5))
+                        this->empty.store(true, std::memory_order::relaxed);
+                    else
+                    {
+                        this->empty.store(false, std::memory_order::relaxed);
+                        this->queue_cv.notify_all();
+                    }
+                }
+
+                ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
+                ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
+
+                ~ThreadSafeQueue() = default;
+
+                value_type front() const
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    if (this->queue.empty())
+                        throw InternalException("ThreadSafeQueue::front(): queue is empty");
+                    return this->queue.front();
+                }
+
+                value_type back() const
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    if (this->queue.empty())
+                        throw InternalException("ThreadSafeQueue::back(): queue is empty");
+                    return this->queue.back();
+                }
+
+                [[nodiscard]]
+                bool empty() const
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    return this->queue.empty();
+                }
+
+                size_type size() const
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    return this->queue.size();
+                }
+
+                void push(const value_type& t)
+                {
+                    std::unique_lock<std::mutex> lock(this->mutex);
+                    this->queue.push(t);
+                    likely_if (!this->queue.empty())
+                    {
+                        this->empty.store(false, std::memory_order::release);
+                        lock.unlock();
+                        this->queue_cv.notify_one();
+                    }
+                }
+
+                void push(value_type&& t)
+                {
+                    std::unique_lock<std::mutex> lock(this->mutex);
+                    this->queue.push(std::move(t));
+                    likely_if (!this->queue.empty())
+                    {
+                        this->empty.store(false, std::memory_order::release);
+                        lock.unlock();
+                        this->queue_cv.notify_one();
+                    }
+                }
+
+                template <typename... Args>
+                decltype(auto) emplace(Args&&... args)
+                {
+                    std::unique_lock<std::mutex> lock(this->mutex);
+                    decltype(auto) ret = this->queue.emplace(std::forward<Args>(args)...);
+                    likely_if (!this->queue.empty())
+                    {
+                        this->empty.store(false, std::memory_order::release);
+                        lock.unlock();
+                        this->queue_cv.notify_one();
+                    }
+                    return ret;
+                }
+
+                void pop()
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    unlikely_if (this->queue.empty())
+                        throw InternalException("ThreadSafeQueue::pop(): queue is empty");
+                    this->queue.pop();
+                    if (this->queue.empty())
+                        this->empty.store(true, std::memory_order::release);
+                }
+
+                void swap(ThreadSafeQueue& other) noexcept(std::is_nothrow_swappable_v<QueueType>)
+                {
+                    if (this != std::addressof(other))
+                    {
+                        std::scoped_lock locker(this->mutex, other.mutex);
+                        std::swap(this->queue, other.queue);
+                    }
+                }
+
+                QueueType& to_unsafe() noexcept
+                {
+                    return this->queue;
+                }
+
+                const QueueType& to_unsafe() const noexcept
+                {
+                    return this->queue;
+                }
+
+                value_type next()
+                {
+                    std::lock_guard<std::mutex> lock(this->mutex);
+                    unlikely_if (this->queue.empty())
+                        throw InternalException("ThreadSafeQueue::next(): queue is empty");
+                    value_type ret = this->queue.front();
+                    this->queue.pop();
+                    if (this->queue.empty())
+                        this->empty.store(true, std::memory_order::release);
+                    return ret;
+                }
+
+                // Wait until another thread pushes something (and pray for the implementation to use Linux futexes so it's efficient)
+                value_type wait_for_next()
+                {
+                    decltype(auto) this_ptr = this;
+                    auto&& pred = [&this_ptr] {
+                        return
+                            !this_ptr->empty.load(std::memory_order::acquire)           ||
+                            this_ptr->stop_required.load(std::memory_order::acquire);
+                    };
+                    std::unique_lock<std::mutex> lock(this->mutex);
+                    this->queue_cv.wait(lock, pred);
+                    hard_assert(lock.owns_lock());
+                    if (this->stop_required.load(std::memory_order::acquire))
+                        throw StopRequired();
+                    unlikely_if (this->queue.empty())
+                        throw InternalException("ThreadSafeQueue::wait_for_next(): queue is empty after waking up");
+                    value_type ret = this->queue.front();
+                    this->queue.pop();
+                    if (this->queue.empty())
+                        this->empty.store(true, std::memory_order::release);
+                    return ret;
+                }
+
+                STATIC_TODO("Write tests for `wait_for_next_or`")
+                template <
+                    typename AdditionalPredicate,
+                    typename ToInvoke /* to invoke when additional_pred is satisfied (after we checked if this->stop_required) */,
+                    typename... PredArgs
+                >
+                    requires std::predicate<AdditionalPredicate, PredArgs&&...>
+                          && std::invocable<ToInvoke>
+                          && std::same_as<std::invoke_result_t<ToInvoke>, void>
+                value_type wait_for_next_or(
+                    AdditionalPredicate&& additional_pred,
+                    ToInvoke&& to_invoke,
+                    PredArgs&&... pred_args
+                )
+                {
+                    decltype(auto) this_ptr = this;
+                    auto&& pred = [&this_ptr, &additional_pred, &pred_args...] {
+                        return
+                            !this_ptr->empty.load(std::memory_order::acquire)           ||
+                            this_ptr->stop_required.load(std::memory_order::acquire)    ||
+                            std::invoke(
+                                std::forward<AdditionalPredicate>(additional_pred),
+                                std::forward<PredArgs>(pred_args)...
+                            );
+                    };
+                    std::unique_lock<std::mutex> lock(this->mutex);
+                    this->queue_cv.wait(lock, pred);
+                    hard_assert(lock.owns_lock());
+                    if (this->stop_required.load(std::memory_order::acquire))
+                        throw StopRequired();
+                    if (
+                        std::invoke(
+                            std::forward<AdditionalPredicate>(additional_pred),
+                            std::forward<PredArgs>(pred_args)...
+                        )
+                    )
+                        std::invoke(std::forward<ToInvoke>(to_invoke));
+                    unlikely_if (this->queue.empty())
+                        throw InternalException("ThreadSafeQueue::wait_for_next_or(): queue is empty after waking up");
+                    value_type ret = this->queue.front();
+                    this->queue.pop();
+                    if (this->queue.empty())
+                        this->empty.store(true, std::memory_order::release);
+                    return ret;
+                }
+
+                void notify_all() noexcept
+                {
+                    this->queue_cv.notify_all();
+                }
+
+                void request_stop() noexcept
+                {
+                    this->stop_required.store(true, std::memory_order::release);
+                    this->queue_cv.notify_all();
+                }
+
+                void restart_after_stop() noexcept
+                {
+                    this->stop_required.store(false, std::memory_order::release);
+                    std::unique_lock<std::mutex> lock(this->mutex);
+                    if (!this->queue.empty())
+                    {
+                        this->empty.store(false, std::memory_order::release);
+                        lock.unlock();
+                        this->queue_cv.notify_all();
+                    }
+                }
+        };
+#endif
 
         template <typename Tp>
         static constexpr inline bool is_restricted_ptr_impl = false;
@@ -2144,6 +2489,16 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
         static_assert(!same_sign(1.0, -2.0));
         static_assert(!same_sign(-1.0, 2.0));
 
+        template <typename Int, typename Ret = Int>
+            requires std::integral<Int>
+        constexpr static inline Ret abs(Int a)
+        {
+            if constexpr (std::signed_integral<Int>)
+                return a < 0 ? static_cast<Ret>(-a) : static_cast<Ret>(a);
+            else
+                return static_cast<Ret>(a);
+        }
+
         namespace
         {
             template <typename Int>
@@ -2165,6 +2520,15 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
             constexpr static inline bool mul_exceeds_max(Int a, Int b)
             {
                 return same_sign(a, b);
+            }
+
+            template <typename Int>
+                requires std::integral<Int>
+            constexpr static inline bool opposite_can_be_represented(Int val)
+            {
+                [[maybe_unused]]
+                Int temp_res;
+                return !ckd_sub(&temp_res, 0, val);
             }
         };
 
@@ -2224,6 +2588,117 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
         static_assert(saturated_mul(std::numeric_limits<int>::min() / 2, int(5)) == std::numeric_limits<int>::min());
         static_assert(saturated_mul(std::numeric_limits<int>::max() / 2, int(-5)) == std::numeric_limits<int>::min());
         static_assert(saturated_mul(std::numeric_limits<int>::min() / 2, int(-5)) == std::numeric_limits<int>::max());
+
+        template <typename Int>
+            requires std::integral<Int>
+        constexpr static inline Int wrapped_add(Int a, Int b)
+        {
+            if constexpr (std::unsigned_integral<Int>)
+                return a + b;
+            else
+            {
+                Int res;
+                if (!ckd_add(&res, a, b))
+                    return res;
+                else if (add_exceeds_max(a, b))
+                {
+                    hard_assert_msg(a > 0 && b > 0, "a and b should be positive at this point");
+
+                    Int temp = std::numeric_limits<Int>::max() - a;
+                    hard_assert(b >= temp && temp > 0);
+
+                    temp = b - temp;
+                    hard_assert(temp > 0);
+
+                    return std::numeric_limits<Int>::min() + temp;
+                }
+                else
+                {
+                    hard_assert_msg(a < 0 && b < 0, "a and b should be negative at this point");
+
+                    Int temp = std::numeric_limits<Int>::min() - a;
+                    hard_assert(b <= temp && temp < 0);
+
+                    temp = b - temp;
+                    hard_assert(temp < 0);
+
+                    return std::numeric_limits<Int>::max() + temp;
+                }
+            }
+        }
+
+        template <typename Int>
+            requires std::integral<Int>
+        constexpr static inline Int wrapped_sub(Int a, Int b)
+        {
+            if constexpr (std::unsigned_integral<Int>)
+                return a - b;
+            else
+            {
+                Int res;
+                Int temp_b = b;
+                ptrdiff_t additional_incdec = 0;
+                auto&& go_towards_zero = [&additional_incdec](Int& val) -> void
+                {
+                    if (val < 0)
+                    {
+                        ++val;
+                        ++additional_incdec;
+                    }
+                    else if (val > 0)
+                    {
+                        --val;
+                        --additional_incdec;
+                    }
+                };
+                // Find the closest value to (-b) that can be represented in an `Int`,
+                // then just `wrapped_add` this value to res and then incrementaly 
+                // `wrapped_add` `additional_incdec` to the result to get the correct result
+                while (!opposite_can_be_represented(temp_b))
+                    go_towards_zero(temp_b);
+                res = wrapped_add(a, -temp_b);
+                for (size_t i = 0; i < ::SupDef::Util::abs<ptrdiff_t, size_t>(additional_incdec); ++i)
+                    res = wrapped_add(res, additional_incdec > 0 ? 1 : -1);                
+                return res;
+            }
+        }
+
+        template <typename Int>
+            requires std::integral<Int>
+        constexpr static inline Int wrapped_mul(Int a, Int b)
+        {
+            if constexpr (std::unsigned_integral<Int>)
+                return a * b;
+            else
+            {
+                if (a == 0 || b == 0)
+                    return 0;
+                if (a == 1)
+                    return b;
+                if (b == 1)
+                    return a;
+                if (a == -1)
+                    return wrapped_sub(0, b);
+                if (b == -1)
+                    return wrapped_sub(0, a);
+                
+                Int res = 0;
+                if (a > 0)
+                {
+                    for (Int i = 0; i < a; ++i)
+                        res = wrapped_add(res, b);
+                    return res;
+                }
+                else
+                {
+                    for (Int i = a; i < 0; ++i)
+                        res = wrapped_sub(res, b);
+                    return res;
+                }
+            }
+        }
+
+        STATIC_TODO("Add tests for `wrapped_add`, `wrapped_sub` and `wrapped_mul`")
     }
 
     // All values here are based on Boost.Contract library failure handlers

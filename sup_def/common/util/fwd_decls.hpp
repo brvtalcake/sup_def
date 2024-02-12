@@ -41,6 +41,9 @@
 
 namespace SupDef
 {
+    template <typename T>
+    class Coro;
+    
     namespace Util
     {
         SD_COMMON_API
