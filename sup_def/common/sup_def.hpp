@@ -1442,10 +1442,107 @@ namespace SupDef
     template <typename...>
     class PackagedCoro;
 
-    // TO BE TESTED
-    class ThreadPool
+    template <typename ThreadPoolType>
+    class ThreadPoolBase
     {
         private:
+            using get_next_task_return_type = typename ThreadPoolType::task_queue_t::value_type;
+            
+            static get_next_task_return_type&&
+                get_next_task(ThreadPoolType* const this_ptr, std::stop_token stoken)
+            {
+                // If current thread's queue is empty, try to steal a task from another thread
+                // else, return `this_ptr->task_queues[std::this_thread::get_id()].wait_for_next()`
+                TODO(
+                    "Instead of `wait_for_next`, use `wait_for_next_or` with the predicate `!stoken.stop_requested()`"
+                );
+                
+                using task_queue_stop_required = typename ThreadPoolType::task_queue_t::StopRequired;
+                
+                static const auto stoken_stop_requested_pred = [](const std::stop_token& stoken) -> bool
+                {
+                    return stoken.stop_requested();
+                };
+                static const auto to_invoke_if_true = []() -> void
+                {
+                    throw task_queue_stop_required();
+                };
+                
+                std::shared_lock<std::shared_mutex> lock(this_ptr->map_mtx); // Get READ access to the map
+                if (this_ptr->task_queues[std::this_thread::get_id()].empty())
+                {
+                    std::jthread::id most_busy_thread_id = this_ptr->get_most_busy_thread(true);
+                    if (this_ptr->task_queues[most_busy_thread_id].empty())
+                        goto just_wait_ours;
+                    else
+                    {
+                        std::unique_lock<std::shared_mutex> lock2(this_ptr->waiting_locations_mtx);
+                        this_ptr->waiting_locations[std::this_thread::get_id()] = most_busy_thread_id;
+                        lock2.unlock();
+                        lock.unlock();
+                        return std::move(this_ptr->task_queues[most_busy_thread_id].wait_for_next_or(stoken_stop_requested_pred, to_invoke_if_true, stoken));
+                    }
+                }
+            just_wait_ours:
+                std::unique_lock<std::shared_mutex> lock2(this_ptr->waiting_locations_mtx);
+                this_ptr->waiting_locations[std::this_thread::get_id()] = std::this_thread::get_id();
+                lock2.unlock();
+                lock.unlock();
+                return std::move(this_ptr->task_queues[std::this_thread::get_id()].wait_for_next_or(stoken_stop_requested_pred, to_invoke_if_true, stoken));
+            }
+
+        protected:
+            static void thread_main(std::stop_token stoken, const ThreadPoolType* const const_this_ptr, size_t index)
+            {
+                using task_queue_t = typename ThreadPoolType::task_queue_t;
+                using task_queue_stop_required = task_queue_t::StopRequired;
+
+#if 0
+                const ThreadPoolType& const_ref = *const_this_ptr;
+                ThreadPoolType& ref = const_cast<ThreadPoolType&>(const_ref);
+                ThreadPoolType* const this_ptr = std::addressof(ref);
+#else
+                ThreadPoolType* const this_ptr = std::addressof(const_cast<ThreadPoolType&>(*const_this_ptr));
+#endif
+
+                /* delctype(auto) this_ptr = dynamic_cast<ThreadPoolType* const>(this); */
+                while (this_ptr->threads.at(index).second.load(std::memory_order::acquire) != true); // Wait for the go signal
+                do
+                {
+                    try
+                    {
+                        // `get_next_task()` will throw `task_queue_stop_required` if the thread should stop
+                        auto&& task = get_next_task(this_ptr, stoken);
+                        std::invoke(std::move(task));
+                    }
+                    catch (const task_queue_stop_required& e)
+                    {
+                        continue;
+                        // It will stop if the stop token is requested
+                        // If we were waiting on another thread's queue, it will just reenter the loop
+                        // and retry to steal a task
+                    }
+                    catch (...)
+                    {
+                        UNREACHABLE("Unhandled exception of type `", ::SupDef::Util::demangle(std::current_exception().__cxa_exception_type()->name()), "`");
+                    }
+                } while (!stoken.stop_requested());
+            }
+    };
+
+    // TO BE TESTED
+    class ThreadPool
+    : private ThreadPoolBase<ThreadPool>
+    {
+        STATIC_TODO(
+            "Make it possible to know if there is still tasks running in the thread pool (or in the queues)"
+        );
+        STATIC_TODO(
+            "Make it possible to add timeouts to tasks"
+        );
+        private:
+            friend class ThreadPoolBase<ThreadPool>;
+            using BaseType = ThreadPoolBase<ThreadPool>;
 #if 0
             using function_type = std::move_only_function<void()>;
 #else
@@ -1470,8 +1567,10 @@ namespace SupDef
             
             std::vector< std::pair< std::jthread, MovableAtomic<bool> > > threads;
             std::unordered_map< std::jthread::id, task_queue_t > task_queues;
+
             std::mutex threads_mtx;
             std::shared_mutex map_mtx;
+
             // In which queue is the thread waiting for a task
             std::unordered_map< std::jthread::id, std::jthread::id > waiting_locations; 
             std::shared_mutex waiting_locations_mtx;
@@ -1480,6 +1579,10 @@ namespace SupDef
             std::jthread* get_thread_from_id(const std::jthread::id& id);
             std::jthread::id get_most_busy_thread(bool already_locked);
             std::jthread::id get_least_busy_thread(bool already_locked);
+
+            void request_thread_stop(std::jthread::id&& id);
+            void request_thread_stop(const std::jthread::id& id);
+            void request_thread_stop(size_t index);
 
         public:
             explicit ThreadPool(const size_t nb_threads = std::jthread::hardware_concurrency());

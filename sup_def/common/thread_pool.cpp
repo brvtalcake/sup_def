@@ -36,21 +36,24 @@
 namespace SupDef
 {
 
-    // TODO: Modify this to use ThreadSafeQueue::StopRequired
     ThreadPool::ThreadPool(const size_t nb_threads)
     {
         using namespace std::string_literals;
         using task_queue_stop_required = task_queue_t::StopRequired;
 
         if (nb_threads == 0)
-            throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Cannot create a thread pool of 0 thread");
+            throw InternalError("Cannot create a thread pool of 0 thread"s);
 
-        std::lock_guard<std::mutex> lock(this->threads_mtx);
+        std::lock_guard<std::mutex> lock1(this->threads_mtx);
+        std::lock_guard<std::shared_mutex> lock2(this->map_mtx);
 
+#if SUPDEF_THREADPOOL_USE_LAMBDAS
         ThreadPool*& this_ptr = const_cast<ThreadPool*>(this);
+#endif
 
         for (size_t i = 0; i < nb_threads; ++i)
         {
+#if SUPDEF_THREADPOOL_USE_LAMBDAS
             TODO("Make both the main thread function and `get_next_task` function a private static member function of `ThreadPool`, instead of a lambda");
             this->threads.emplace_back(std::piecewise_construct, 
             std::forward_as_tuple(std::move(std::jthread(
@@ -109,6 +112,28 @@ namespace SupDef
                     } while (!stoken.stop_requested());
                 }
             ))), std::forward_as_tuple(false));
+#else
+            try
+            {
+                this->threads.emplace_back(
+                    std::piecewise_construct,
+                    std::forward_as_tuple(
+                        std::move(
+                            std::jthread(
+                                std::addressof(thread_main),
+                                std::addressof(this),
+                                i
+                            )
+                        )
+                    ),
+                    std::forward_as_tuple(false)
+                );
+            }
+            catch (const std::exception& e)
+            {
+                throw InternalError("Failed to create thread "s + std::to_string(i) + ": "s + e.what());
+            }
+#endif
             // Create the task queue for the thread
             using pair_type = typename decltype(this->task_queues)::value_type;
             const std::jthread::id id = this->threads.at(i).first.get_id();
@@ -117,7 +142,7 @@ namespace SupDef
                     std::move(pair)
                 ) ; !inserted
             )
-                throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to create task queue for thread "s + std::to_string(i));
+                throw InternalError("Failed to create task queue for thread "s + std::to_string(i));
         }
         // Say go to the threads
         for (size_t i = 0; i < nb_threads; ++i)
@@ -127,23 +152,163 @@ namespace SupDef
     // TODO: Modify this to use ThreadSafeQueue::request_stop
     ThreadPool::~ThreadPool()
     {
-        std::lock_guard<std::mutex> lock1(this->threads_mtx);
-        for (auto& [thread, go] : this->threads)
+        std::vector<std::jthread::id> ids;
+        std::unique_lock<std::mutex> lock(this->threads_mtx);
+
+        TODO(
+            "Is `std::transform` ok here?"
+        );
+        std::transform(
+            std::begin(this->threads),
+            std::end(this->threads),
+            std::back_inserter(ids),
+            [](const auto& pair)
+            {
+                return pair.first.get_id();
+            }
+        );
+
+        lock.unlock();
+
+        std::for_each(
+            std::begin(ids),
+            std::end(ids),
+            [&this](const auto& id)
+            {
+                this->request_thread_stop(id);
+            }
+        );
+    }
+
+    void ThreadPool::request_thread_stop(std::jthread::id&& id)
+    {
+        try
         {
-            thread.request_stop();
-        }
-        std::unique_lock<std::shared_mutex> lock2(this->map_mtx); // Get WRITE access to the map
-        for (auto& [thread, go] : this->threads)
-        {
-            this->task_queues[thread.get_id()].push([](){});
-        }
-        lock2.unlock();
-        for (auto& [thread, go] : this->threads)
-        {
+            std::jthread& thread = *this->get_thread_from_id(std::move(id));
+            bool ret_bool = thread.request_stop();
+            hard_assert(ret_bool);
+    
+            std::unique_lock<std::shared_mutex> waiting_locations_lock(this->waiting_locations_mtx);
+            std::unique_lock<std::shared_mutex> map_lock(this->map_mtx);
+            std::unique_lock<std::mutex> threads_lock(this->threads_mtx);
+
+            std::jthread::id& waiting_where = this->waiting_locations.at(std::move(id));
+            size_t ret_size_t = this->waiting_locations.erase(std::move(id));
+            hard_assert(ret_size_t == 1);
+
+            std::optional<std::reference_wrapper<task_queue_t>> task_queue = std::nullopt;
+            try
+            {
+                task_queue = std::ref(this->task_queues.at(waiting_where));
+            }
+            catch (const std::out_of_range& e)
+            {
+                /*
+                 * Perhaps the thread to which the queue we were waiting for belonged to
+                 * was stopped while we were executing a task from its queue.
+                 * In that case, it's just ok to not throw anything.
+                 */
+                task_queue = std::nullopt;
+            }
+            catch (...)
+            {
+                throw;
+            }
+            this->task_queues.at(std::move(id)).request_stop();
+            if (waiting_where != std::move(id) && task_queue.has_value())
+            {
+                task_queue_t& real_tq = task_queue->get();
+                real_tq.push([](){});
+                real_tq.notify_all();
+            }
+            ret_size_t = this->task_queues.erase(std::move(id));
+            hard_assert(ret_size_t == 1);
+
             thread.join();
+
+            ret_size_t = std::erase_if(
+                this->threads,
+                [&id](const auto& pair)
+                {
+                    return pair.first.get_id() == id;
+                }
+            );
+            hard_assert(ret_size_t == 1);
+        }
+        catch (const std::exception& e)
+        {
+            throw InternalError("Failed to stop thread: "s + e.what());
         }
     }
 
+    void ThreadPool::request_thread_stop(const std::jthread::id& id)
+    {
+        try
+        {
+            std::jthread& thread = *this->get_thread_from_id(id);
+            bool ret_bool = thread.request_stop();
+            hard_assert(ret_bool);
+    
+            std::unique_lock<std::shared_mutex> waiting_locations_lock(this->waiting_locations_mtx);
+            std::unique_lock<std::shared_mutex> map_lock(this->map_mtx);
+            std::unique_lock<std::mutex> threads_lock(this->threads_mtx);
+
+            std::jthread::id& waiting_where = this->waiting_locations.at(id);
+            size_t ret_size_t = this->waiting_locations.erase(id);
+            hard_assert(ret_size_t == 1);
+
+            std::optional<std::reference_wrapper<task_queue_t>> task_queue = std::nullopt;
+            try
+            {
+                task_queue = std::ref(this->task_queues.at(waiting_where));
+            }
+            catch (const std::out_of_range& e)
+            {
+                /*
+                 * Perhaps the thread to which the queue we were waiting for belonged to
+                 * was stopped while we were executing a task from its queue.
+                 * In that case, it's just ok to not throw anything.
+                 */
+                task_queue = std::nullopt;
+            }
+            catch (...)
+            {
+                throw;
+            }
+            this->task_queues.at(id).request_stop();
+            if (waiting_where != id && task_queue.has_value())
+            {
+                task_queue_t& real_tq = task_queue->get();
+                real_tq.push([](){});
+                real_tq.notify_all();
+            }
+            ret_size_t = this->task_queues.erase(id);
+            hard_assert(ret_size_t == 1);
+
+            thread.join();
+
+            ret_size_t = std::erase_if(
+                this->threads,
+                [&id](const auto& pair)
+                {
+                    return pair.first.get_id() == id;
+                }
+            );
+            hard_assert(ret_size_t == 1);
+        }
+        catch (const std::exception& e)
+        {
+            throw InternalError("Failed to stop thread: "s + e.what());
+        }
+    }
+
+    void ThreadPool::request_thread_stop(size_t index)
+    {
+        std::unique_lock<std::mutex> lock(this->threads_mtx);
+        std::jthread::id id = this->threads.at(index).first.get_id();
+        lock.unlock();
+        this->request_thread_stop(std::move(id));
+    }
 
     std::jthread* ThreadPool::get_thread_from_id(std::jthread::id&& id)
     {

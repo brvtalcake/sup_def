@@ -287,6 +287,7 @@ namespace SupDef
     #undef UNREACHABLE_
 #endif
 #define UNREACHABLE_(...) ::SupDef::Util::unreachable<MAP_LIST(MAKE_DECAY, ID(__VA_ARGS__))>
+    
 
 #if 0
         template <typename T, size_t N, typename Allocator = std::allocator<T>>
@@ -623,72 +624,73 @@ namespace SupDef
         template <typename... Types>
         struct TypeContainer
         {
-            static constexpr size_t size = sizeof...(Types);
+            public:
+                static constexpr size_t size = sizeof...(Types);
             
-            using types = std::tuple<Types...>;
-            template <size_t N>
-                requires (N < sizeof...(Types))
-            using get = GetNthType<N, Types...>;
-            template <typename T>
-            static constexpr size_t count = (bool_to_size_t<std::same_as<T, Types>> + ...);
-            template <typename T>
-            static constexpr bool contains = (std::same_as<T, Types> || ...);
-            // For each type in Types, apply predicate template T to it
-            template <template <typename> typename T, size_t N>
-            static constexpr bool apply_predicate_to = false;
+                using types = std::tuple<Types...>;
+                template <size_t N>
+                    requires (N < sizeof...(Types))
+                using get = GetNthType<N, Types...>;
+                template <typename T>
+                static constexpr size_t count = (bool_to_size_t<std::same_as<T, Types>> + ...);
+                template <typename T>
+                static constexpr bool contains = (std::same_as<T, Types> || ...);
+                // For each type in Types, apply predicate template T to it
+                template <template <typename> typename T, size_t N>
+                static constexpr bool apply_predicate_to = false;
 
 #if GCC_VERSION_AT_LEAST(14, 0, 0)
-            template <template <typename> typename T, size_t N>
-                requires HasValueField<GetNthType<N, Types...>, T> && (!ConvertsToBool<GetNthType<N, Types...>, T>)
-            static constexpr bool apply_predicate_to<T, N> = T<GetNthType<N, Types...>>::value;
+                template <template <typename> typename T, size_t N>
+                    requires HasValueField<GetNthType<N, Types...>, T> && (!ConvertsToBool<GetNthType<N, Types...>, T>)
+                static constexpr bool apply_predicate_to<T, N> = T<GetNthType<N, Types...>>::value;
 
-            template <template <typename> typename T, size_t N>
-                requires ConvertsToBool<GetNthType<N, Types...>, T>
-            static constexpr bool apply_predicate_to<T, N> = static_cast<bool>(T<GetNthType<N, Types...>>());
+                template <template <typename> typename T, size_t N>
+                    requires ConvertsToBool<GetNthType<N, Types...>, T>
+                static constexpr bool apply_predicate_to<T, N> = static_cast<bool>(T<GetNthType<N, Types...>>());
 #endif
 
 #if GCC_VERSION_AT_LEAST(14, 0, 0)
-            template <template <typename> typename T, size_t N = 0>
-            static constexpr bool apply_predicate_conjunction_impl = (apply_predicate_to<T, N> && apply_predicate_conjunction_impl<T, N + 1>);
+                template <template <typename> typename T, size_t N = 0>
+                static constexpr bool apply_predicate_conjunction_impl = (apply_predicate_to<T, N> && apply_predicate_conjunction_impl<T, N + 1>);
 
-            template <template <typename> typename T>
-            static constexpr bool apply_predicate_conjunction_impl<T, size> = true;
+                template <template <typename> typename T>
+                static constexpr bool apply_predicate_conjunction_impl<T, size> = true;
 
-            template <template <typename> typename T, size_t N = 0>
-            static constexpr bool apply_predicate_disjunction_impl = (apply_predicate_to<T, N> || apply_predicate_disjunction_impl<T, N + 1>);
+                template <template <typename> typename T, size_t N = 0>
+                static constexpr bool apply_predicate_disjunction_impl = (apply_predicate_to<T, N> || apply_predicate_disjunction_impl<T, N + 1>);
 
-            template <template <typename> typename T>
-            static constexpr bool apply_predicate_disjunction_impl<T, size> = false;
+                template <template <typename> typename T>
+                static constexpr bool apply_predicate_disjunction_impl<T, size> = false;
 
-            template <template <typename> typename T>
-            static constexpr bool apply_predicate_conjunction = apply_predicate_conjunction_impl<T, 0>;
+                template <template <typename> typename T>
+                static constexpr bool apply_predicate_conjunction = apply_predicate_conjunction_impl<T, 0>;
 
-            template <template <typename> typename T>
-            static constexpr bool apply_predicate_disjunction = apply_predicate_disjunction_impl<T, 0>;
+                template <template <typename> typename T>
+                static constexpr bool apply_predicate_disjunction = apply_predicate_disjunction_impl<T, 0>;
 #else
-            template <template <typename> typename T, size_t N = 0>
-            static consteval bool apply_predicate_conjunction_impl()
-            {
-                if constexpr (N == size)
-                    return true;
-                else
-                    return apply_predicate_to<T, N> && apply_predicate_conjunction_impl<T, N + 1>();
-            }
+                template <template <typename> typename T, size_t N = 0>
+                static consteval bool apply_predicate_conjunction_impl()
+                {
+                    if constexpr (N == size)
+                        return true;
+                    else
+                        return apply_predicate_to<T, N> && apply_predicate_conjunction_impl<T, N + 1>();
+                }
 
-            template <template <typename> typename T, size_t N = 0>
-            static consteval bool apply_predicate_disjunction_impl()
-            {
-                if constexpr (N == size)
-                    return false;
-                else
-                    return apply_predicate_to<T, N> || apply_predicate_disjunction_impl<T, N + 1>();
-            }
+                template <template <typename> typename T, size_t N = 0>
+                static consteval bool apply_predicate_disjunction_impl()
+                {
+                    if constexpr (N == size)
+                        return false;
+                    else
+                        return apply_predicate_to<T, N> || apply_predicate_disjunction_impl<T, N + 1>();
+                }
 
-            template <template <typename> typename T>
-            static constexpr bool apply_predicate_conjunction = apply_predicate_conjunction_impl<T, 0>();
+                template <template <typename> typename T>
+                static constexpr bool apply_predicate_conjunction = apply_predicate_conjunction_impl<T, 0>();
 
-            template <template <typename> typename T>
-            static constexpr bool apply_predicate_disjunction = apply_predicate_disjunction_impl<T, 0>();
+                template <template <typename> typename T>
+                static constexpr bool apply_predicate_disjunction = apply_predicate_disjunction_impl<T, 0>();
 #endif
         };
 
@@ -728,6 +730,705 @@ namespace SupDef
             template <template <typename> typename T>
             static constexpr bool apply_predicate_disjunction = false;
         };
+
+#if 0
+        template <typename... Types>
+        struct MergeTypeContainersImpl
+        { };
+
+        template <typename... Types1, typename... Types2>
+        struct MergeTypeContainersImpl<TypeContainer<Types1...>, TypeContainer<Types2...>>
+        {
+            using type = TypeContainer<Types1..., Types2...>;
+        };
+
+        template <typename... Types1, typename... Types2>
+        using MergeTypeContainers = typename MergeTypeContainersImpl<TypeContainer<Types1...>, TypeContainer<Types2...>>::type;
+#endif
+
+        template <typename T1, typename T2>
+        struct IsSameSize
+        {
+            static constexpr bool value = sizeof(T1) == sizeof(T2);
+            constexpr operator bool()
+            {
+                return value;
+            }
+        };
+
+        template <typename T1, typename T2>
+        static constexpr inline bool is_same_size = IsSameSize<T1, T2>::value;
+
+        template <typename T1, typename T2>
+        struct IsLargerSize
+        {
+            static constexpr bool value = sizeof(T1) > sizeof(T2);
+            constexpr operator bool()
+            {
+                return value;
+            }
+        };
+
+        template <typename T1, typename T2>
+        static constexpr inline bool is_larger_size = IsLargerSize<T1, T2>::value;
+
+        template <size_t types_size, typename... Types>
+        struct LargestTypes_TypeContainer : public TypeContainer<Types...>
+        {
+            static constexpr size_t tpsize = types_size;
+        };
+
+        template <typename... Types>
+        struct MergeTypeContainers_Impl
+        { };
+
+        template <typename... Types1, typename... Types2>
+        struct MergeTypeContainers_Impl<TypeContainer<Types1...>, TypeContainer<Types2...>>
+        {
+            using type = TypeContainer<Types1..., Types2...>;
+        };
+
+        template <size_t types_size, typename... Types1, typename... Types2>
+        struct MergeTypeContainers_Impl<LargestTypes_TypeContainer<types_size, Types1...>, LargestTypes_TypeContainer<types_size, Types2...>>
+        {
+            using type = LargestTypes_TypeContainer<types_size, Types1..., Types2...>;
+        };
+
+        template <typename TypeContainer1, typename TypeContainer2>
+        using MergeTypeContainers = typename MergeTypeContainers_Impl<TypeContainer1, TypeContainer2>::type;
+
+        static_assert(
+            std::same_as<
+                LargestTypes_TypeContainer<1, char, unsigned char>,
+                LargestTypes_TypeContainer<1, char, unsigned char>
+            >
+        );
+        static_assert(
+            std::same_as<
+                MergeTypeContainers<
+                    LargestTypes_TypeContainer<1, char, unsigned char>,
+                    LargestTypes_TypeContainer<1, signed char>
+                >,
+                LargestTypes_TypeContainer<1, char, unsigned char, signed char>
+            >
+        );
+
+        template <typename TC, typename... Types>
+        struct AddToTypeContainer_Impl
+        { };
+
+        template <typename... Types1, typename... Types2>
+        struct AddToTypeContainer_Impl<TypeContainer<Types1...>, Types2...>
+        {
+            using type = TypeContainer<Types1..., Types2...>;
+        };
+
+        template <size_t types_size, typename... Types1, typename Type>
+        struct AddToTypeContainer_Impl<LargestTypes_TypeContainer<types_size, Types1...>, Type>
+        {
+            using type = 
+                std::conditional_t<
+                    bool(sizeof(Type) == types_size),
+                    LargestTypes_TypeContainer<types_size, Types1..., Type>,
+                    LargestTypes_TypeContainer<types_size, Types1...>
+                >;
+        };
+
+        template <size_t types_size, typename... Types1, typename Type, typename... Types2>
+        struct AddToTypeContainer_Impl<LargestTypes_TypeContainer<types_size, Types1...>, Type, Types2...>
+        {
+            using type = 
+                std::conditional_t<
+                    bool(sizeof(Type) == types_size),
+                    typename AddToTypeContainer_Impl<LargestTypes_TypeContainer<types_size, Types1..., Type>, Types2...>::type,
+                    typename AddToTypeContainer_Impl<LargestTypes_TypeContainer<types_size, Types1...>, Types2...>::type
+                >;
+        };
+
+        template <typename TC, typename... Types>
+        using AddToTypeContainer = typename AddToTypeContainer_Impl<TC, Types...>::type;
+
+        static_assert(
+            std::same_as<
+                LargestTypes_TypeContainer<1, char, unsigned char>,
+                LargestTypes_TypeContainer<1, char, unsigned char>
+            >
+        );
+        static_assert(
+            std::same_as<
+                AddToTypeContainer<
+                    LargestTypes_TypeContainer<1, char, unsigned char>,
+                    signed char, int, float, double, std::string
+                >,
+                LargestTypes_TypeContainer<1, char, unsigned char, signed char>
+            >
+        );
+
+        template <typename... Types>
+        struct CanBeAddedToTypeContainerImpl
+        { };
+
+        template <size_t types_size, typename... Types, typename Type>
+        struct CanBeAddedToTypeContainerImpl<LargestTypes_TypeContainer<types_size, Types...>, Type> : public std::bool_constant<sizeof(Type) == types_size>
+        { };
+
+        template <typename TC, typename Type>
+        static constexpr bool CanBeAddedToTypeContainer = CanBeAddedToTypeContainerImpl<TC, Type>::value;
+
+        static_assert(CanBeAddedToTypeContainer<LargestTypes_TypeContainer<1, char, unsigned char>, signed char>);
+        static_assert(!CanBeAddedToTypeContainer<LargestTypes_TypeContainer<1, char, unsigned char>, int>);
+
+        template <typename TC, size_t N = 0>
+        struct ReverseTypeContainerImpl
+        { };
+
+        template <size_t types_size, typename... Types, size_t N>
+        struct ReverseTypeContainerImpl<LargestTypes_TypeContainer<types_size, Types...>, N>
+        {
+            using type = AddToTypeContainer<
+                typename ReverseTypeContainerImpl<LargestTypes_TypeContainer<types_size, Types...>, N + 1>::type,
+                GetNthType<N, Types...>
+            >;
+        };
+
+        template <typename... Types, size_t N>
+        struct ReverseTypeContainerImpl<TypeContainer<Types...>, N>
+        {
+            using type = AddToTypeContainer<
+                typename ReverseTypeContainerImpl<TypeContainer<Types...>, N + 1>::type,
+                GetNthType<N, Types...>
+            >;
+        };
+
+        template <size_t types_size, typename... Types>
+        struct ReverseTypeContainerImpl<LargestTypes_TypeContainer<types_size, Types...>, sizeof...(Types) - 1>
+        {
+            using type = LargestTypes_TypeContainer<types_size, GetNthType<sizeof...(Types) - 1, Types...>>;
+        };
+
+        template <typename... Types>
+        struct ReverseTypeContainerImpl<TypeContainer<Types...>, sizeof...(Types) - 1>
+        {
+            using type = TypeContainer<GetNthType<sizeof...(Types) - 1, Types...>>;
+        };
+        
+        template <typename TC>
+        using ReverseTypeContainer = typename ReverseTypeContainerImpl<TC, 0>::type;
+
+        static_assert(
+            std::same_as<
+                ReverseTypeContainer<LargestTypes_TypeContainer<1, char, unsigned char>>,
+                LargestTypes_TypeContainer<1, unsigned char, char>
+            >
+        );
+        static_assert(
+            std::same_as<
+                ReverseTypeContainer<TypeContainer<char, unsigned char, int, float, double>>,
+                TypeContainer<double, float, int, unsigned char, char>
+            >
+        );
+
+        template <typename TC, size_t ToRemove, size_t Current = 0>
+        struct RemoveFromTypeContainerImpl;
+
+        template <size_t types_size, typename... Types, size_t ToRemove, size_t Current>
+            requires (ToRemove > (sizeof...(Types) - 1))
+        struct RemoveFromTypeContainerImpl<LargestTypes_TypeContainer<types_size, Types...>, ToRemove, Current>
+        {
+            using type = LargestTypes_TypeContainer<types_size, Types...>;
+        };
+
+        template <size_t types_size, typename... Types, size_t ToRemove, size_t Current>
+            requires (ToRemove <= (sizeof...(Types) - 1))
+        struct RemoveFromTypeContainerImpl<LargestTypes_TypeContainer<types_size, Types...>, ToRemove, Current>
+        {
+            using type = 
+                std::conditional_t<
+                    bool(Current == ToRemove),
+                    typename RemoveFromTypeContainerImpl<LargestTypes_TypeContainer<types_size, Types...>, ToRemove, Current + 1>::type,
+                    AddToTypeContainer<typename RemoveFromTypeContainerImpl<LargestTypes_TypeContainer<types_size, Types...>, ToRemove, Current + 1>::type, GetNthType<Current, Types...>>
+                >;
+        };
+
+        template <size_t types_size, typename... Types, size_t ToRemove>
+            requires (ToRemove <= (sizeof...(Types) - 1))
+        struct RemoveFromTypeContainerImpl<LargestTypes_TypeContainer<types_size, Types...>, ToRemove, sizeof...(Types)>
+        {
+            using type = LargestTypes_TypeContainer<types_size>;
+        };
+
+        template <typename... Types, size_t ToRemove, size_t Current>
+            requires (ToRemove > (sizeof...(Types) - 1))
+        struct RemoveFromTypeContainerImpl<TypeContainer<Types...>, ToRemove, Current>
+        {
+            using type = TypeContainer<Types...>;
+        };
+
+        template <typename... Types, size_t ToRemove, size_t Current>
+            requires (ToRemove <= (sizeof...(Types) - 1))
+        struct RemoveFromTypeContainerImpl<TypeContainer<Types...>, ToRemove, Current>
+        {
+            using base_type = TypeContainer<Types...>;
+            using type = 
+                std::conditional_t<
+                    bool(Current == ToRemove),
+                    typename RemoveFromTypeContainerImpl<TypeContainer<Types...>, ToRemove, Current + 1>::type,
+                    AddToTypeContainer<typename RemoveFromTypeContainerImpl<TypeContainer<Types...>, ToRemove, Current + 1>::type, GetNthType<Current, Types...>>
+                >;
+        };
+
+        template <typename... Types, size_t ToRemove>
+            requires (ToRemove <= (sizeof...(Types) - 1))
+        struct RemoveFromTypeContainerImpl<TypeContainer<Types...>, ToRemove, sizeof...(Types)>
+        {
+            using type = TypeContainer<>;
+        };
+
+        template <typename TC, size_t ToRemove>
+        using RemoveFromTypeContainer = std::conditional_t<
+            bool((ToRemove < (TC::size)) && ((TC::size) > 0)),
+            ReverseTypeContainer<typename RemoveFromTypeContainerImpl<TC, ToRemove>::type>,
+            TC
+        >;
+
+        static_assert(
+            std::same_as<
+                RemoveFromTypeContainer<LargestTypes_TypeContainer<1, char, unsigned char>, 0>,
+                LargestTypes_TypeContainer<1, unsigned char>
+            >
+        );
+        static_assert(
+            std::same_as<
+                RemoveFromTypeContainer<LargestTypes_TypeContainer<1, char, unsigned char>, 1>,
+                LargestTypes_TypeContainer<1, char>
+            >
+        );
+        static_assert(
+            std::same_as<
+                RemoveFromTypeContainer<LargestTypes_TypeContainer<1, char, unsigned char>, 2>,
+                LargestTypes_TypeContainer<1, char, unsigned char>
+            >
+        );
+        static_assert(
+            std::same_as<
+                RemoveFromTypeContainer<TypeContainer<char, unsigned char>, 0>,
+                TypeContainer<unsigned char>
+            >
+        );
+        static_assert(
+            std::same_as<
+                RemoveFromTypeContainer<TypeContainer<char, unsigned char, int, float, double>, 2>,
+                TypeContainer<char, unsigned char, float, double>
+            >
+        );
+
+        namespace Detail
+        {
+#if 0
+            template <size_t Current, typename... Types>
+            struct CanBeAddedToWhichTCImpl
+            { };
+
+            template <size_t Current, typename... TCTypes, typename Type>
+            struct CanBeAddedToWhichTCImpl<Current, TypeContainer<TCTypes...>, Type>
+            : std::conditional_t<
+                CanBeAddedToTypeContainer<GetNthType<Current, TCTypes...>, Type>,
+                std::integral_constant<size_t, Current>,
+                CanBeAddedToWhichTCImpl<Current + 1, TypeContainer<TCTypes...>, Type>
+            >
+            { };
+
+            template <typename... TCTypes, typename Type>
+            struct CanBeAddedToWhichTCImpl<sizeof...(TCTypes), TypeContainer<TCTypes...>, Type>
+            : std::integral_constant<size_t, size_t(-1)>
+            { };
+
+            template <typename TC, typename Type>
+            static constexpr size_t CanBeAddedToWhichTC = CanBeAddedToWhichTCImpl<0, TC, Type>::value;
+
+            static_assert(
+                CanBeAddedToWhichTC<
+                    TypeContainer<
+                        LargestTypes_TypeContainer<1, char, unsigned char>,
+                        LargestTypes_TypeContainer<2, int16_t, uint16_t>,
+                        LargestTypes_TypeContainer<4, int32_t, uint32_t>
+                    >,
+                    int64_t
+                > == size_t(-1)
+            );
+
+            static_assert(
+                CanBeAddedToWhichTC<
+                    TypeContainer<
+                        LargestTypes_TypeContainer<1, char, unsigned char>,
+                        LargestTypes_TypeContainer<2, int16_t, uint16_t>,
+                        LargestTypes_TypeContainer<4, int32_t, uint32_t>
+                    >,
+                    uint8_t
+                > == 0
+            );
+
+            static_assert(
+                CanBeAddedToWhichTC<
+                    TypeContainer<
+                        LargestTypes_TypeContainer<1, char, unsigned char>,
+                        LargestTypes_TypeContainer<2, int16_t, uint16_t>,
+                        LargestTypes_TypeContainer<4, int32_t, uint32_t>
+                    >,
+                    int16_t
+                > == 1
+            );
+
+            template <bool Cond, size_t Index, typename PrevType>
+            struct CreateChoiceContainerImpl_HelperType1
+            {
+                using type = typename PrevType::template get<Index>;
+            };
+
+            template <size_t Index, typename PrevType>
+            struct CreateChoiceContainerImpl_HelperType1<false, Index, PrevType>
+            {
+                using type = void; // Just unused in this case
+            };
+
+            template <typename RmvedTcType, typename ToAddType>
+            struct CreateChoiceContainerImpl_HelperType2
+            {
+                using type = AddToTypeContainer<RmvedTcType, ToAddType>;
+            };
+
+            template <typename ToAddType>
+            struct CreateChoiceContainerImpl_HelperType2<void, ToAddType>
+            {
+                using type = void; // Just unused in this case
+            };
+
+            template <typename T, typename... R>
+            struct CreateChoiceContainerImpl
+            {
+                // If T can be added to one of the `LargestTypes_TypeContainer` in
+                // `typename CreateChoiceContainerImpl<R...>::type`, then add it to
+                // that `LargestTypes_TypeContainer`, otherwise create a new one
+                private:
+                    using previous_type = typename CreateChoiceContainerImpl<R...>::type;
+                    static constexpr size_t index = CanBeAddedToWhichTC<previous_type, T>;
+                    static constexpr bool predicate = bool(index < previous_type::size);
+                    using removed_tc_type = CreateChoiceContainerImpl_HelperType1<predicate, index, previous_type>::type;
+                    using to_add_type = CreateChoiceContainerImpl_HelperType2<removed_tc_type, T>::type;
+                    static_assert(
+                        ( predicate && !std::is_void_v<removed_tc_type> && !std::is_void_v<to_add_type>) ||
+                        (!predicate &&  std::is_void_v<removed_tc_type> &&  std::is_void_v<to_add_type>)
+                    );
+                public:
+                    using type = std::conditional_t<
+                        predicate,
+                        AddToTypeContainer<RemoveFromTypeContainer<previous_type, index>, to_add_type>,
+                        AddToTypeContainer<previous_type, LargestTypes_TypeContainer<sizeof(T), T>>
+                    >;
+            };
+
+            template <typename T>
+            struct CreateChoiceContainerImpl<T>
+            {
+                using type = TypeContainer<LargestTypes_TypeContainer<sizeof(T), T>>;
+            };
+
+            template <typename... Types>
+            struct SortChoiceContainerImpl {};
+
+            // TODO: Sort the `LargestTypes_TypeContainer` in `TypeContainer` in descending order of their `tpsize`,
+            //       so that the largest type sets are always at the beginning of the `TypeContainer`
+            // TODO: Try to optimize everything so we don't hit the template instantiation limit (which is 900 in GCC 13.2)
+            //       (at least when we have only 2 types to compare, so `largest_types_t` can be at least a bit useful)
+            template <typename... Types>
+            using CreateChoiceContainer = /* SortChoiceContainer< */typename CreateChoiceContainerImpl<Types...>::type/* > */;
+
+            /* static_assert(
+                CanBeAddedToWhichTC<
+                    LargestTypes_TypeContainer<4, unsigned int, int>,
+                    short unsigned int
+                >
+                == size_t(-1)
+            ); */ // error
+            
+            /*
+            static_assert(
+                std::same_as<
+                    CreateChoiceContainer<char, uint32_t>,
+                    TypeContainer<
+                        LargestTypes_TypeContainer<4, uint32_t>,
+                        LargestTypes_TypeContainer<1, char>
+                    >
+                >
+            );
+
+            static_assert(
+                std::same_as<
+                    CreateChoiceContainer<char, uint32_t, int16_t>,
+                    TypeContainer<
+                        LargestTypes_TypeContainer<4, uint32_t>,
+                        LargestTypes_TypeContainer<2, int16_t>,
+                        LargestTypes_TypeContainer<1, char>
+                    >
+                >
+            );
+
+            static_assert(
+                std::same_as<
+                    CreateChoiceContainer<char, unsigned char, int8_t>,
+                    TypeContainer<
+                        LargestTypes_TypeContainer<1, char, unsigned char, int8_t>
+                    >
+                >
+            );
+
+            */
+#endif
+            namespace largest_types_t_impl
+            {
+                /*
+                namespace v1
+                {
+                    template <typename... Types>
+                    static consteval std::pair<size_t, size_t> get_largest_type_index_and_size()
+                    {
+                        size_t index = -1;
+                        size_t size = -1;
+                        for (size_t i = 0; i < sizeof...(Types); ++i)
+                        {
+                            using type = GetNthType<i, Types...>;
+                            if (type::tpsize > size)
+                            {
+                                size = type::tpsize;
+                                index = i;
+                            }
+                        }
+                        return { index, size };
+                    }
+                }
+                */
+
+                namespace v2
+                {
+                    //template <size_t MaxSize, typename... Types>
+                    //struct GetLargestTypesFinalType : public LargestTypes_TypeContainer<MaxSize, Types...>
+                    //{ };
+                    //template <size_t MaxSize, typename... Types>
+                    //struct GetLargestTypesFinalType<MaxSize, TypeContainer<Types...>> : public LargestTypes_TypeContainer<MaxSize, Types...>
+                    //{ };
+
+                    //template <typename... Types>
+                    //struct IsolateLargestTypes
+                    //{
+                    //    using type = TypeContainer<>;
+                    //};
+                    //template <size_t... Indices, typename... Types>
+                    //struct IsolateLargestTypes<std::index_sequence<Indices...>, Types...>
+                    //{
+                    //    using type = TypeContainer<GetNthType<Indices, Types...>...>;
+                    //};
+
+                    template <typename PrevTC, typename T, typename... R>
+                    struct GetLargestTypesImplBase
+                    {
+                        static constexpr bool can_be_added = bool(CanBeAddedToTypeContainer<PrevTC, T>);
+                        static constexpr bool needs_new_tc = bool(!can_be_added && (sizeof(T) > PrevTC::tpsize));
+                        using tc_type = std::conditional_t<
+                            can_be_added,
+                            AddToTypeContainer<PrevTC, T>,
+                            std::conditional_t<
+                                needs_new_tc,
+                                LargestTypes_TypeContainer<sizeof(T), T>,
+                                PrevTC
+                            >
+                        >;
+                    };
+
+                    template <typename PrevTC, typename T, typename... R>
+                    struct GetLargestTypesImpl : private GetLargestTypesImplBase<PrevTC, T, R...>
+                    {
+                        private:
+                            using tc_type = typename GetLargestTypesImplBase<PrevTC, T, R...>::tc_type;
+                        public:
+                            using type = typename GetLargestTypesImpl<tc_type, R...>::type;
+                    };
+
+                    template <typename PrevTC, typename T>
+                    struct GetLargestTypesImpl<PrevTC, T> : private GetLargestTypesImplBase<PrevTC, T>
+                    {
+                        private:
+                            using tc_type = typename GetLargestTypesImplBase<PrevTC, T>::tc_type;
+                        public:
+                            using type = tc_type;
+                    };
+
+                    using dummy_type = void;
+
+                    //template </* size_t Current, typename TCType,*/ typename... Types>
+                    //static consteval auto get_largest_type_index_and_size_impl()
+                    //{
+                    //    constexpr std::array<size_t, sizeof...(Types)> sizes = { (sizeof(Types), ...) };
+                    //    constexpr std::vector<size_t> indices{};
+                    //    constexpr size_t max_size = 0;
+                    //    for (size_t i = 0; i < sizeof...(Types); ++i)
+                    //    {
+                    //        if (sizes[i] > max_size)
+                    //        {
+                    //            max_size = sizes[i];
+                    //            indices.clear();
+                    //            indices.push_back(i);
+                    //        }
+                    //        else if (sizes[i] == max_size)
+                    //        {
+                    //            indices.push_back(i);
+                    //        }
+                    //    }
+                    //    return GetLargestTypesFinalType<max_size, IsolateLargestTypes<indices, Types...>>;
+                    //}
+                }
+            }
+
+            namespace smallest_types_t_impl
+            {
+                struct alignas(1024*1024) dummy_type
+                {
+                    char _dummy;
+                };
+                static_assert(sizeof(dummy_type) == 1024*1024);
+
+                template <size_t TpSize, typename... Types>
+                using SmallestTypes_TypeContainer = LargestTypes_TypeContainer<TpSize, Types...>;
+
+                template <typename PrevTC, typename T, typename... R>
+                struct GetSmallestTypesImplBase
+                {
+                    static constexpr bool can_be_added = bool(CanBeAddedToTypeContainer<PrevTC, T>);
+                    static constexpr bool needs_new_tc = bool(!can_be_added && (sizeof(T) < PrevTC::tpsize));
+                    using tc_type = std::conditional_t<
+                        can_be_added,
+                        AddToTypeContainer<PrevTC, T>,
+                        std::conditional_t<
+                            needs_new_tc,
+                            SmallestTypes_TypeContainer<sizeof(T), T>,
+                            PrevTC
+                        >
+                    >;
+                };
+
+                template <typename PrevTC, typename T, typename... R>
+                struct GetSmallestTypesImpl : private GetSmallestTypesImplBase<PrevTC, T, R...>
+                {
+                    private:
+                        using tc_type = typename GetSmallestTypesImplBase<PrevTC, T, R...>::tc_type;
+                    public:
+                        using type = typename GetSmallestTypesImpl<tc_type, R...>::type;
+                };
+
+                template <typename PrevTC, typename T>
+                struct GetSmallestTypesImpl<PrevTC, T> : private GetSmallestTypesImplBase<PrevTC, T>
+                {
+                    private:
+                        using tc_type = typename GetSmallestTypesImplBase<PrevTC, T>::tc_type;
+                    public:
+                        using type = tc_type;
+                };
+            };
+        };
+
+        using Detail::smallest_types_t_impl::SmallestTypes_TypeContainer;
+
+        template <typename T1, typename... Types>
+        /* using largest_types_t = Detail::CreateChoiceContainer<T1, Types...>::template get<0>; */
+        using largest_types_t = 
+            typename ::SupDef::Util::Detail::largest_types_t_impl::v2::GetLargestTypesImpl<
+                LargestTypes_TypeContainer<
+                    0,
+                    ::SupDef::Util::Detail::largest_types_t_impl::v2::dummy_type
+                >,
+                T1, Types...
+            >::type;
+
+        template <typename T1, typename... Types>
+        using smallest_types_t = 
+            typename ::SupDef::Util::Detail::smallest_types_t_impl::GetSmallestTypesImpl<
+                LargestTypes_TypeContainer<
+                    sizeof(::SupDef::Util::Detail::smallest_types_t_impl::dummy_type),
+                    ::SupDef::Util::Detail::smallest_types_t_impl::dummy_type
+                >,
+                T1, Types...
+            >::type;
+
+        static_assert(
+            std::same_as<
+                largest_types_t<signed char, unsigned char, int16_t>,
+                LargestTypes_TypeContainer<2, int16_t>
+            >
+        );
+
+        static_assert(
+            bool(
+                std::same_as<
+                    smallest_types_t<signed char, unsigned char, int16_t>,
+                    SmallestTypes_TypeContainer<1, signed char, unsigned char>
+                >
+            ) || 
+            bool(
+                std::same_as<
+                    smallest_types_t<signed char, unsigned char, int16_t>,
+                    SmallestTypes_TypeContainer<1, unsigned char, signed char>
+                >
+            )
+        );
+
+        static_assert(
+            std::same_as<
+                largest_types_t<signed char, unsigned char, int16_t, int32_t>,
+                LargestTypes_TypeContainer<4, int32_t>
+            >
+        );
+
+        static_assert(
+            bool(
+                std::same_as<
+                    smallest_types_t<signed char, unsigned char, int16_t, int32_t>,
+                    SmallestTypes_TypeContainer<1, signed char, unsigned char>
+                >
+            ) ||
+            bool(
+                std::same_as<
+                    smallest_types_t<signed char, unsigned char, int16_t, int32_t>,
+                    SmallestTypes_TypeContainer<1, unsigned char, signed char>
+                >
+            )
+        );
+
+        static_assert(
+            []() consteval
+            {
+                using type = largest_types_t<
+                    signed char, unsigned char, char,
+                    int16_t, uint16_t,
+                    int32_t, uint32_t,
+                    int64_t, uint64_t,
+                    __int128_t, __uint128_t
+                >;
+                return ((type::size == 2) && (type::tpsize == sizeof(__int128_t)) && type::contains<__int128_t> && type::contains<__uint128_t>);
+            }()
+        );
+
+        static_assert(
+            []() consteval
+            {
+                using type = smallest_types_t<
+                    signed char, unsigned char, char,
+                    int16_t, uint16_t,
+                    int32_t, uint32_t,
+                    int64_t, uint64_t,
+                    __int128_t, __uint128_t
+                >;
+                return ((type::size == 3) && (type::tpsize == 1) && type::contains<signed char> && type::contains<unsigned char> && type::contains<char>);
+            }()
+        );
 
         // Implement GetTemplateArgs, a TypeContainer alias storing the types which specialize an unknown template `Template`
         template <typename...>
@@ -1983,8 +2684,8 @@ namespace SupDef
             private:
                 QueueType queue;
                 std::condition_variable queue_cv{};
-                std::atomic<bool> stop_required = false;
-                std::atomic<bool> empty = true;
+                std::atomic<bool> stop_required_state = false;
+                std::atomic<bool> empty_state = true;
                 mutable std::mutex mutex{};
 
             public:
@@ -1993,10 +2694,10 @@ namespace SupDef
                 ThreadSafeQueue() : queue()
                 {
                     likely_if (this->queue.empty())
-                        this->empty.store(true, std::memory_order::relaxed);
+                        this->empty_state.store(true, std::memory_order::relaxed);
                     else
                     {
-                        this->empty.store(false, std::memory_order::relaxed);
+                        this->empty_state.store(false, std::memory_order::relaxed);
                         this->queue_cv.notify_all();
                     }
                 }
@@ -2005,10 +2706,10 @@ namespace SupDef
                 ThreadSafeQueue(ThreadSafeQueue&& other) : queue(std::move(other.queue))
                 {
                     if (this->queue.empty())
-                        this->empty.store(true, std::memory_order::relaxed);
+                        this->empty_state.store(true, std::memory_order::relaxed);
                     else
                     {
-                        this->empty.store(false, std::memory_order::relaxed);
+                        this->empty_state.store(false, std::memory_order::relaxed);
                         this->queue_cv.notify_all();
                     }
                 }
@@ -2019,10 +2720,10 @@ namespace SupDef
                     : queue(std::forward<Args>(args)...)
                 {
                     probably_if (this->queue.empty(), (sizeof...(Args) == 0 ? 100 : 5))
-                        this->empty.store(true, std::memory_order::relaxed);
+                        this->empty_state.store(true, std::memory_order::relaxed);
                     else
                     {
-                        this->empty.store(false, std::memory_order::relaxed);
+                        this->empty_state.store(false, std::memory_order::relaxed);
                         this->queue_cv.notify_all();
                     }
                 }
@@ -2034,10 +2735,10 @@ namespace SupDef
                     for (auto& e : il)
                         this->queue.push(value_type(e));
                     probably_if (this->queue.empty(), (il.size() == 0 ? 100 : 5))
-                        this->empty.store(true, std::memory_order::relaxed);
+                        this->empty_state.store(true, std::memory_order::relaxed);
                     else
                     {
-                        this->empty.store(false, std::memory_order::relaxed);
+                        this->empty_state.store(false, std::memory_order::relaxed);
                         this->queue_cv.notify_all();
                     }
                 }
@@ -2045,7 +2746,11 @@ namespace SupDef
                 ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
                 ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
 
-                ~ThreadSafeQueue() = default;
+                ~ThreadSafeQueue()
+                {
+                    this->request_stop();
+                    this->notify_all();
+                }
 
                 value_type front() const
                 {
@@ -2082,7 +2787,7 @@ namespace SupDef
                     this->queue.push(t);
                     likely_if (!this->queue.empty())
                     {
-                        this->empty.store(false, std::memory_order::release);
+                        this->empty_state.store(false, std::memory_order::release);
                         lock.unlock();
                         this->queue_cv.notify_one();
                     }
@@ -2094,7 +2799,7 @@ namespace SupDef
                     this->queue.push(std::move(t));
                     likely_if (!this->queue.empty())
                     {
-                        this->empty.store(false, std::memory_order::release);
+                        this->empty_state.store(false, std::memory_order::release);
                         lock.unlock();
                         this->queue_cv.notify_one();
                     }
@@ -2107,7 +2812,7 @@ namespace SupDef
                     decltype(auto) ret = this->queue.emplace(std::forward<Args>(args)...);
                     likely_if (!this->queue.empty())
                     {
-                        this->empty.store(false, std::memory_order::release);
+                        this->empty_state.store(false, std::memory_order::release);
                         lock.unlock();
                         this->queue_cv.notify_one();
                     }
@@ -2121,7 +2826,7 @@ namespace SupDef
                         throw InternalException("ThreadSafeQueue::pop(): queue is empty");
                     this->queue.pop();
                     if (this->queue.empty())
-                        this->empty.store(true, std::memory_order::release);
+                        this->empty_state.store(true, std::memory_order::release);
                 }
 
                 void swap(ThreadSafeQueue& other) noexcept(std::is_nothrow_swappable_v<QueueType>)
@@ -2151,7 +2856,7 @@ namespace SupDef
                     value_type ret = this->queue.front();
                     this->queue.pop();
                     if (this->queue.empty())
-                        this->empty.store(true, std::memory_order::release);
+                        this->empty_state.store(true, std::memory_order::release);
                     return ret;
                 }
 
@@ -2161,27 +2866,27 @@ namespace SupDef
                     decltype(auto) this_ptr = this;
                     auto&& pred = [&this_ptr] {
                         return
-                            !this_ptr->empty.load(std::memory_order::acquire)           ||
-                            this_ptr->stop_required.load(std::memory_order::acquire);
+                            !this_ptr->empty_state.load(std::memory_order::acquire)           ||
+                            this_ptr->stop_required_state.load(std::memory_order::acquire);
                     };
                     std::unique_lock<std::mutex> lock(this->mutex);
                     this->queue_cv.wait(lock, pred);
                     hard_assert(lock.owns_lock());
-                    if (this->stop_required.load(std::memory_order::acquire))
+                    if (this->stop_required_state.load(std::memory_order::acquire))
                         throw StopRequired();
                     unlikely_if (this->queue.empty())
                         throw InternalException("ThreadSafeQueue::wait_for_next(): queue is empty after waking up");
                     value_type ret = this->queue.front();
                     this->queue.pop();
                     if (this->queue.empty())
-                        this->empty.store(true, std::memory_order::release);
+                        this->empty_state.store(true, std::memory_order::release);
                     return ret;
                 }
 
                 STATIC_TODO("Write tests for `wait_for_next_or`")
                 template <
                     typename AdditionalPredicate,
-                    typename ToInvoke /* to invoke when additional_pred is satisfied (after we checked if this->stop_required) */,
+                    typename ToInvoke /* to invoke when additional_pred is satisfied (after we checked if this->stop_required_state) */,
                     typename... PredArgs
                 >
                     requires std::predicate<AdditionalPredicate, PredArgs&&...>
@@ -2196,8 +2901,8 @@ namespace SupDef
                     decltype(auto) this_ptr = this;
                     auto&& pred = [&this_ptr, &additional_pred, &pred_args...] {
                         return
-                            !this_ptr->empty.load(std::memory_order::acquire)           ||
-                            this_ptr->stop_required.load(std::memory_order::acquire)    ||
+                            !this_ptr->empty_state.load(std::memory_order::acquire)           ||
+                            this_ptr->stop_required_state.load(std::memory_order::acquire)    ||
                             std::invoke(
                                 std::forward<AdditionalPredicate>(additional_pred),
                                 std::forward<PredArgs>(pred_args)...
@@ -2206,7 +2911,7 @@ namespace SupDef
                     std::unique_lock<std::mutex> lock(this->mutex);
                     this->queue_cv.wait(lock, pred);
                     hard_assert(lock.owns_lock());
-                    if (this->stop_required.load(std::memory_order::acquire))
+                    if (this->stop_required_state.load(std::memory_order::acquire))
                         throw StopRequired();
                     if (
                         std::invoke(
@@ -2220,7 +2925,7 @@ namespace SupDef
                     value_type ret = this->queue.front();
                     this->queue.pop();
                     if (this->queue.empty())
-                        this->empty.store(true, std::memory_order::release);
+                        this->empty_state.store(true, std::memory_order::release);
                     return ret;
                 }
 
@@ -2231,17 +2936,17 @@ namespace SupDef
 
                 void request_stop() noexcept
                 {
-                    this->stop_required.store(true, std::memory_order::release);
+                    this->stop_required_state.store(true, std::memory_order::release);
                     this->queue_cv.notify_all();
                 }
 
                 void restart_after_stop() noexcept
                 {
-                    this->stop_required.store(false, std::memory_order::release);
+                    this->stop_required_state.store(false, std::memory_order::release);
                     std::unique_lock<std::mutex> lock(this->mutex);
                     if (!this->queue.empty())
                     {
-                        this->empty.store(false, std::memory_order::release);
+                        this->empty_state.store(false, std::memory_order::release);
                         lock.unlock();
                         this->queue_cv.notify_all();
                     }
@@ -2534,61 +3239,125 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
 
         template <typename Int>
             requires std::integral<Int>
-        constexpr static inline Int saturated_add(Int a, Int b)
+        constexpr static inline Int saturated_add(
+            Int a, Int b,
+            Int min = std::numeric_limits<Int>::lowest(),
+            Int max = std::numeric_limits<Int>::max()
+        )
         {
+            if (min != std::numeric_limits<Int>::lowest() || max != std::numeric_limits<Int>::max())
+            {
+                TODO("Implement a `saturated_add_explicit` function");
+            }
+#if __cpp_lib_saturation_arithmetic >= 202311L
+            return std::add_sat(a, b);
+#else
             Int res;
             if (!ckd_add(&res, a, b))
                 return res;
             else if (add_exceeds_max(a, b))
                 return std::numeric_limits<Int>::max();
             else
-                return std::numeric_limits<Int>::min();
+                return std::numeric_limits<Int>::lowest();
+#endif
         }
 
         template <typename Int>
             requires std::integral<Int>
-        constexpr static inline Int saturated_sub(Int a, Int b)
+        constexpr static inline Int saturated_sub(
+            Int a, Int b,
+            Int min = std::numeric_limits<Int>::lowest(),
+            Int max = std::numeric_limits<Int>::max()
+        )
         {
+            if (min != std::numeric_limits<Int>::lowest() || max != std::numeric_limits<Int>::max())
+            {
+                TODO("Implement a `saturated_sub_explicit` function");
+            }
+#if __cpp_lib_saturation_arithmetic >= 202311L
+            return std::sub_sat(a, b);
+#else
             Int res;
             if (!ckd_sub(&res, a, b))
                 return res;
             else if (sub_exceeds_max(a, b))
                 return std::numeric_limits<Int>::max();
             else
-                return std::numeric_limits<Int>::min();
+                return std::numeric_limits<Int>::lowest();
+#endif
         }
 
         template <typename Int>
             requires std::integral<Int>
-        constexpr static inline Int saturated_mul(Int a, Int b)
+        constexpr static inline Int saturated_mul(
+            Int a, Int b,
+            Int min = std::numeric_limits<Int>::lowest(),
+            Int max = std::numeric_limits<Int>::max()
+        )
         {
+            if (min != std::numeric_limits<Int>::lowest() || max != std::numeric_limits<Int>::max())
+            {
+                TODO("Implement a `saturated_mul_explicit` function");
+            }
+#if __cpp_lib_saturation_arithmetic >= 202311L
+            return std::mul_sat(a, b);
+#else
             Int res;
             if (!ckd_mul(&res, a, b))
                 return res;
             else if (mul_exceeds_max(a, b))
                 return std::numeric_limits<Int>::max();
             else
-                return std::numeric_limits<Int>::min();
+                return std::numeric_limits<Int>::lowest();
+#endif
+        }
+
+        template <typename Int>
+            requires std::integral<Int>
+        constexpr static inline Int saturated_div(
+            Int a, Int b,
+            Int min = std::numeric_limits<Int>::lowest(),
+            Int max = std::numeric_limits<Int>::max()
+        )
+        {
+            if (min != std::numeric_limits<Int>::lowest() || max != std::numeric_limits<Int>::max())
+            {
+                TODO("Implement a `saturated_div_explicit` function");
+            }
+            TODO();
+        }
+
+        template <typename Int1, typename Int2>
+            requires std::integral<Int1> && std::integral<Int2>
+        constexpr static inline Int1 saturated_cast(Int2 val)
+        {
+#if __cpp_lib_saturation_arithmetic >= 202311L
+            return std::saturate_cast<Int1>(val);
+#else
+            TODO();
+#endif
         }
 
         static_assert(saturated_add(1, 2) == 3);
         static_assert(saturated_add(std::numeric_limits<int>::max(), int(1)) == std::numeric_limits<int>::max());
-        static_assert(saturated_add(std::numeric_limits<int>::min(), int(-1)) == std::numeric_limits<int>::min());
+        static_assert(saturated_add(std::numeric_limits<int>::lowest(), int(-1)) == std::numeric_limits<int>::lowest());
         static_assert(saturated_add(std::numeric_limits<int>::max(), int(-1)) == std::numeric_limits<int>::max() - 1);
-        static_assert(saturated_add(std::numeric_limits<int>::min(), int(1)) == std::numeric_limits<int>::min() + 1);
+        static_assert(saturated_add(std::numeric_limits<int>::lowest(), int(1)) == std::numeric_limits<int>::lowest() + 1);
 
         static_assert(saturated_sub(1, 2) == -1);
         static_assert(saturated_sub(std::numeric_limits<int>::max(), int(1)) == std::numeric_limits<int>::max() - 1);
-        static_assert(saturated_sub(std::numeric_limits<int>::min(), int(-1)) == std::numeric_limits<int>::min() + 1);
+        static_assert(saturated_sub(std::numeric_limits<int>::lowest(), int(-1)) == std::numeric_limits<int>::lowest() + 1);
         static_assert(saturated_sub(std::numeric_limits<int>::max(), int(-1)) == std::numeric_limits<int>::max());
-        static_assert(saturated_sub(std::numeric_limits<int>::min(), int(1)) == std::numeric_limits<int>::min());
+        static_assert(saturated_sub(std::numeric_limits<int>::lowest(), int(1)) == std::numeric_limits<int>::lowest());
 
         static_assert(saturated_mul(1, 2) == 2);
         static_assert(saturated_mul(std::numeric_limits<int>::max() / 2, int(5)) == std::numeric_limits<int>::max());
-        static_assert(saturated_mul(std::numeric_limits<int>::min() / 2, int(5)) == std::numeric_limits<int>::min());
-        static_assert(saturated_mul(std::numeric_limits<int>::max() / 2, int(-5)) == std::numeric_limits<int>::min());
-        static_assert(saturated_mul(std::numeric_limits<int>::min() / 2, int(-5)) == std::numeric_limits<int>::max());
+        static_assert(saturated_mul(std::numeric_limits<int>::lowest() / 2, int(5)) == std::numeric_limits<int>::lowest());
+        static_assert(saturated_mul(std::numeric_limits<int>::max() / 2, int(-5)) == std::numeric_limits<int>::lowest());
+        static_assert(saturated_mul(std::numeric_limits<int>::lowest() / 2, int(-5)) == std::numeric_limits<int>::max());
 
+        STATIC_TODO("As for `saturated_<op>` functions, add optional parameters to specify the min and max values");
+        
         template <typename Int>
             requires std::integral<Int>
         constexpr static inline Int wrapped_add(Int a, Int b)
@@ -2610,13 +3379,13 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                     temp = b - temp;
                     hard_assert(temp > 0);
 
-                    return std::numeric_limits<Int>::min() + temp;
+                    return std::numeric_limits<Int>::lowest() + temp;
                 }
                 else
                 {
                     hard_assert_msg(a < 0 && b < 0, "a and b should be negative at this point");
 
-                    Int temp = std::numeric_limits<Int>::min() - a;
+                    Int temp = std::numeric_limits<Int>::lowest() - a;
                     hard_assert(b <= temp && temp < 0);
 
                     temp = b - temp;
