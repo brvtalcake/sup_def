@@ -26,6 +26,109 @@
     #error "Don't include this yourself"
 #endif
 
+#if !DEFINED(TimedTask)
+
+struct TimedTaskBase;
+
+/**
+ * @brief Represent a task with a timeout (to be used internally by the ThreadPool)
+ */
+template <typename...>
+struct TimedTask;
+
+/* template <typename... Args>
+struct TimedTask<Args...>::TimedOut; */
+
+#define TimedTask_DEFINED 1
+
+/* template <
+    typename Rep, typename Period,
+    typename FuncType, typename... Args,
+    typename ReturnType = std::invoke_result_t<FuncType, Args...>
+>
+struct TimedTask<std::chrono::duration<Rep, Period>, FuncType, Args...>
+{
+    struct TimedOut : public InternalException
+    {
+        TimedOut() : InternalException("Timed out while waiting for task to complete", false, false)
+        {
+            this->trace = CURRENT_STACKTRACE(1);
+            this->init_msg();
+        }
+    };
+
+    private:
+        static constexpr decltype(auto) to_add = std::chrono::microseconds(100);
+        using DurationType = decltype(
+                                std::declval<std::chrono::duration<Rep, Period>>()
+                              + std::declval<decltype(to_add)>()
+                            );
+
+        DurationType duration;
+        FuncType func;
+
+        ATTRIBUTE_HOT
+        ReturnType wrap_func(Args&&... args)
+        {
+            std::mutex mtx{};
+            std::condition_variable cv{};
+            bool done = false;
+            ReturnType result;
+
+            std::thread t([&mtx, &cv, &done, &result, this](auto&&... args) -> void
+            {
+                result = std::invoke(this->func, std::forward<Args>(args)...);
+
+                std::unique_lock<std::mutex> lock(mtx);
+                done = true;
+                lock.unlock();
+
+                cv.notify_one();
+            }, std::forward<Args>(args)...);
+
+            {
+                std::unique_lock<std::mutex> lock(mtx);
+                if (!cv.wait_for(lock, this->duration, [&done]{ return done; }))
+                {
+                    hard_assert(!done);
+                    t.detach();
+                    throw TimedOut();
+                    UNREACHABLE();
+                }
+            }
+
+            t.join();
+            return result;
+        }
+
+    public:
+        TimedTask(std::chrono::duration<Rep, Period>&& duration, FuncType&& func)
+            : duration(std::forward<std::chrono::duration<Rep, Period>>(duration) + to_add),
+              func(std::forward<FuncType>(func))
+        {}
+
+        TimedTask(const TimedTask&) = default;
+        TimedTask(TimedTask&&) = default;
+        ~TimedTask() = default;
+
+        TimedTask& operator=(const TimedTask&) = default;
+        TimedTask& operator=(TimedTask&&) = default;
+
+        ATTRIBUTE_COLD
+        inline auto get_duration(void) const noexcept { return this->duration; }
+
+        ATTRIBUTE_COLD
+        inline auto get_func(void) const noexcept { return this->func; }
+
+        ATTRIBUTE_HOT
+        inline ReturnType operator()(Args&&... args)
+        {
+            return this->wrap_func(std::forward<Args>(args)...);
+        }
+};
+ */
+#endif
+
 #if !DEFINED(Exception)
 
 class InternalException;
@@ -35,8 +138,9 @@ template <typename T, typename U>
     requires CharacterType<T> && FilePath<U>
 class Exception : public std::exception
 {
-    friend class ::SupDef::InternalException;
-    friend class ::SupDef::ContractViolation;
+    friend class  ::SupDef::InternalException;
+    friend class  ::SupDef::ContractViolation;
+    friend struct ::SupDef::TimedTaskBase;
 
     private:
         ExcType type;

@@ -3468,6 +3468,22 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
         }
 
         STATIC_TODO("Add tests for `wrapped_add`, `wrapped_sub` and `wrapped_mul`")
+
+        template <typename... Args>
+        struct InheritFromAllImpl;
+
+        template <typename T>
+        struct InheritFromAllImpl<T> : public T
+        { };
+
+        template <typename T, typename... Args>
+        struct InheritFromAllImpl<T, Args...> : public T, public InheritFromAllImpl<Args...>
+        { };
+
+#undef INHERIT_FROM_ALL
+#define INHERIT_FROM_ALL(...) ::SupDef::Util::InheritFromAllImpl<__VA_ARGS__>
+        
+        
     }
 
     // All values here are based on Boost.Contract library failure handlers
@@ -3612,6 +3628,279 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
         std::ignore = boost::contract::set_old_failure(old_value_handler);
         std::ignore = boost::contract::set_check_failure(check_handler);
     }
+
+    namespace Util
+    {
+        namespace Detail
+        {
+            namespace mutex_impl
+            {
+                typedef __int128_t MutexId;
+                
+                MutexId gen_new_id(void);
+                void release_id(const MutexId& id) noexcept;
+                void release_id(const MutexId&& id) noexcept;
+                void release_ids(const std::vector<MutexId>& to_release) noexcept;
+                void release_ids(std::vector<MutexId>&& to_release) noexcept;
+                
+                template <typename IdType1, typename IdType2>
+                    requires std::same_as<
+                        std::remove_cvref_t<IdType1>,
+                        MutexId
+                    > && std::same_as<
+                        std::remove_cvref_t<IdType2>,
+                        MutexId
+                    >
+                static inline bool is_same_id(IdType1&& id1, IdType2&& id2)
+                {
+                    return std::forward<IdType1>(id1) == std::forward<IdType2>(id2);
+                }
+                bool is_existing_id(const MutexId& id);
+                bool is_existing_id(const MutexId&& id);
+
+                namespace rec_shared
+                {
+                    enum class LockingMode : uint8_t
+                    {
+                        None = 0,
+                        Exclusive = 1 << 0,
+                        Shared = 1 << 1
+                    };
+
+                    void lock_impl(
+                        const MutexId&  id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+                    void lock_impl(
+                        const MutexId&& id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+
+                    bool try_lock_impl(
+                        const MutexId&  id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+                    bool try_lock_impl(
+                        const MutexId&& id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+
+                    void unlock_impl(
+                        const MutexId&  id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+                    void unlock_impl(
+                        const MutexId&& id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+
+                    void lock_shared_impl(
+                        const MutexId&  id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+                    void lock_shared_impl(
+                        const MutexId&& id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+
+                    bool try_lock_shared_impl(
+                        const MutexId&  id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+                    bool try_lock_shared_impl(
+                        const MutexId&& id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+
+                    void unlock_shared_impl(
+                        const MutexId&  id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+                    void unlock_shared_impl(
+                        const MutexId&& id,
+                        std::shared_mutex& mutex,
+                        std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
+                    );
+                }
+                
+#if 0
+                uint_fast64_t increment_lock_count(MutexId id, std::function<void(const uint_fast64_t)> on_lock);
+                uint_fast64_t decrement_lock_count(MutexId id, std::function<void(const uint_fast64_t)> on_unlock)
+                std::pair<bool, uint_fast64_t> try_increment_lock_count(
+                    MutexId id,
+                    std::function<void(const uint_fast64_t)> on_lock,
+                    bool shared_mode = false
+                );
+
+                bool is_locked(MutexId id);
+                bool is_locked_by_current_thread(MutexId id);
+                bool is_locked_by_other_thread(MutexId id);
+#endif
+
+                namespace test
+                {
+                    bool test_flat_set(void);
+                }
+            }
+        }
+    }
+
+    /* template <typename T>
+    class FlatSet
+    {
+        public:
+        private:
+    }; */
+
+    using Util::Detail::mutex_impl::MutexId;
+
+#if 0
+    class RecursiveMutex
+    {
+        public:
+            RecursiveMutex()
+                : mtx_id(Detail::mutex_impl::gen_new_id())
+            { }
+            RecursiveMutex(const RecursiveMutex&) = delete;
+            RecursiveMutex(RecursiveMutex&&) = delete;
+            RecursiveMutex& operator=(const RecursiveMutex&) = delete;
+            RecursiveMutex& operator=(RecursiveMutex&&) = delete;
+            ~RecursiveMutex()
+            {
+                Detail::mutex_impl::release_id(this->mtx_id);
+            }
+
+            void lock(void)
+            {
+                std::ignore = Detail::mutex_impl::increment_lock_count(
+                    this->mtx_id,
+                    [this](const uint_fast64_t lock_count) -> void
+                    {
+                        if (lock_count == 1)
+                            this->mutex.lock();
+                    }
+                );
+            }
+
+            bool try_lock(void)
+            {
+                auto [locked, lock_count] = Detail::mutex_impl::try_increment_lock_count(
+                    this->mtx_id,
+                    [this](const uint_fast64_t lock_count) -> void
+                    {
+                        if (lock_count == 1)
+                            this->mutex.lock();
+                    }
+                );
+                return locked;
+            }
+
+            void unlock(void)
+            {
+                std::ignore = Detail::mutex_impl::decrement_lock_count(
+                    this->mtx_id,
+                    [this](const uint_fast64_t lock_count) -> void
+                    {
+                        if (lock_count == 0)
+                            this->mutex.unlock();
+                    }
+                );
+            }
+        private:
+            std::mutex mutex;
+            MutexId mtx_id;
+    };
+#else
+
+    class RecursiveSharedMutex
+    {
+        public:
+            RecursiveSharedMutex()
+                : mtx_id(::SupDef::Util::Detail::mutex_impl::gen_new_id())
+            { }
+            RecursiveSharedMutex(const RecursiveSharedMutex&) = delete;
+            RecursiveSharedMutex(RecursiveSharedMutex&&) = delete;
+            RecursiveSharedMutex& operator=(const RecursiveSharedMutex&) = delete;
+            RecursiveSharedMutex& operator=(RecursiveSharedMutex&&) = delete;
+            ~RecursiveSharedMutex()
+            {
+                ::SupDef::Util::Detail::mutex_impl::release_id(std::move(this->mtx_id));
+            }
+
+            void lock(void) const
+            {
+                ::SupDef::Util::Detail::mutex_impl::rec_shared::lock_impl(
+                    std::move(this->mtx_id),
+                    this->mutex,
+                    this->current_mode
+                );
+            }
+
+            bool try_lock(void) const
+            {
+                return ::SupDef::Util::Detail::mutex_impl::rec_shared::try_lock_impl(
+                    std::move(this->mtx_id),
+                    this->mutex,
+                    this->current_mode
+                );
+            }
+
+            void unlock(void) const
+            {
+                ::SupDef::Util::Detail::mutex_impl::rec_shared::unlock_impl(
+                    std::move(this->mtx_id),
+                    this->mutex,
+                    this->current_mode
+                );
+            }
+
+            void lock_shared(void) const
+            {
+                ::SupDef::Util::Detail::mutex_impl::rec_shared::lock_shared_impl(
+                    std::move(this->mtx_id),
+                    this->mutex,
+                    this->current_mode
+                );
+            }
+
+            bool try_lock_shared(void) const
+            {
+                return ::SupDef::Util::Detail::mutex_impl::rec_shared::try_lock_shared_impl(
+                    std::move(this->mtx_id),
+                    this->mutex,
+                    this->current_mode
+                );
+            }
+
+            void unlock_shared(void) const
+            {
+                ::SupDef::Util::Detail::mutex_impl::rec_shared::unlock_shared_impl(
+                    std::move(this->mtx_id),
+                    this->mutex,
+                    this->current_mode
+                );
+            }
+
+        private:
+            using enum ::Supdef::Util::Detail::mutex_impl::rec_shared::LockingMode;
+
+            mutable std::atomic<std::underlying_type_t<enum LockingMode>> current_mode = ATOMIC_VAR_INIT(std::to_underlying(LockingMode::None));
+            mutable std::shared_mutex mutex;
+            const MutexId mtx_id;
+    };
+
+#endif
 
     using Util::remove_whitespaces;
 }

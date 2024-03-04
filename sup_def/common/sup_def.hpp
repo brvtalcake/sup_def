@@ -1442,13 +1442,117 @@ namespace SupDef
     template <typename...>
     class PackagedCoro;
 
-    template <typename ThreadPoolType>
+    struct TimedTaskBase
+    {
+        struct TimedOut : public InternalException
+        {
+            TimedOut() : InternalException("Timed out while waiting for task to complete", false, false)
+            {
+                this->trace = CURRENT_STACKTRACE(1);
+                this->init_msg();
+            }
+        };
+    };
+
+    template <
+        typename Rep, typename Period,
+        typename FuncType
+    >
+    struct TimedTask<std::chrono::duration<Rep, Period>, FuncType> : public TimedTaskBase
+    {
+        private:
+            static constexpr decltype(auto) to_add = std::chrono::microseconds(100);
+            using DurationType = decltype(
+                                    std::declval<std::chrono::duration<Rep, Period>>()
+                                  + std::declval<decltype(to_add)>()
+                                );
+            template <typename... Args>
+            using ReturnType = std::invoke_result_t<FuncType, Args...>;
+
+            DurationType duration;
+            FuncType func;
+
+            template <typename... Args>
+                requires std::invocable<FuncType, Args...>
+            ATTRIBUTE_HOT
+            ReturnType<Args...> wrap_func(Args&&... args)
+            {
+                std::mutex mtx{};
+                std::condition_variable cv{};
+                bool done = false;
+                ReturnType<Args...> result;
+
+                std::thread t([&mtx, &cv, &done, &result, this](auto&&... args) -> void
+                {
+                    result = std::invoke(this->func, std::forward<Args>(args)...);
+
+                    std::unique_lock<std::mutex> lock(mtx);
+                    done = true;
+                    lock.unlock();
+                    
+                    cv.notify_one();
+                }, std::forward<Args>(args)...);
+                
+                {
+                    std::unique_lock<std::mutex> lock(mtx);
+                    if (!cv.wait_for(lock, this->duration, [&done]{ return done; }))
+                    {
+                        hard_assert(!done);
+                        t.detach();
+                        throw TimedOut();
+                        UNREACHABLE();
+                    }
+                }
+                
+                t.join();
+                return result;
+            }
+
+        public:
+            TimedTask(std::chrono::duration<Rep, Period>&& duration, FuncType&& func)
+                : duration(std::forward<std::chrono::duration<Rep, Period>>(duration) + to_add),
+                  func(std::forward<FuncType>(func))
+            {}
+
+            TimedTask(const TimedTask&) = default;
+            TimedTask(TimedTask&&) = default;
+            ~TimedTask() = default;
+
+            TimedTask& operator=(const TimedTask&) = default;
+            TimedTask& operator=(TimedTask&&) = default;
+
+            ATTRIBUTE_COLD
+            inline auto get_duration(void) const noexcept { return this->duration; }
+
+            ATTRIBUTE_COLD
+            inline auto get_func(void) const noexcept { return this->func; }
+
+            template <typename... Args>
+                requires std::invocable<FuncType, Args...>
+            ATTRIBUTE_HOT
+            inline ReturnType<Args...> operator()(Args&&... args)
+            {
+                return this->wrap_func(std::forward<Args>(args)...);
+            }
+    };
+
+    // Deduction guide
+    template <typename Rep, typename Period, typename FuncType>
+    TimedTask(std::chrono::duration<Rep, Period>&&, FuncType&&) -> TimedTask<std::chrono::duration<Rep, Period>, FuncType>;
+
+    template <typename ThreadPoolType, typename ThreadPoolRequiredAliases>
+        requires
+            requires {
+                typename ThreadPoolRequiredAliases::task_queue_t;
+                typename ThreadPoolRequiredAliases::task_queue_t::value_type;
+                typename ThreadPoolRequiredAliases::task_queue_t::StopRequired;
+            }
     class ThreadPoolBase
     {
         private:
-            using get_next_task_return_type = typename ThreadPoolType::task_queue_t::value_type;
+            using get_next_task_return_type = typename ThreadPoolRequiredAliases::task_queue_t::value_type;
             
-            static get_next_task_return_type&&
+            static get_next_task_return_type
                 get_next_task(ThreadPoolType* const this_ptr, std::stop_token stoken)
             {
                 // If current thread's queue is empty, try to steal a task from another thread
@@ -1457,7 +1561,7 @@ namespace SupDef
                     "Instead of `wait_for_next`, use `wait_for_next_or` with the predicate `!stoken.stop_requested()`"
                 );
                 
-                using task_queue_stop_required = typename ThreadPoolType::task_queue_t::StopRequired;
+                using task_queue_stop_required = typename ThreadPoolRequiredAliases::task_queue_t::StopRequired;
                 
                 static const auto stoken_stop_requested_pred = [](const std::stop_token& stoken) -> bool
                 {
@@ -1480,7 +1584,7 @@ namespace SupDef
                         this_ptr->waiting_locations[std::this_thread::get_id()] = most_busy_thread_id;
                         lock2.unlock();
                         lock.unlock();
-                        return std::move(this_ptr->task_queues[most_busy_thread_id].wait_for_next_or(stoken_stop_requested_pred, to_invoke_if_true, stoken));
+                        return this_ptr->task_queues[most_busy_thread_id].wait_for_next_or(stoken_stop_requested_pred, to_invoke_if_true, stoken);
                     }
                 }
             just_wait_ours:
@@ -1488,13 +1592,13 @@ namespace SupDef
                 this_ptr->waiting_locations[std::this_thread::get_id()] = std::this_thread::get_id();
                 lock2.unlock();
                 lock.unlock();
-                return std::move(this_ptr->task_queues[std::this_thread::get_id()].wait_for_next_or(stoken_stop_requested_pred, to_invoke_if_true, stoken));
+                return this_ptr->task_queues[std::this_thread::get_id()].wait_for_next_or(stoken_stop_requested_pred, to_invoke_if_true, stoken);
             }
 
         protected:
             static void thread_main(std::stop_token stoken, const ThreadPoolType* const const_this_ptr, size_t index)
             {
-                using task_queue_t = typename ThreadPoolType::task_queue_t;
+                using task_queue_t = typename ThreadPoolRequiredAliases::task_queue_t;
                 using task_queue_stop_required = task_queue_t::StopRequired;
 
 #if 0
@@ -1530,27 +1634,40 @@ namespace SupDef
             }
     };
 
+    struct ThreadPoolAliases
+    {
+#if 1
+        using function_type = std::function<void()>;
+#else
+        using function_type = std::move_only_function<void()>;
+#endif
+        template <typename T>
+        using queue_type = ::SupDef::Util::ThreadSafeQueue<T>;
+
+        typedef queue_type<function_type> task_queue_t;
+    };
+
     // TO BE TESTED
     class ThreadPool
-    : private ThreadPoolBase<ThreadPool>
+    : virtual private ThreadPoolAliases
+    , virtual private ThreadPoolBase<ThreadPool, ThreadPoolAliases>
     {
         STATIC_TODO(
             "Make it possible to know if there is still tasks running in the thread pool (or in the queues)"
         );
-        STATIC_TODO(
-            "Make it possible to add timeouts to tasks"
-        );
         private:
-            friend class ThreadPoolBase<ThreadPool>;
-            using BaseType = ThreadPoolBase<ThreadPool>;
-#if 0
-            using function_type = std::move_only_function<void()>;
-#else
-            using function_type = std::function<void()>;
-#endif
-            template <typename T>
-            using queue_type = ::SupDef::Util::ThreadSafeQueue<T>;
+            friend class ThreadPoolBase<ThreadPool, ThreadPoolAliases>;
+            
+            using BaseType1 = ThreadPoolAliases;
+            using BaseType2 = ThreadPoolBase<ThreadPool, ThreadPoolAliases>;
 
+            enum : uint8_t
+            {
+                READ = 1 << 0,
+                WRITE = 1 << 1,
+                READ_WRITE = READ | WRITE
+            };
+            
             template <typename T>
             struct MovableAtomic : public std::atomic<T>
             {
@@ -1562,14 +1679,12 @@ namespace SupDef
                 using std::atomic<T>::atomic;
                 using std::atomic<T>::operator=;
             };
-
-            typedef queue_type<function_type> task_queue_t;
             
             std::vector< std::pair< std::jthread, MovableAtomic<bool> > > threads;
             std::unordered_map< std::jthread::id, task_queue_t > task_queues;
 
             std::mutex threads_mtx;
-            std::shared_mutex map_mtx;
+            std::shared_mutex task_queues_mtx;
 
             // In which queue is the thread waiting for a task
             std::unordered_map< std::jthread::id, std::jthread::id > waiting_locations; 
@@ -1585,6 +1700,8 @@ namespace SupDef
             void request_thread_stop(size_t index);
 
         public:
+            using TaskTimeoutError = typename TimedTaskBase::TimedOut;
+
             explicit ThreadPool(const size_t nb_threads = std::jthread::hardware_concurrency());
             ThreadPool(const ThreadPool&) = delete;
             ThreadPool(ThreadPool&&) = delete;
@@ -1601,11 +1718,22 @@ namespace SupDef
             bool try_remove_threads(size_t nb_threads);
             size_t size(void) const noexcept;
 
-            template <typename FuncType, typename... Args, typename ReturnType = std::invoke_result_t<FuncType&&, Args&&...>>
+            template <
+                typename FuncType, typename... Args,
+                typename ReturnType = std::invoke_result_t<FuncType&&, Args&&...>
+            >
                 requires std::invocable<FuncType, Args...> && (!IsCoro<ReturnType>)
             std::future<ReturnType> enqueue(FuncType&& func, Args&&... args);
 
+            template <
+                typename Rep, typename Period,
+                typename FuncType, typename... Args,
+                typename ReturnType = std::invoke_result_t<FuncType&&, Args&&...>
+            >
+                requires std::invocable<FuncType, Args...> && (!IsCoro<ReturnType>)
+            std::future<ReturnType> enqueue(std::chrono::duration<Rep, Period>&& timeout, FuncType&& func, Args&&... args);
     };
+
 
 #undef NEED_ThreadPool_TEMPLATES
 #define NEED_ThreadPool_TEMPLATES 1

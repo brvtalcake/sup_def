@@ -43,6 +43,10 @@
 
 #include <sup_def/third_party/map/map.h>
 #include <sup_def/third_party/empty_macro/detect.h>
+#include <chaos/preprocessor/algorithm/reverse.h>
+#include <chaos/preprocessor/tuple/core.h>
+#include <chaos/preprocessor/generics/strip.h>
+/* #include <chaos/preprocessor.h> */
 
 #if defined(ID)
     #undef ID
@@ -195,7 +199,7 @@
 #if defined(REVERSE_)
     #undef REVERSE_
 #endif
-#define REVERSE_(...) BOOST_PP_SEQ_ENUM(BOOST_PP_SEQ_REVERSE(BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)))
+#define REVERSE_(...) EXPAND_ONE_TUPLE(CHAOS_PP_STRIP(CHAOS_PP_REVERSE((CHAOS_PP_TUPLE) (__VA_ARGS__))))
 
 #if defined(EXP_INST_CLASS_ONE)
     #undef EXP_INST_CLASS_ONE
@@ -404,6 +408,7 @@
 #if SUPDEF_COMPILER == 1
     #include <bits/stdc++.h>
 #endif
+#include <execution>
 
 #ifdef GCC_VERSION_AT_LEAST
     #undef GCC_VERSION_AT_LEAST
@@ -644,74 +649,207 @@
     #endif
 #endif
 
+#undef LIKELY_BRANCH_IMPL
 #ifdef likely_if
     #undef likely_if
 #endif
+#ifdef likely_elseif
+    #undef likely_elseif
+#endif
+#ifdef likely_else
+    #undef likely_else
+#endif
+#ifdef likely_while
+    #undef likely_while
+#endif
+
+#define likely_if(expr) if LIKELY_BRANCH_IMPL(expr)
+#define likely_elseif(expr) else if LIKELY_BRANCH_IMPL(expr)
+#define likely_while(expr) while LIKELY_BRANCH_IMPL(expr)
+
 #ifdef __has_cpp_attribute
     #if __has_cpp_attribute(likely)
-        #define likely_if(expr) if ((expr)) [[likely]]
+        #define LIKELY_BRANCH_IMPL(expr) (bool((expr))) [[likely]]
+        #define likely_else else [[likely]]
     #endif
 #endif
-#ifndef likely_if
+#ifndef likely_else
+    #define likely_else else
+#endif
+#ifndef LIKELY_BRANCH_IMPL
     #if SUPDEF_COMPILER == 1
         #ifdef __has_builtin
             #if __has_builtin(__builtin_expect)
-                #define likely_if(expr) if (__builtin_expect(long(bool((expr))), long(true)))
+                #define LIKELY_BRANCH_IMPL(expr) (__builtin_expect(long(bool((expr))), long(true)))
             #endif
         #endif
-        #ifndef likely_if
-            #define likely_if(expr) if ((expr))
+        #ifndef LIKELY_BRANCH_IMPL
+            #define LIKELY_BRANCH_IMPL(expr) ((expr))
         #endif
     #elif SUPDEF_COMPILER == 2
-        #define likely_if(expr) if (__builtin_expect(long(bool((expr))), long(true)))
+        #define LIKELY_BRANCH_IMPL(expr) (__builtin_expect(long(bool((expr))), long(true)))
     #elif SUPDEF_COMPILER == 3
-        #define likely_if(expr) if ((expr))
+        #define LIKELY_BRANCH_IMPL(expr) ((expr))
     #else
-        #define likely_if(expr) if ((expr))
+        #define LIKELY_BRANCH_IMPL(expr) ((expr))
     #endif
 #endif
 
+#undef UNLIKELY_BRANCH_IMPL
 #ifdef unlikely_if
     #undef unlikely_if
 #endif
+#ifdef unlikely_elseif
+    #undef unlikely_elseif
+#endif
+#ifdef unlikely_else
+    #undef unlikely_else
+#endif
+#ifdef unlikely_while
+    #undef unlikely_while
+#endif
+
+#define unlikely_if(expr) if UNLIKELY_BRANCH_IMPL(expr)
+#define unlikely_elseif(expr) else if UNLIKELY_BRANCH_IMPL(expr)
+#define unlikely_while(expr) while UNLIKELY_BRANCH_IMPL(expr)
+
 #ifdef __has_cpp_attribute
     #if __has_cpp_attribute(unlikely)
-        #define unlikely_if(expr) if ((expr)) [[unlikely]]
+        #define UNLIKELY_BRANCH_IMPL(expr) (bool((expr))) [[unlikely]]
+        #define unlikely_else else [[unlikely]]
     #endif
 #endif
-#ifndef unlikely_if
+#ifndef unlikely_else
+    #define unlikely_else else
+#endif
+#ifndef UNLIKELY_BRANCH_IMPL
     #if SUPDEF_COMPILER == 1
         #ifdef __has_builtin
             #if __has_builtin(__builtin_expect)
-                #define unlikely_if(expr) if (__builtin_expect(long(bool((expr))), long(false)))
+                #define UNLIKELY_BRANCH_IMPL(expr) (__builtin_expect(long(bool((expr))), long(false)))
             #endif
         #endif
-        #ifndef unlikely_if
-            #define unlikely_if(expr) if ((expr))
+        #ifndef UNLIKELY_BRANCH_IMPL
+            #define UNLIKELY_BRANCH_IMPL(expr) ((expr))
         #endif
     #elif SUPDEF_COMPILER == 2
-        #define unlikely_if(expr) if (__builtin_expect(long(bool((expr))), long(false)))
+        #define UNLIKELY_BRANCH_IMPL(expr) (__builtin_expect(long(bool((expr))), long(false)))
     #elif SUPDEF_COMPILER == 3
-        #define unlikely_if(expr) if ((expr))
+        #define UNLIKELY_BRANCH_IMPL(expr) ((expr))
     #else
-        #define unlikely_if(expr) if ((expr))
+        #define UNLIKELY_BRANCH_IMPL(expr) ((expr))
     #endif
 #endif
 
+#undef PROBABLY_BRANCH_IMPL
 #ifdef probably_if
     #undef probably_if
 #endif
+#ifdef probably_elseif
+    #undef probably_elseif
+#endif
+#ifdef probably_else
+    #undef probably_else
+#endif
+#ifdef probably_while
+    #undef probably_while
+#endif
+
+#define probably_if(expr, percentage) if PROBABLY_BRANCH_IMPL(expr, percentage)
+#define probably_elseif(expr, percentage) else if PROBABLY_BRANCH_IMPL(expr, percentage)
+#define probably_else(percentage) else
+#define probably_while(expr, percentage) while PROBABLY_BRANCH_IMPL(expr, percentage)
+
 #if SUPDEF_COMPILER == 1 || SUPDEF_COMPILER == 2
     #ifdef __has_builtin
         #if __has_builtin(__builtin_expect_with_probability)
-            #define probably_if(expr, percentage) if (__builtin_expect_with_probability(long(bool((expr))), long(true), double((percentage) / 100)))
+            #define PROBABLY_BRANCH_IMPL(expr, percentage)              \
+                (                                                       \
+                    __builtin_expect_with_probability(                  \
+                        long(                                           \
+                            bool(                                       \
+                                (expr)                                  \
+                            )                                           \
+                        ),                                              \
+                        long(true),                                     \
+                        double(                                         \
+                            COMPTIME_SCALE(                             \
+                                double,                                 \
+                                (percentage),                           \
+                                (0, 100),                               \
+                                (0, 1)                                  \
+                            )                                           \
+                        )                                               \
+                    )                                                   \
+                )
         #endif
     #endif
 #endif
-#ifndef probably_if
-    #define probably_if(expr, percentage) if ((expr))
+#ifndef PROBABLY_BRANCH_IMPL
+    #define PROBABLY_BRANCH_IMPL(expr, percentage) ((expr))
 #endif
 
+#undef COMPTIME_ABS
+#define COMPTIME_ABS(value) ( [](auto x) consteval { return x < 0 ? -x : x; }(value) )
+
+#undef COMPTIME_SCALE
+/**
+ * @def COMPTIME_SCALE(type, value, min_max_from, min_max_new)
+ * @brief Scales (or normalizes) a value from one range to another at compile time.
+ * @param type The type used for computations.
+ * @param value The value to scale.
+ * @param min_max_from The tupled minimum and maximum values of the original range.
+ * @param min_max_new The tupled minimum and maximum values of the new range.
+ * @return The scaled value.
+ * @example COMPTIME_SCALE(double, 50, (0, 100), (0, 1)) will return 0.5.
+ * @example COMPTIME_SCALE(float, 0.25, (0, 1), (-100, 0)) will return -75.0f.
+ * @example COMPTIME_SCALE(double, 0.5, (0, 1), (-2000, 2000)) will return 0.0.
+ */
+#define COMPTIME_SCALE(type, value, min_max_from, min_max_new)  \
+    type(COMPTIME_SCALE_IMPL(                                   \
+        type(value),                                            \
+        type(FIRST_ARG(EXPAND_ONE_TUPLE(min_max_from))),        \
+        type(LAST_ARG(EXPAND_ONE_TUPLE(min_max_from))),         \
+        type(FIRST_ARG(EXPAND_ONE_TUPLE(min_max_new))),         \
+        type(LAST_ARG(EXPAND_ONE_TUPLE(min_max_new)))           \
+    ))
+
+#undef COMPTIME_SCALE_IMPL
+#define COMPTIME_SCALE_IMPL(value, min_from, max_from, min_new, max_new)    \
+    (                                                                       \
+        (                                                                   \
+            (                                                               \
+                (value - min_from) * (max_new - min_new)                    \
+            ) / (max_from - min_from)                                       \
+        ) + min_new                                                         \
+    )
+    
+#undef COMPTIME_FLOAT_EQ
+#define COMPTIME_FLOAT_EQ(a, b, epsilon) (COMPTIME_ABS((a) - (b)) <= (epsilon))
+
+#undef ABS_UNSAFE
+#define ABS_UNSAFE(value) ((value) < 0 ? -(value) : (value))
+
+#undef FLOAT_EQ_UNSAFE
+#define FLOAT_EQ_UNSAFE(a, b, epsilon) (ABS_UNSAFE((a) - (b)) <= (epsilon))
+
+#undef ATTRIBUTE_COLD
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_COLD [[__gnu__::__cold__]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_COLD [[clang::cold]]
+#else
+    #define ATTRIBUTE_COLD
+#endif
+
+#undef ATTRIBUTE_HOT
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_HOT [[__gnu__::__hot__]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_HOT [[clang::hot]]
+#else
+    #define ATTRIBUTE_HOT ATTRIBUTE_USED
+#endif
 
 #if 0
 #include <boost/parameter.hpp>
@@ -725,3 +863,10 @@ namespace BoostParameterConfig
 
 using namespace BoostParameterConfig;
 #endif
+
+static_assert(COMPTIME_ABS(-5) == 5);
+static_assert(COMPTIME_ABS(5) == 5);
+
+static_assert(COMPTIME_FLOAT_EQ(COMPTIME_SCALE(double, 50, (0, 100), (0, 1)), 0.5, 0.0001));
+static_assert(COMPTIME_FLOAT_EQ(COMPTIME_SCALE(float, 0.25, (0, 1), (-100, 0)), -75.0f, 0.0001));
+static_assert(COMPTIME_FLOAT_EQ(COMPTIME_SCALE(double, 0.5, (0, 1), (-2000, 2000)), 0.0, 0.0001));

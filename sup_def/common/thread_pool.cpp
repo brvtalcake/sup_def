@@ -25,12 +25,12 @@
 #include <sup_def/common/config.h>
 
 #if defined(__INTELLISENSE__)
-    #define TRUE_VAL 1
+    #define BOOL_VAL 0
 #endif
 
-#if NEED_TPP_INC(ThreadPool) == 0 || TRUE_VAL
+#if NEED_TPP_INC(ThreadPool) == 0 || BOOL_VAL
 
-#undef TRUE_VAL
+#undef BOOL_VAL
 #include <sup_def/common/sup_def.hpp>
 
 namespace SupDef
@@ -39,15 +39,16 @@ namespace SupDef
     ThreadPool::ThreadPool(const size_t nb_threads)
     {
         using namespace std::string_literals;
-        using task_queue_stop_required = task_queue_t::StopRequired;
 
         if (nb_threads == 0)
             throw InternalError("Cannot create a thread pool of 0 thread"s);
 
         std::lock_guard<std::mutex> lock1(this->threads_mtx);
         std::lock_guard<std::shared_mutex> lock2(this->map_mtx);
-
+SAVE_MACRO(SUPDEF_THREADPOOL_USE_LAMBDAS)
+#undef SUPDEF_THREADPOOL_USE_LAMBDAS
 #if SUPDEF_THREADPOOL_USE_LAMBDAS
+        using task_queue_stop_required = task_queue_t::StopRequired;
         ThreadPool*& this_ptr = const_cast<ThreadPool*>(this);
 #endif
 
@@ -121,7 +122,7 @@ namespace SupDef
                         std::move(
                             std::jthread(
                                 std::addressof(thread_main),
-                                std::addressof(this),
+                                this,
                                 i
                             )
                         )
@@ -134,6 +135,8 @@ namespace SupDef
                 throw InternalError("Failed to create thread "s + std::to_string(i) + ": "s + e.what());
             }
 #endif
+#undef SUPDEF_THREADPOOL_USE_LAMBDAS
+RESTORE_MACRO(SUPDEF_THREADPOOL_USE_LAMBDAS)
             // Create the task queue for the thread
             using pair_type = typename decltype(this->task_queues)::value_type;
             const std::jthread::id id = this->threads.at(i).first.get_id();
@@ -155,9 +158,11 @@ namespace SupDef
         std::vector<std::jthread::id> ids;
         std::unique_lock<std::mutex> lock(this->threads_mtx);
 
+#if 0
         TODO(
             "Is `std::transform` ok here?"
         );
+#endif
         std::transform(
             std::begin(this->threads),
             std::end(this->threads),
@@ -171,9 +176,10 @@ namespace SupDef
         lock.unlock();
 
         std::for_each(
+            std::execution::par,
             std::begin(ids),
             std::end(ids),
-            [&this](const auto& id)
+            [this](const auto& id)
             {
                 this->request_thread_stop(id);
             }
@@ -182,20 +188,28 @@ namespace SupDef
 
     void ThreadPool::request_thread_stop(std::jthread::id&& id)
     {
+        using namespace std::string_literals;
         try
         {
-            std::jthread& thread = *this->get_thread_from_id(std::move(id));
+            std::jthread* thread_ptr = this->get_thread_from_id(std::move(id));
+            if (thread_ptr == nullptr)
+                throw InternalError("Failed to stop thread: thread not found");
+
+            std::jthread& thread = *thread_ptr;
             bool ret_bool = thread.request_stop();
             hard_assert(ret_bool);
     
-            std::unique_lock<std::shared_mutex> waiting_locations_lock(this->waiting_locations_mtx);
-            std::unique_lock<std::shared_mutex> map_lock(this->map_mtx);
-            std::unique_lock<std::mutex> threads_lock(this->threads_mtx);
+            std::unique_lock<std::shared_mutex> waiting_locations_lock(this->waiting_locations_mtx, std::defer_lock);
+            std::unique_lock<std::shared_mutex> map_lock(this->map_mtx, std::defer_lock);
+            std::unique_lock<std::mutex> threads_lock(this->threads_mtx, std::defer_lock);
 
+            waiting_locations_lock.lock();
             std::jthread::id& waiting_where = this->waiting_locations.at(std::move(id));
             size_t ret_size_t = this->waiting_locations.erase(std::move(id));
             hard_assert(ret_size_t == 1);
+            waiting_locations_lock.unlock();
 
+            map_lock.lock();
             std::optional<std::reference_wrapper<task_queue_t>> task_queue = std::nullopt;
             try
             {
@@ -223,9 +237,10 @@ namespace SupDef
             }
             ret_size_t = this->task_queues.erase(std::move(id));
             hard_assert(ret_size_t == 1);
+            map_lock.unlock();
 
+            threads_lock.lock();
             thread.join();
-
             ret_size_t = std::erase_if(
                 this->threads,
                 [&id](const auto& pair)
@@ -234,6 +249,11 @@ namespace SupDef
                 }
             );
             hard_assert(ret_size_t == 1);
+            threads_lock.unlock();
+        }
+        catch (const InternalError& e)
+        {
+            throw;
         }
         catch (const std::exception& e)
         {
@@ -243,9 +263,14 @@ namespace SupDef
 
     void ThreadPool::request_thread_stop(const std::jthread::id& id)
     {
+        using namespace std::string_literals;
         try
         {
-            std::jthread& thread = *this->get_thread_from_id(id);
+            std::jthread* thread_ptr = this->get_thread_from_id(id);
+            if (thread_ptr == nullptr)
+                throw InternalError("Failed to stop thread: thread not found");
+
+            std::jthread& thread = *thread_ptr;
             bool ret_bool = thread.request_stop();
             hard_assert(ret_bool);
     
@@ -295,6 +320,10 @@ namespace SupDef
                 }
             );
             hard_assert(ret_size_t == 1);
+        }
+        catch (const InternalError& e)
+        {
+            throw;
         }
         catch (const std::exception& e)
         {
@@ -415,19 +444,34 @@ namespace SupDef
         return true;
     }
 
-    void ThreadPool::add_threads(size_t nb_threads);
-    void ThreadPool::remove_threads(size_t nb_threads);
+    void ThreadPool::add_threads(size_t nb_threads)
+    {
+        TODO(
+            "Implement `ThreadPool::add_threads`"
+        );
+    }
+
+    void ThreadPool::remove_threads(size_t nb_threads)
+    {
+        for (size_t i = 0; i < nb_threads; ++i)
+        {
+            std::jthread::id id = this->get_least_busy_thread(false);
+        }
+    }
 }
 
 #else
 
-template <typename FuncType, typename... Args, typename ReturnType /* = std::invoke_result_t<FuncType&&, Args&&...> */>
+template <
+    typename FuncType, typename... Args,
+    typename ReturnType /* = std::invoke_result_t<FuncType&&, Args&&...> */
+>
     requires std::invocable<FuncType, Args...> && (!IsCoro<ReturnType>)
 std::future<ReturnType> ThreadPool::enqueue(FuncType&& func, Args&&... args)
 {
     std::promise<ReturnType> promise;
     auto future = promise.get_future();
-    auto task =
+    function_type task =
         [p = std::move(promise), f = std::forward<FuncType>(func), ... a = std::forward<Args>(args)]() mutable
         {
             try
@@ -448,6 +492,60 @@ std::future<ReturnType> ThreadPool::enqueue(FuncType&& func, Args&&... args)
             }
         };
     std::unique_lock<std::shared_mutex> lock(this->map_mtx); // Get WRITE access to the map
+    std::unique_lock<std::mutex> lock2(this->threads_mtx);
+    this->task_queues[this->get_least_busy_thread(true)].push(std::move(task));
+    return future;
+}
+
+template <
+    typename Rep, typename Period,
+    typename FuncType, typename... Args,
+    typename ReturnType /* = std::invoke_result_t<FuncType&&, Args&&...> */
+>
+    requires std::invocable<FuncType, Args...> && (!IsCoro<ReturnType>)
+std::future<ReturnType> ThreadPool::enqueue(std::chrono::duration<Rep, Period>&& timeout, FuncType&& func, Args&&... args)
+{
+    using duration_t = std::chrono::duration<Rep, Period>;
+
+    std::promise<ReturnType> promise;
+    auto future = promise.get_future();
+    auto real_task = std::move(
+        TimedTask(
+            std::forward<duration_t>(timeout),
+            std::forward<FuncType>(func)
+        )
+    );
+    using real_task_t = decltype(real_task);
+    function_type task =
+        [
+            p = std::move(promise),
+            f = std::move(real_task),
+            ... a = std::forward<Args>(args)
+        ]() mutable
+        {
+            try
+            {
+                if constexpr (std::same_as<ReturnType, void>)
+                {
+                    std::invoke(std::move(f), std::move(a)...);
+                    p.set_value();
+                }
+                else
+                {
+                    p.set_value(std::invoke(std::move(f), std::move(a)...));
+                }
+            }
+            catch (const typename real_task_t::TimedOut& e)
+            {
+                p.set_exception(std::make_exception_ptr(TaskTimeoutError()));
+            }
+            catch (...)
+            {
+                p.set_exception(std::current_exception());
+            }
+        };
+    std::unique_lock<std::shared_mutex> lock(this->map_mtx); // Get WRITE access to the map
+    std::unique_lock<std::mutex> lock2(this->threads_mtx);
     this->task_queues[this->get_least_busy_thread(true)].push(std::move(task));
     return future;
 }

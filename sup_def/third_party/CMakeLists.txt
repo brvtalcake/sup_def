@@ -38,6 +38,7 @@ target_compile_definitions(sdthirdparty INTERFACE _LARGEFILE_SOURCE=1)
 target_compile_definitions(sdthirdparty INTERFACE _LARGEFILE64_SOURCE=1)
 target_compile_definitions(sdthirdparty INTERFACE _FILE_OFFSET_BITS=64)
 target_compile_definitions(sdthirdparty INTERFACE _TIME_BITS=64)
+target_compile_options(sdthirdparty INTERFACE -fconcepts-diagnostics-depth=10)
 
 # TODO: Remove this workaround when GCC bug is fixed, and fix other bugs in my own code
 target_compile_definitions(sdthirdparty INTERFACE SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR=0)
