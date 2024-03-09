@@ -43,10 +43,101 @@
 
 #include <sup_def/third_party/map/map.h>
 #include <sup_def/third_party/empty_macro/detect.h>
+
+#include <chaos/preprocessor/algorithm/filter.h>
+#include <chaos/preprocessor/algorithm/transform.h>
+#include <chaos/preprocessor/algorithm/elem.h>
+#include <chaos/preprocessor/algorithm/enumerate.h>
 #include <chaos/preprocessor/algorithm/reverse.h>
-#include <chaos/preprocessor/tuple/core.h>
+#include <chaos/preprocessor/algorithm/size.h>
+#include <chaos/preprocessor/arbitrary/add.h>
+#include <chaos/preprocessor/arbitrary/bool.h>
+#include <chaos/preprocessor/arbitrary/dec.h>
+#include <chaos/preprocessor/arbitrary/demote.h>
+#include <chaos/preprocessor/arbitrary/div.h>
+#include <chaos/preprocessor/arbitrary/greater.h>
+#include <chaos/preprocessor/arbitrary/inc.h>
+#include <chaos/preprocessor/arbitrary/mul.h>
+#include <chaos/preprocessor/arbitrary/neg.h>
+#include <chaos/preprocessor/arbitrary/not_equal.h>
+#include <chaos/preprocessor/arbitrary/promote.h>
+#include <chaos/preprocessor/arbitrary/sign.h>
+#include <chaos/preprocessor/arbitrary/sub.h>
+#include <chaos/preprocessor/control/while.h>
+#include <chaos/preprocessor/detection/is_numeric.h>
+#include <chaos/preprocessor/extended/variadic_cat.h>
+#include <chaos/preprocessor/facilities/push.h>
 #include <chaos/preprocessor/generics/strip.h>
+#include <chaos/preprocessor/lambda/ops.h>
+#include <chaos/preprocessor/logical/bool.h>
+#include <chaos/preprocessor/logical/not.h>
+#include <chaos/preprocessor/logical/or.h>
+#include <chaos/preprocessor/recursion/expr.h>
+#include <chaos/preprocessor/seq/core.h>
+#include <chaos/preprocessor/seq/drop.h>
+#include <chaos/preprocessor/seq/enumerate.h>
+#include <chaos/preprocessor/tuple/core.h>
+
+/* #include <chaos/preprocessor/control/auto/while.h>
+#include <chaos/preprocessor/logical/and.h> */
 /* #include <chaos/preprocessor.h> */
+
+#undef PP_CONSTRUCT_FLOAT
+#undef PP_CONSTRUCT_FLOAT_IMPL
+#define PP_CONSTRUCT_FLOAT(integral, decimal, abs_exponent, suffix, negative_exp)   \
+    PP_CONSTRUCT_FLOAT_IMPL(integral, decimal, abs_exponent, suffix, negative_exp)
+#define PP_CONSTRUCT_FLOAT_IMPL(integral, decimal, abs_exponent, suffix, negative_exp)  \
+    PP_IF(negative_exp)                                                                 \
+    (                                                                                   \
+        VARIADIC_CAT(                                                                   \
+            CHAOS_PP_CLEAN(integral),                                                   \
+            CHAOS_PP_CLEAN(.),                                                          \
+            CHAOS_PP_CLEAN(decimal),                                                    \
+            CHAOS_PP_CLEAN(e),                                                          \
+            CHAOS_PP_CLEAN(-),                                                          \
+            CHAOS_PP_CLEAN(abs_exponent),                                               \
+            CHAOS_PP_CLEAN(suffix)                                                      \
+        )                                                                               \
+    )                                                                                   \
+    (                                                                                   \
+        VARIADIC_CAT(                                                                   \
+            CHAOS_PP_CLEAN(integral),                                                   \
+            CHAOS_PP_CLEAN(.),                                                          \
+            CHAOS_PP_CLEAN(decimal),                                                    \
+            CHAOS_PP_CLEAN(e),                                                          \
+            CHAOS_PP_CLEAN(abs_exponent),                                               \
+            CHAOS_PP_CLEAN(suffix)                                                      \
+        )                                                                               \
+    )
+
+
+#undef VARIADIC_AND
+#define VARIADIC_AND(...) VARIADIC_AND_IMPL(__VA_ARGS__)
+
+#undef VARIADIC_AND_IMPL
+#define VARIADIC_AND_IMPL(...)                                  \
+    CHAOS_PP_NOT(                                               \
+        CHAOS_PP_BOOL(                                          \
+            VA_COUNT(                                           \
+                CHAOS_PP_ENUMERATE(                             \
+                    CHAOS_PP_EXPR(                              \
+                        CHAOS_PP_FILTER(                        \
+                            CHAOS_PP_NOT_(                      \
+                                CHAOS_PP_BOOL_(CHAOS_PP_ARG(1)) \
+                            ),                                  \
+                            (CHAOS_PP_TUPLE) (__VA_ARGS__)      \
+                        )                                       \
+                    )                                           \
+                )                                               \
+            )                                                   \
+        )                                                       \
+    )
+
+#undef TRUE_FOR_ALL
+#define TRUE_FOR_ALL(pred, ...) TRUE_FOR_ALL_IMPL(pred, __VA_ARGS__)
+
+#undef TRUE_FOR_ALL_IMPL
+#define TRUE_FOR_ALL_IMPL(pred, ...) VARIADIC_AND(CHAOS_PP_ENUMERATE(CHAOS_PP_EXPR(CHAOS_PP_TRANSFORM(pred, (CHAOS_PP_TUPLE) (__VA_ARGS__)))))
 
 #if defined(ID)
     #undef ID
@@ -107,6 +198,626 @@
     #undef PP_IF_1
 #endif
 #define PP_IF_1(...) __VA_ARGS__ PP_EAT
+
+#undef PP_PACK
+#undef PP_PACK_IMPL
+#define PP_PACK(...) PP_PACK_IMPL(__VA_ARGS__)
+#define PP_PACK_IMPL(...) CHAOS_PP_PUSH(__VA_ARGS__)
+
+#undef ARBITRARY_ABS
+#undef ARBITRARY_ABS_IMPL
+#define ARBITRARY_ABS(chaospp_arbitrary) ARBITRARY_ABS_IMPL(chaospp_arbitrary)
+#define ARBITRARY_ABS_IMPL(chaospp_arbitrary)           \
+    PP_IF(                                              \
+        CHAOS_PP_ARBITRARY_SIGN(chaospp_arbitrary)      \
+    )                                                   \
+    (                                                   \
+        EXPAND_ONE_TUPLE(chaospp_arbitrary)             \
+    )                                                   \
+    (                                                   \
+        chaospp_arbitrary                               \
+    )
+
+#undef ARBITRARY_DIGIT_COUNT
+#undef ARBITRARY_DIGIT_COUNT_IMPL
+#define ARBITRARY_DIGIT_COUNT(chaospp_arbitrary) ARBITRARY_DIGIT_COUNT_IMPL(chaospp_arbitrary)
+#define ARBITRARY_DIGIT_COUNT_IMPL(chaospp_arbitrary)       \
+    CHAOS_PP_ELEM(                                          \
+        1,                                                  \
+        CHAOS_PP_EXPR(                                      \
+            CHAOS_PP_WHILE(                                 \
+                CHAOS_PP_ARBITRARY_BOOL_(                   \
+                    CHAOS_PP_ELEM_(                         \
+                        0,                                  \
+                        CHAOS_PP_ARG(1)                     \
+                    )                                       \
+                ),                                          \
+                CHAOS_PP_LAMBDA(                            \
+                    (CHAOS_PP_TUPLE)(                       \
+                        CHAOS_PP_ARBITRARY_DIV_(            \
+                            CHAOS_PP_ELEM_(                 \
+                                0,                          \
+                                CHAOS_PP_ARG(1)             \
+                            ),                              \
+                            CHAOS_PP_ARBITRARY_PROMOTE(10)  \
+                        ),                                  \
+                        CHAOS_PP_ARBITRARY_INC_(            \
+                            CHAOS_PP_ELEM_(                 \
+                                1,                          \
+                                CHAOS_PP_ARG(1)             \
+                            )                               \
+                        )                                   \
+                    )                                       \
+                ),                                          \
+                (CHAOS_PP_TUPLE)(                           \
+                    ARBITRARY_ABS(                          \
+                        chaospp_arbitrary                   \
+                    ),                                      \
+                    CHAOS_PP_ARBITRARY_PROMOTE(0)           \
+                )                                           \
+            )                                               \
+        )                                                   \
+    )
+
+#undef ARBITRARY_EXP
+#undef ARBITRARY_EXP_IMPL
+#define ARBITRARY_EXP(chaospp_arbitrary_base, chaospp_arbitrary_exp) ARBITRARY_EXP_IMPL(chaospp_arbitrary_base, chaospp_arbitrary_exp)
+#define ARBITRARY_EXP_IMPL(chaospp_arbitrary_base, chaospp_arbitrary_exp)   \
+    CHAOS_PP_ELEM(                                                          \
+        0,                                                                  \
+        CHAOS_PP_EXPR(                                                      \
+            CHAOS_PP_WHILE(                                                 \
+                CHAOS_PP_ARBITRARY_BOOL_(                                   \
+                    CHAOS_PP_ELEM_(                                         \
+                        1,                                                  \
+                        CHAOS_PP_ARG(1)                                     \
+                    )                                                       \
+                ),                                                          \
+                CHAOS_PP_LAMBDA(                                            \
+                    (CHAOS_PP_TUPLE)(                                       \
+                        CHAOS_PP_ARBITRARY_MUL_(                            \
+                            CHAOS_PP_ELEM_(                                 \
+                                0,                                          \
+                                CHAOS_PP_ARG(1)                             \
+                            ),                                              \
+                            chaospp_arbitrary_base                          \
+                        ),                                                  \
+                        CHAOS_PP_ARBITRARY_DEC_(                            \
+                            CHAOS_PP_ELEM_(                                 \
+                                1,                                          \
+                                CHAOS_PP_ARG(1)                             \
+                            )                                               \
+                        )                                                   \
+                    )                                                       \
+                ),                                                          \
+                (CHAOS_PP_TUPLE)(                                           \
+                    CHAOS_PP_ARBITRARY_PROMOTE(1),                          \
+                    chaospp_arbitrary_exp                                   \
+                )                                                           \
+            )                                                               \
+        )                                                                   \
+    )
+
+#ifdef __INTELLISENSE__
+    #undef ARBITRARY_EXP
+    #define ARBITRARY_EXP(...) (0)
+#endif
+
+#undef VARIADIC_CAT
+#define VARIADIC_CAT(...) CHAOS_PP_VARIADIC_CAT(__VA_ARGS__)
+
+#undef CCAST
+#define CCAST(type, ...) ((type)(__VA_ARGS__))
+
+#undef CPPCAST
+#define CPPCAST(type, ...) (static_cast<type>(__VA_ARGS__))
+
+#undef CPPCAST_CONSTRUCT
+#define CPPCAST_CONSTRUCT(type, ...) (type(__VA_ARGS__))
+
+#undef PP_PAIR
+#define PP_PAIR(x, y) (CHAOS_PP_TUPLE)(x, y)
+
+#undef PP_FLOAT
+#define PP_FLOAT(integralized, pow10) PP_PAIR(integralized, pow10)
+
+#undef PP_FLOAT_PROMOTE
+#undef PP_FLOAT_PROMOTE_IMPL
+#define PP_FLOAT_PROMOTE(integral, decimal, ...) PP_FLOAT_PROMOTE_IMPL(integral, decimal, __VA_ARGS__)
+/**
+ * @def PP_FLOAT_PROMOTE_IMPL(integral, decimal, optional_pow10)
+ * @brief Promotes a floating point number (described as <integral>.<decimal>) to a `PP_PAIR` such that : a*10^b == integral.decimal (a and b being integers composing the pair)
+ */
+#define PP_FLOAT_PROMOTE_IMPL(integral, decimal, ...)   \
+    PP_FLOAT(                                           \
+        PP_IF(                                          \
+            CHAOS_PP_ARBITRARY_SIGN(                    \
+                CHAOS_PP_ARBITRARY_PROMOTE(integral)    \
+            )                                           \
+        )(                                              \
+            CHAOS_PP_ARBITRARY_NEG(                     \
+                PP_FLOAT_PROMOTE_IMPL_INT_PART(         \
+                    integral,                           \
+                    decimal                             \
+                )                                       \
+            )                                           \
+        )(                                              \
+            PP_FLOAT_PROMOTE_IMPL_INT_PART(             \
+                integral,                               \
+                decimal                                 \
+            )                                           \
+        ),                                              \
+        PP_IF(                                          \
+            ISEMPTY(__VA_ARGS__)                        \
+        )(                                              \
+            PP_FLOAT_PROMOTE_IMPL_POW10_PART(           \
+                integral,                               \
+                decimal                                 \
+            )                                           \
+        )(                                              \
+            CHAOS_PP_ARBITRARY_ADD(                     \
+                PP_FLOAT_PROMOTE_IMPL_POW10_PART(       \
+                    integral,                           \
+                    decimal                             \
+                ),                                      \
+                CHAOS_PP_ARBITRARY_PROMOTE(             \
+                    FIRST_ARG(__VA_ARGS__)              \
+                )                                       \
+            )                                           \
+        )                                               \
+    )
+
+#undef PP_FLOAT_PROMOTE_IMPL_INT_PART
+#define PP_FLOAT_PROMOTE_IMPL_INT_PART(integral, decimal)   \
+    CHAOS_PP_ARBITRARY_ADD(                                 \
+        ARBITRARY_ABS(                                      \
+            CHAOS_PP_ARBITRARY_PROMOTE(decimal)             \
+        ),                                                  \
+        CHAOS_PP_ARBITRARY_MUL(                             \
+            ARBITRARY_ABS(                                  \
+                CHAOS_PP_ARBITRARY_PROMOTE(integral)        \
+            ),                                              \
+            ARBITRARY_EXP(                                  \
+                CHAOS_PP_ARBITRARY_PROMOTE(10),             \
+                ARBITRARY_DIGIT_COUNT(                      \
+                    ARBITRARY_ABS(                          \
+                        CHAOS_PP_ARBITRARY_PROMOTE(decimal) \
+                    )                                       \
+                )                                           \
+            )                                               \
+        )                                                   \
+    )
+
+#undef PP_FLOAT_PROMOTE_IMPL_POW10_PART
+#define PP_FLOAT_PROMOTE_IMPL_POW10_PART(integral, decimal) \
+    CHAOS_PP_ARBITRARY_NEG(                                 \
+        ARBITRARY_DIGIT_COUNT(                              \
+            ARBITRARY_ABS(                                  \
+                CHAOS_PP_ARBITRARY_PROMOTE(decimal)         \
+            )                                               \
+        )                                                   \
+    )
+
+#ifdef __INTELLISENSE__
+    #undef PP_FLOAT_PROMOTE
+    #define PP_FLOAT_PROMOTE(...) PP_FLOAT((0), (0))
+#endif
+
+#undef PP_FLOAT_DEMOTE
+#undef PP_FLOAT_DEMOTE_IMPL
+#define PP_FLOAT_DEMOTE(pair, ...) PP_FLOAT_DEMOTE_IMPL(pair, __VA_ARGS__ /* Optional type */)
+#define PP_FLOAT_DEMOTE_IMPL(pair, ...) \
+    PP_IF(ISEMPTY(__VA_ARGS__))         \
+    (                                   \
+        PP_FLOAT_DEMOTE_IMPL_1(         \
+            pair                        \
+        )                               \
+    )                                   \
+    (                                   \
+        PP_FLOAT_DEMOTE_IMPL_2(         \
+            pair,                       \
+            FIRST_ARG(__VA_ARGS__)      \
+        )                               \
+    )
+
+#include <stdfloat>
+
+#undef PP_FLOAT_DEMOTE_HAS_FLOAT128
+#if __STDCPP_FLOAT128_T__
+    #define PP_FLOAT_DEMOTE_HAS_FLOAT128 1
+#else
+    #define PP_FLOAT_DEMOTE_HAS_FLOAT128 0
+#endif
+
+#undef PP_FLOAT_DEMOTE_IMPL_1
+#define PP_FLOAT_DEMOTE_IMPL_1(pair)                    \
+    PP_IF(PP_FLOAT_DEMOTE_HAS_FLOAT128)                 \
+    (                                                   \
+        PP_CONSTRUCT_FLOAT(                             \
+            PP_FLOAT_DEMOTE_INT_PART(pair),             \
+            PP_FLOAT_DEMOTE_DEC_PART(pair),             \
+            PP_FLOAT_DEMOTE_EXP_PART(pair),             \
+            F128,                                       \
+            PP_FLOAT_DEMOTE_EXP_PART_IS_NEG(pair)       \
+        )                                               \
+    )                                                   \
+    (                                                   \
+        PP_CONSTRUCT_FLOAT(                             \
+            PP_FLOAT_DEMOTE_INT_PART(pair),             \
+            PP_FLOAT_DEMOTE_DEC_PART(pair),             \
+            PP_FLOAT_DEMOTE_EXP_PART(pair),             \
+            L,                                          \
+            PP_FLOAT_DEMOTE_EXP_PART_IS_NEG(pair)       \
+        )                                               \
+    )
+
+#undef PP_FLOAT_DEMOTE_IMPL_2
+#define PP_FLOAT_DEMOTE_IMPL_2(pair, type) CCAST(type, PP_FLOAT_DEMOTE_IMPL_1(pair))
+
+#undef PP_FLOAT_DEMOTE_INT_PART
+#undef PP_FLOAT_DEMOTE_INT_PART_IMPL_SIGN
+#undef PP_FLOAT_DEMOTE_INT_PART_IMPL_NOSIGN
+#define PP_FLOAT_DEMOTE_INT_PART_IMPL_SIGN(integral_chaospp_arbitrary)  \
+    -PP_FLOAT_DEMOTE_INT_PART_IMPL_NOSIGN(                              \
+        EXPAND_ONE_TUPLE(                                               \
+            integral_chaospp_arbitrary                                  \
+        )                                                               \
+    )
+#define PP_FLOAT_DEMOTE_INT_PART_IMPL_NOSIGN(integral_chaospp_arbitrary) CHAOS_PP_ELEM(0, (CHAOS_PP_SEQ) integral_chaospp_arbitrary)
+#define PP_FLOAT_DEMOTE_INT_PART(pair)          \
+    PP_IF(                                      \
+        CHAOS_PP_ARBITRARY_SIGN(                \
+            CHAOS_PP_ELEM(0, pair)              \
+        )                                       \
+    )                                           \
+    (                                           \
+        PP_FLOAT_DEMOTE_INT_PART_IMPL_SIGN(     \
+            CHAOS_PP_ELEM(0, pair)              \
+        )                                       \
+    )                                           \
+    (                                           \
+        PP_FLOAT_DEMOTE_INT_PART_IMPL_NOSIGN(   \
+            CHAOS_PP_ELEM(0, pair)              \
+        )                                       \
+    )
+
+#undef PP_FLOAT_DEMOTE_DEC_PART
+#undef PP_FLOAT_DEMOTE_DEC_PART_IMPL
+#define PP_FLOAT_DEMOTE_DEC_PART(pair) PP_FLOAT_DEMOTE_DEC_PART_IMPL(ARBITRARY_ABS(CHAOS_PP_ELEM(0, pair)))
+#define PP_FLOAT_DEMOTE_DEC_PART_IMPL(integral_chaospp_arbitrary) VARIADIC_CAT(CHAOS_PP_SEQ_ENUMERATE(CHAOS_PP_SEQ_DROP(1, integral_chaospp_arbitrary)))
+
+#undef PP_FLOAT_DEMOTE_EXP_PART_IS_NEG
+#undef PP_FLOAT_DEMOTE_EXP_PART_IS_NEG_IMPL
+#undef PP_FLOAT_DEMOTE_EXP_PART
+#undef PP_FLOAT_DEMOTE_EXP_PART_IMPL
+#define PP_FLOAT_DEMOTE_EXP_PART_IS_NEG(pair) PP_FLOAT_DEMOTE_EXP_PART_IS_NEG_IMPL(CHAOS_PP_ELEM(0, pair), CHAOS_PP_ELEM(1, pair))
+#define PP_FLOAT_DEMOTE_EXP_PART_IS_NEG_IMPL(integral_chaospp_arbitrary, pow10_chaospp_arbitrary)   \
+    CHAOS_PP_ARBITRARY_SIGN(                                                                        \
+        CHAOS_PP_ARBITRARY_ADD(                                                                     \
+            CHAOS_PP_ARBITRARY_DEC(                                                                 \
+                ARBITRARY_DIGIT_COUNT(                                                              \
+                    integral_chaospp_arbitrary                                                      \
+                )                                                                                   \
+            ),                                                                                      \
+            pow10_chaospp_arbitrary                                                                 \
+        )                                                                                           \
+    )
+#define PP_FLOAT_DEMOTE_EXP_PART(pair) PP_FLOAT_DEMOTE_EXP_PART_IMPL(CHAOS_PP_ELEM(0, pair), CHAOS_PP_ELEM(1, pair))
+#define PP_FLOAT_DEMOTE_EXP_PART_IMPL(integral_chaospp_arbitrary, pow10_chaospp_arbitrary)  \
+    CHAOS_PP_ARBITRARY_DEMOTE(                                                              \
+        ARBITRARY_ABS(                                                                      \
+            CHAOS_PP_ARBITRARY_ADD(                                                         \
+                CHAOS_PP_ARBITRARY_DEC(                                                     \
+                    ARBITRARY_DIGIT_COUNT(                                                  \
+                        integral_chaospp_arbitrary                                          \
+                    )                                                                       \
+                ),                                                                          \
+                pow10_chaospp_arbitrary                                                     \
+            )                                                                               \
+        )                                                                                   \
+    )
+
+#undef PP_FLOAT_ADAPT
+#undef PP_FLOAT_ADAPT_IMPL
+#undef PP_FLOAT_ADAPT_LOOP_OP
+/**
+ * @def PP_FLOAT_ADAPT(pair_a, pair_b)
+ * @brief Adapts two floating point numbers to the same exponent
+ * 
+ */
+#define PP_FLOAT_ADAPT(pair_a, pair_b) PP_FLOAT_ADAPT_IMPL(pair_a, pair_b)
+#define PP_FLOAT_ADAPT_IMPL(pair_a, pair_b) \
+    CHAOS_PP_EXPR(                          \
+        CHAOS_PP_WHILE(                     \
+            CHAOS_PP_ARBITRARY_NOT_EQUAL_(  \
+                CHAOS_PP_ELEM_(             \
+                    1,                      \
+                    CHAOS_PP_ARG(1)         \
+                ),                          \
+                CHAOS_PP_ELEM_(             \
+                    1,                      \
+                    CHAOS_PP_ARG(2)         \
+                )                           \
+            ),                              \
+            PP_FLOAT_ADAPT_LOOP_OP,         \
+            pair_a,                         \
+            pair_b                          \
+        )                                   \
+    )
+#define PP_FLOAT_ADAPT_LOOP_OP(_, pair_a, pair_b)   \
+    PP_IF(                                          \
+        CHAOS_PP_ARBITRARY_GREATER(                 \
+            CHAOS_PP_ELEM(                          \
+                1,                                  \
+                pair_a                              \
+            ),                                      \
+            CHAOS_PP_ELEM(                          \
+                1,                                  \
+                pair_b                              \
+            )                                       \
+        )                                           \
+    )(                                              \
+        PP_FLOAT(                                   \
+            CHAOS_PP_ARBITRARY_MUL(                 \
+                CHAOS_PP_ELEM(                      \
+                    0,                              \
+                    pair_a                          \
+                ),                                  \
+                CHAOS_PP_ARBITRARY_PROMOTE(10)      \
+            ),                                      \
+            CHAOS_PP_ARBITRARY_DEC(                 \
+                CHAOS_PP_ELEM(                      \
+                    1,                              \
+                    pair_a                          \
+                )                                   \
+            )                                       \
+        ),                                          \
+        pair_b                                      \
+    )(                                              \
+        pair_a,                                     \
+        PP_FLOAT(                                   \
+            CHAOS_PP_ARBITRARY_MUL(                 \
+                CHAOS_PP_ELEM(                      \
+                    0,                              \
+                    pair_b                          \
+                ),                                  \
+                CHAOS_PP_ARBITRARY_PROMOTE(10)      \
+            ),                                      \
+            CHAOS_PP_ARBITRARY_DEC(                 \
+                CHAOS_PP_ELEM(                      \
+                    1,                              \
+                    pair_b                          \
+                )                                   \
+            )                                       \
+        )                                           \
+    )
+
+#undef PP_FLOAT_ADD
+#undef PP_FLOAT_ADD_IMPL
+#define PP_FLOAT_ADD(pair_a, pair_b) PP_FLOAT_ADD_IMPL(pair_a, pair_b)
+#define PP_FLOAT_ADD_IMPL(pair_a, pair_b)   \
+    PP_FLOAT(                               \
+        CHAOS_PP_ARBITRARY_ADD(             \
+            CHAOS_PP_ELEM(                  \
+                0,                          \
+                FIRST_ARG(                  \
+                    PP_FLOAT_ADAPT(         \
+                        pair_a,             \
+                        pair_b              \
+                    )                       \
+                )                           \
+            ),                              \
+            CHAOS_PP_ELEM(                  \
+                0,                          \
+                SECOND_ARG(                 \
+                    PP_FLOAT_ADAPT(         \
+                        pair_a,             \
+                        pair_b              \
+                    )                       \
+                )                           \
+            )                               \
+        ),                                  \
+        CHAOS_PP_ELEM(                      \
+            1,                              \
+            FIRST_ARG(                      \
+                PP_FLOAT_ADAPT(             \
+                    pair_a,                 \
+                    pair_b                  \
+                )                           \
+            )                               \
+        )                                   \
+    )
+
+#undef PP_FLOAT_NEG
+#undef PP_FLOAT_NEG_IMPL
+#define PP_FLOAT_NEG(pair) PP_FLOAT_NEG_IMPL(pair)
+#define PP_FLOAT_NEG_IMPL(pair) PP_FLOAT(CHAOS_PP_ARBITRARY_NEG(CHAOS_PP_ELEM(0, pair)), CHAOS_PP_ELEM(1, pair))
+
+#undef PP_FLOAT_SUB
+#undef PP_FLOAT_SUB_IMPL
+#define PP_FLOAT_SUB(pair_a, pair_b) PP_FLOAT_SUB_IMPL(pair_a, pair_b)
+#define PP_FLOAT_SUB_IMPL(pair_a, pair_b) PP_FLOAT_ADD(pair_a, PP_FLOAT_NEG(pair_b))
+
+#undef PP_FLOAT_MUL
+#undef PP_FLOAT_MUL_IMPL
+#define PP_FLOAT_MUL(pair_a, pair_b) PP_FLOAT_MUL_IMPL(pair_a, pair_b)
+#define PP_FLOAT_MUL_IMPL(pair_a, pair_b)   \
+    PP_FLOAT(                               \
+        CHAOS_PP_ARBITRARY_MUL(             \
+            CHAOS_PP_ELEM(                  \
+                0,                          \
+                pair_a                      \
+            ),                              \
+            CHAOS_PP_ELEM(                  \
+                0,                          \
+                pair_b                      \
+            )                               \
+        ),                                  \
+        CHAOS_PP_ARBITRARY_ADD(             \
+            CHAOS_PP_ELEM(                  \
+                1,                          \
+                pair_a                      \
+            ),                              \
+            CHAOS_PP_ELEM(                  \
+                1,                          \
+                pair_b                      \
+            )                               \
+        )                                   \
+    )
+
+#undef PP_FLOAT_DIV
+#undef PP_FLOAT_DIV_IMPL
+#define PP_FLOAT_DIV(pair_a, pair_b, ...) PP_FLOAT_DIV_IMPL(pair_a, pair_b, PP_IF(ISEMPTY(__VA_ARGS__))(5)(FIRST_ARG(__VA_ARGS__)))
+#define PP_FLOAT_DIV_IMPL(pair_a, pair_b, precision) PP_FLOAT_MUL(pair_a, PP_FLOAT_INV(pair_b, precision))
+
+#undef PP_FLOAT_ONE
+#define PP_FLOAT_ONE(...) PP_FLOAT_PROMOTE(1, 0 __VA_OPT__(, FIRST_ARG(__VA_ARGS__)))
+
+#undef PP_FLOAT_DECIMAL_DIGIT_COUNT
+#undef PP_FLOAT_DECIMAL_DIGIT_COUNT_IMPL
+/**
+ * @def PP_FLOAT_DECIMAL_DIGIT_COUNT(pair)
+ * @brief Returns the number of decimal digits in a PP_FLOAT, when the power of 10 is 0
+ * 
+ */
+#define PP_FLOAT_DECIMAL_DIGIT_COUNT(pair) PP_FLOAT_DECIMAL_DIGIT_COUNT_IMPL(pair)
+#define PP_FLOAT_DECIMAL_DIGIT_COUNT_IMPL(pair) \
+    PP_IF(                                      \
+        CHAOS_PP_ARBITRARY_SIGN(                \
+            CHAOS_PP_ELEM(                      \
+                1,                              \
+                pair                            \
+            )                                   \
+        )                                       \
+    )(                                          \
+        ARBITRARY_ABS(                          \
+            CHAOS_PP_ELEM(                      \
+                1,                              \
+                pair                            \
+            )                                   \
+        )                                       \
+    )(                                          \
+        CHAOS_PP_ARBITRARY_PROMOTE(0)           \
+    )
+
+#undef PP_FLOAT_ABS
+#undef PP_FLOAT_ABS_IMPL
+#define PP_FLOAT_ABS(pair) PP_FLOAT_ABS_IMPL(pair)
+#define PP_FLOAT_ABS_IMPL(pair) PP_FLOAT(ARBITRARY_ABS(CHAOS_PP_ELEM(0, pair)), CHAOS_PP_ELEM(1, pair))
+
+#undef PP_FLOAT_SIGN
+#undef PP_FLOAT_SIGN_IMPL
+#define PP_FLOAT_SIGN(pair) PP_FLOAT_SIGN_IMPL(pair)
+#define PP_FLOAT_SIGN_IMPL(pair) CHAOS_PP_ARBITRARY_SIGN(CHAOS_PP_ELEM(0, pair))
+
+#undef PP_FLOAT_INV
+#undef PP_FLOAT_INV_IMPL
+#undef PP_FLOAT_INV_IMPL_WRAPPER
+#undef PP_FLOAT_INV_IMPL_WHILE_BODY
+#define PP_FLOAT_INV(pair, ...) PP_FLOAT_INV_IMPL(pair, PP_IF(ISEMPTY(__VA_ARGS__))(5)(FIRST_ARG(__VA_ARGS__)))
+#define PP_FLOAT_INV_IMPL(pair, precision)                      \
+    PP_FLOAT_INV_IMPL_WRAPPER(                                  \
+        PP_FLOAT_SIGN(pair),                                    \
+        PP_FLOAT_INV_IMPL_WHILE_BODY(pair, precision)           \
+    )
+#define PP_FLOAT_INV_IMPL_WRAPPER(boolean, ...) \
+    PP_IF(boolean)                              \
+    (                                           \
+        PP_FLOAT_NEG(                           \
+            FIRST_ARG(                          \
+                CHAOS_PP_EXPR(                  \
+                    CHAOS_PP_WHILE(             \
+                        __VA_ARGS__             \
+                    )                           \
+                )                               \
+            )                                   \
+        )                                       \
+    )(                                          \
+        FIRST_ARG(                              \
+            CHAOS_PP_EXPR(                      \
+                CHAOS_PP_WHILE(                 \
+                    __VA_ARGS__                 \
+                )                               \
+            )                                   \
+        )                                       \
+    )
+#define PP_FLOAT_INV_IMPL_WHILE_BODY(pair, precision)           \
+    CHAOS_PP_OR_                                                \
+    (                                                           \
+        CHAOS_PP_ARBITRARY_NOT_EQUAL_(                          \
+            CHAOS_PP_LAMBDA(PP_FLOAT_DECIMAL_DIGIT_COUNT)(      \
+                CHAOS_PP_ARG(1)                                 \
+            ),                                                  \
+            CHAOS_PP_ARBITRARY_PROMOTE(precision)               \
+        )                                                       \
+    )(                                                          \
+        CHAOS_PP_BOOL_(CHAOS_PP_ARG(4))                         \
+    ) /* While cond */,                                         \
+    PP_FLOAT_COMPUTE_DIV_STEP /* While op */,                   \
+    PP_FLOAT_PROMOTE(0, 0) /* Result (arg 1) */,                \
+    PP_FLOAT_ONE() /* Pair a (arg 2) */,                        \
+    PP_FLOAT_ABS(pair) /* Pair b (arg 3) */,                    \
+    CHAOS_PP_BOOL(0) /* Division finished (arg 4) */,           \
+    CHAOS_PP_ARBITRARY_PROMOTE(0) /* Last remainder (arg 5) */, \
+    CHAOS_PP_ARBITRARY_PROMOTE(0) /* Step count (arg 6) */
+
+#undef PP_FLOAT_COMPUTE_DIV_STEP
+#define PP_FLOAT_COMPUTE_DIV_STEP(_, prev_step_result, pair_a, pair_b, div_finished, last_remainder, step_count)    \
+    PP_FLOAT_ADD(                                                                                                   \
+        PP_FLOAT_MUL(                                                                                               \
+            prev_step_result,                                                                                       \
+            
+
+#ifdef __INTELLISENSE__
+    #undef PP_FLOAT_INV
+    #define PP_FLOAT_INV(...) PP_FLOAT((0), (0))
+#endif
+
+#if 0
+    /* Ignore precision for now */          \
+    PP_FLOAT(                               \
+        CHAOS_PP_ARBITRARY_DIV(             \
+            CHAOS_PP_ELEM(                  \
+                0,                          \
+                FIRST_ARG(                  \
+                    PP_FLOAT_ADAPT(         \
+                        PP_FLOAT_ONE(),     \
+                        pair                \
+                    )                       \
+                )                           \
+            ),                              \
+            CHAOS_PP_ELEM(                  \
+                0,                          \
+                SECOND_ARG(                 \
+                    PP_FLOAT_ADAPT(         \
+                        PP_FLOAT_ONE(),     \
+                        pair                \
+                    )                       \
+                )                           \
+            )                               \
+        ),                                  \
+        CHAOS_PP_ARBITRARY_SUB(             \
+            CHAOS_PP_ELEM(                  \
+                1,                          \
+                FIRST_ARG(                  \
+                    PP_FLOAT_ADAPT(         \
+                        PP_FLOAT_ONE(),     \
+                        pair                \
+                    )                       \
+                )                           \
+            ),                              \
+            CHAOS_PP_ELEM(                  \
+                1,                          \
+                SECOND_ARG(                 \
+                    PP_FLOAT_ADAPT(         \
+                        PP_FLOAT_ONE(),     \
+                        pair                \
+                    )                       \
+                )                           \
+            )                               \
+        )                                   \
+    )
+#endif       
 
 #if defined(VA_COUNT)
     #undef VA_COUNT
@@ -653,8 +1364,8 @@
 #ifdef likely_if
     #undef likely_if
 #endif
-#ifdef likely_elseif
-    #undef likely_elseif
+#ifdef likely_else_if
+    #undef likely_else_if
 #endif
 #ifdef likely_else
     #undef likely_else
@@ -664,7 +1375,7 @@
 #endif
 
 #define likely_if(expr) if LIKELY_BRANCH_IMPL(expr)
-#define likely_elseif(expr) else if LIKELY_BRANCH_IMPL(expr)
+#define likely_else_if(expr) else if LIKELY_BRANCH_IMPL(expr)
 #define likely_while(expr) while LIKELY_BRANCH_IMPL(expr)
 
 #ifdef __has_cpp_attribute
@@ -699,8 +1410,8 @@
 #ifdef unlikely_if
     #undef unlikely_if
 #endif
-#ifdef unlikely_elseif
-    #undef unlikely_elseif
+#ifdef unlikely_else_if
+    #undef unlikely_else_if
 #endif
 #ifdef unlikely_else
     #undef unlikely_else
@@ -710,7 +1421,7 @@
 #endif
 
 #define unlikely_if(expr) if UNLIKELY_BRANCH_IMPL(expr)
-#define unlikely_elseif(expr) else if UNLIKELY_BRANCH_IMPL(expr)
+#define unlikely_else_if(expr) else if UNLIKELY_BRANCH_IMPL(expr)
 #define unlikely_while(expr) while UNLIKELY_BRANCH_IMPL(expr)
 
 #ifdef __has_cpp_attribute
@@ -745,8 +1456,8 @@
 #ifdef probably_if
     #undef probably_if
 #endif
-#ifdef probably_elseif
-    #undef probably_elseif
+#ifdef probably_else_if
+    #undef probably_else_if
 #endif
 #ifdef probably_else
     #undef probably_else
@@ -756,7 +1467,7 @@
 #endif
 
 #define probably_if(expr, percentage) if PROBABLY_BRANCH_IMPL(expr, percentage)
-#define probably_elseif(expr, percentage) else if PROBABLY_BRANCH_IMPL(expr, percentage)
+#define probably_else_if(expr, percentage) else if PROBABLY_BRANCH_IMPL(expr, percentage)
 #define probably_else(percentage) else
 #define probably_while(expr, percentage) while PROBABLY_BRANCH_IMPL(expr, percentage)
 
@@ -789,6 +1500,38 @@
     #define PROBABLY_BRANCH_IMPL(expr, percentage) ((expr))
 #endif
 
+#undef until
+#define until(expr) while(bool(!(expr)))
+
+#undef likely_until
+#define likely_until(expr) while LIKELY_BRANCH_IMPL(!(expr))
+
+#undef unlikely_until
+#define unlikely_until(expr) while UNLIKELY_BRANCH_IMPL(!(expr))
+
+#undef probably_until
+#define probably_until(expr, percentage) while PROBABLY_BRANCH_IMPL(!(expr), percentage)
+
+#undef unless
+#undef else_unless
+#define unless(expr) if(bool(!(expr)))
+#define else_unless(expr) else if(bool(!(expr)))
+
+#undef likely_unless
+#undef likely_else_unless
+#define likely_unless(expr) if LIKELY_BRANCH_IMPL(!(expr))
+#define likely_else_unless(expr) else if LIKELY_BRANCH_IMPL(!(expr))
+
+#undef unlikely_unless
+#undef unlikely_else_unless
+#define unlikely_unless(expr) if UNLIKELY_BRANCH_IMPL(!(expr))
+#define unlikely_else_unless(expr) else if UNLIKELY_BRANCH_IMPL(!(expr))
+
+#undef probably_unless
+#undef probably_else_unless
+#define probably_unless(expr, percentage) if PROBABLY_BRANCH_IMPL(!(expr), percentage)
+#define probably_else_unless(expr, percentage) else if PROBABLY_BRANCH_IMPL(!(expr), percentage)
+
 #undef COMPTIME_ABS
 #define COMPTIME_ABS(value) ( [](auto x) consteval { return x < 0 ? -x : x; }(value) )
 
@@ -800,22 +1543,56 @@
  * @param value The value to scale.
  * @param min_max_from The tupled minimum and maximum values of the original range.
  * @param min_max_new The tupled minimum and maximum values of the new range.
+ * @param backend Whether to try to use the chaos-pp backend for this invocation.
  * @return The scaled value.
  * @example COMPTIME_SCALE(double, 50, (0, 100), (0, 1)) will return 0.5.
  * @example COMPTIME_SCALE(float, 0.25, (0, 1), (-100, 0)) will return -75.0f.
  * @example COMPTIME_SCALE(double, 0.5, (0, 1), (-2000, 2000)) will return 0.0.
  */
-#define COMPTIME_SCALE(type, value, min_max_from, min_max_new)  \
-    type(COMPTIME_SCALE_IMPL(                                   \
-        type(value),                                            \
-        type(FIRST_ARG(EXPAND_ONE_TUPLE(min_max_from))),        \
-        type(LAST_ARG(EXPAND_ONE_TUPLE(min_max_from))),         \
-        type(FIRST_ARG(EXPAND_ONE_TUPLE(min_max_new))),         \
-        type(LAST_ARG(EXPAND_ONE_TUPLE(min_max_new)))           \
+#define COMPTIME_SCALE(type, value, min_max_from, min_max_new, backend) \
+    CCAST(type, COMPTIME_SCALE_IMPL1(                                   \
+        CCAST(type, value),                                             \
+        CCAST(type, FIRST_ARG(EXPAND_ONE_TUPLE(min_max_from))),         \
+        CCAST(type, LAST_ARG(EXPAND_ONE_TUPLE(min_max_from))),          \
+        CCAST(type, FIRST_ARG(EXPAND_ONE_TUPLE(min_max_new))),          \
+        CCAST(type, LAST_ARG(EXPAND_ONE_TUPLE(min_max_new)))            \
     ))
 
-#undef COMPTIME_SCALE_IMPL
-#define COMPTIME_SCALE_IMPL(value, min_from, max_from, min_new, max_new)    \
+#undef COMPTIME_SCALE_GET_BACKEND_IMPL
+#define COMPTIME_SCALE_GET_BACKEND_IMPL(backend) VARIADIC_CAT(COMPTIME_SCALE_, backend, _BACKEND)
+
+#undef COMPTIME_SCALE_GET_BACKEND
+#define COMPTIME_SCALE_GET_BACKEND(backend) COMPTIME_SCALE_GET_BACKEND_IMPL(backend)
+
+#undef COMPTIME_SCALE_CLASSIC_BACKEND
+#define COMPTIME_SCALE_CLASSIC_BACKEND CHAOS_PP_BOOL(0)
+
+#undef COMPTIME_SCALE_CHAOS_BACKEND
+#define COMPTIME_SCALE_CHAOS_BACKEND CHAOS_PP_BOOL(1)
+
+#undef COMPTIME_SCALE_HELPER_COND_VALID_ARG
+#define COMPTIME_SCALE_HELPER_COND_VALID_ARG(arg)   \
+    CHAOS_PP_OR                                     \
+    (                                               \
+        CHAOS_PP_IS_NUMERIC(arg)                    \
+    )                                               \
+    (                                               \
+        CHAOS_PP_IS_NUMERIC(PP_EAT arg)             \
+    )
+
+#undef COMPTIME_SCALE_HELPER_COND
+#define COMPTIME_SCALE_HELPER_COND(value, min_from, max_from, min_new, max_new) \
+    TRUE_FOR_ALL(                                                               \
+        CHAOS_PP_LAMBDA(COMPTIME_SCALE_HELPER_COND_VALID_ARG)(CHAOS_PP_ARG(1)), \
+        value,                                                                  \
+        min_from,                                                               \
+        max_from,                                                               \
+        min_new,                                                                \
+        max_new                                                                 \
+    )
+
+#undef COMPTIME_SCALE_IMPL1
+#define COMPTIME_SCALE_IMPL1(value, min_from, max_from, min_new, max_new)   \
     (                                                                       \
         (                                                                   \
             (                                                               \
@@ -823,15 +1600,27 @@
             ) / (max_from - min_from)                                       \
         ) + min_new                                                         \
     )
-    
+
+#undef COMPTIME_SCALE_IMPL2
+/**
+ * @brief This implementation is selected if chaos-pp can work with provided value to calculate the scaled output using only macros.
+ * 
+ */
+#define COMPTIME_SCALE_IMPL2(value, min_from, max_from, min_new, max_new)
+
 #undef COMPTIME_FLOAT_EQ
-#define COMPTIME_FLOAT_EQ(a, b, epsilon) (COMPTIME_ABS((a) - (b)) <= (epsilon))
+#define COMPTIME_FLOAT_EQ(type, a, b, epsilon) bool(COMPTIME_ABS(type(type(a) - type(b))) <= type(epsilon))
 
 #undef ABS_UNSAFE
 #define ABS_UNSAFE(value) ((value) < 0 ? -(value) : (value))
 
-#undef FLOAT_EQ_UNSAFE
-#define FLOAT_EQ_UNSAFE(a, b, epsilon) (ABS_UNSAFE((a) - (b)) <= (epsilon))
+#undef FLOAT_EQ
+#define FLOAT_EQ(type, a, b, epsilon) bool(ABS_UNSAFE(type(type(a) - type(b))) <= type(epsilon))
+
+static_assert(COMPTIME_FLOAT_EQ(double, 0.5, 0.5, 0.0001));
+static_assert(COMPTIME_FLOAT_EQ(float,  0.5, 0.5, 0.0001));
+static_assert(FLOAT_EQ(double, 0.5, 0.5, 0.0001));
+static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 
 #undef ATTRIBUTE_COLD
 #if SUPDEF_COMPILER == 1
@@ -867,6 +1656,77 @@ using namespace BoostParameterConfig;
 static_assert(COMPTIME_ABS(-5) == 5);
 static_assert(COMPTIME_ABS(5) == 5);
 
-static_assert(COMPTIME_FLOAT_EQ(COMPTIME_SCALE(double, 50, (0, 100), (0, 1)), 0.5, 0.0001));
-static_assert(COMPTIME_FLOAT_EQ(COMPTIME_SCALE(float, 0.25, (0, 1), (-100, 0)), -75.0f, 0.0001));
-static_assert(COMPTIME_FLOAT_EQ(COMPTIME_SCALE(double, 0.5, (0, 1), (-2000, 2000)), 0.0, 0.0001));
+static_assert(COMPTIME_FLOAT_EQ(double, COMPTIME_SCALE(double, 50,   (0, 100), (0, 1),        CLASSIC),    0.5, 0.0001));
+static_assert(COMPTIME_FLOAT_EQ(float,  COMPTIME_SCALE(float,  0.25, (0, 1),   (-100, 0),     CLASSIC), -75.0f, 0.0001));
+static_assert(COMPTIME_FLOAT_EQ(double, COMPTIME_SCALE(double, 0.5,  (0, 1),   (-2000, 2000), CLASSIC),    0.0, 0.0001));
+
+/* PP_FLOAT_DEMOTE(PP_FLOAT_PROMOTE(1, 2), float); */
+/* PP_FLOAT_DEMOTE(PP_FLOAT_PROMOTE((-)1, 2), float); */
+/* PP_FLOAT_DEMOTE(PP_FLOAT_PROMOTE((-)1, 2), long double); */
+
+/* CHAOS_PP_ARBITRARY_DEMOTE(ARBITRARY_DIGIT_COUNT((1)(0)(0)(0)(0)(0)(0)(0)(0))) */
+/* CHAOS_PP_ARBITRARY_DEMOTE((1)(0)(0)(0)(0)(0)(0)(0)(0)) */
+/* CHAOS_PP_ARBITRARY_DEMOTE((0)(0)(0)(0)(0)(0)(0)(0)(0)) */
+/* CHAOS_PP_ARBITRARY_PROMOTE(100) // (1)(0)(0) */
+/* CHAOS_PP_ARBITRARY_PROMOTE((-)100) // ((1)(0)(0)) */
+/* PP_FLOAT_DEMOTE_INT_PART(PP_PAIR((1)(0)(2), unused)) // 1 */
+/* PP_FLOAT_DEMOTE_INT_PART(PP_PAIR(((1)(0)(2)), unused)) // -1 */
+
+/* PP_FLOAT_DEMOTE_DEC_PART(PP_PAIR((1)(0)(2), unused)) // 02 */
+/* PP_FLOAT_DEMOTE_DEC_PART(PP_PAIR(((1)(0)(2)), unused)) // 02 */
+
+/* PP_FLOAT_DEMOTE_EXP_PART(PP_PAIR((1)(0)(2), (1))) // 3 */
+/* PP_FLOAT_DEMOTE_EXP_PART(PP_PAIR((1)(0)(2), ((1)))) // 1 */
+
+/* ARBITRARY_ABS((1)(0)(0)(0)(0)(0)(0)(0)(0)) // (1)(0)(0)(0)(0)(0)(0)(0)(0) */
+/* ARBITRARY_ABS(((1)(0)(0)(0)(0)(0)(0)(0)(0))) // (1)(0)(0)(0)(0)(0)(0)(0)(0) */
+
+PP_FLOAT_DEMOTE(PP_FLOAT((1)(0)(2), (1))) // 1.02e3F128
+PP_FLOAT_DEMOTE(PP_FLOAT((1)(0)(2), ((1)))) // 1.02e1F128
+
+/* ARBITRARY_EXP(CHAOS_PP_ARBITRARY_PROMOTE(10), CHAOS_PP_ARBITRARY_PROMOTE(0))  // (1) */
+/* ARBITRARY_EXP(CHAOS_PP_ARBITRARY_PROMOTE(10), CHAOS_PP_ARBITRARY_PROMOTE(2))  // (1) (0) (0) */
+/* ARBITRARY_EXP(CHAOS_PP_ARBITRARY_PROMOTE(10), CHAOS_PP_ARBITRARY_PROMOTE(10)) // (1) (0) (0) (0) (0) (0) (0) (0) (0) (0) (0) */
+
+/* ARBITRARY_EXP(CHAOS_PP_ARBITRARY_PROMOTE((-)2), CHAOS_PP_ARBITRARY_PROMOTE(0)) // (1) */
+/* ARBITRARY_EXP(CHAOS_PP_ARBITRARY_PROMOTE((-)2), CHAOS_PP_ARBITRARY_PROMOTE(1)) // ((2)) */
+/* ARBITRARY_EXP(CHAOS_PP_ARBITRARY_PROMOTE((-)2), CHAOS_PP_ARBITRARY_PROMOTE(2)) // (4) */
+/* ARBITRARY_EXP(CHAOS_PP_ARBITRARY_PROMOTE((-)2), CHAOS_PP_ARBITRARY_PROMOTE(3)) // ((8)) */
+/* ARBITRARY_EXP(CHAOS_PP_ARBITRARY_PROMOTE((-)2), CHAOS_PP_ARBITRARY_PROMOTE(4)) // (1) (6) */
+/* ARBITRARY_EXP(CHAOS_PP_ARBITRARY_PROMOTE((-)2), CHAOS_PP_ARBITRARY_PROMOTE(5)) // ((3) (2)) */
+
+PP_FLOAT_PROMOTE(1, 2); // represents 1.2
+PP_FLOAT_PROMOTE((-)1, 2); // represents -1.2
+PP_FLOAT_PROMOTE((-)1, 002); // represents -1.002 (doesn't work)
+PP_FLOAT_PROMOTE(2, 0, (-)3); // 0.002
+
+
+PP_FLOAT_DEMOTE(PP_FLOAT_PROMOTE(1, 2))
+PP_FLOAT_DEMOTE(PP_FLOAT_PROMOTE((-)1, 2))
+PP_FLOAT_DEMOTE(PP_FLOAT_PROMOTE(2, 0, (-)3))
+
+PP_IF(1)(blah, blah, blah)(bla, bla, bla)
+PP_IF(0)(blah, blah, blah)(bla, bla, bla)
+
+PP_FLOAT_ADAPT(PP_FLOAT_PROMOTE(0, 299), PP_FLOAT_PROMOTE(0, 299))
+PP_FLOAT_ADAPT(PP_FLOAT_PROMOTE(0, 299), PP_FLOAT_PROMOTE(100, 2))
+PP_FLOAT_PROMOTE(0, 299), PP_FLOAT_PROMOTE(100, 2)
+PP_FLOAT_DEMOTE(PP_FLOAT_PROMOTE(0, 299)), PP_FLOAT_DEMOTE(PP_FLOAT_PROMOTE(100, 2))
+
+PP_FLOAT_DEMOTE(PP_FLOAT_ADD(PP_FLOAT_PROMOTE(0, 299), PP_FLOAT_PROMOTE(100, 2))) // 1.00499e2F128
+PP_FLOAT_DEMOTE(PP_FLOAT_ADD(PP_FLOAT_PROMOTE(0, 299), PP_FLOAT_PROMOTE((-)100, 2))) // -9.9901e1F128
+
+//PP_FLOAT_DEMOTE(PP_FLOAT_INV(PP_FLOAT_PROMOTE(0, 5))) // 2.e0F128
+//PP_FLOAT_DEMOTE(PP_FLOAT_INV(PP_FLOAT_PROMOTE(0, 299))) 
+
+PP_FLOAT_PROMOTE(0, 299)
+CHAOS_PP_ARBITRARY_DEMOTE(PP_FLOAT_DECIMAL_DIGIT_COUNT(PP_FLOAT_PROMOTE(0, 299))) // 3
+
+PP_FLOAT_PROMOTE(100, 2)
+CHAOS_PP_ARBITRARY_DEMOTE(PP_FLOAT_DECIMAL_DIGIT_COUNT(PP_FLOAT_PROMOTE(100, 2))) // 1
+
+PP_FLOAT_PROMOTE(100, 0)
+CHAOS_PP_ARBITRARY_DEMOTE(PP_FLOAT_DECIMAL_DIGIT_COUNT(PP_FLOAT_PROMOTE(100, 0))) // 0
+
+PP_FLOAT_PROMOTE(100,)
+CHAOS_PP_ARBITRARY_DEMOTE(PP_FLOAT_DECIMAL_DIGIT_COUNT(PP_FLOAT_PROMOTE(100, )))  // 0

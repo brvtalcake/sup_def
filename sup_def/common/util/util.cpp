@@ -189,7 +189,7 @@ namespace SupDef
                                 std::memory_order::release
                             );
                         }
-                        unlikely_elseif (
+                        unlikely_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Shared)
                         )
@@ -220,7 +220,7 @@ namespace SupDef
                                 std::memory_order::release
                             );
                         }
-                        unlikely_elseif (
+                        unlikely_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Shared)
                         )
@@ -253,7 +253,7 @@ namespace SupDef
                                 std::memory_order::release
                             );
                         }
-                        probably_elseif (
+                        probably_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Shared),
                             20 /* % probability */
@@ -277,7 +277,7 @@ namespace SupDef
                                 std::memory_order::release
                             );
                         }
-                        probably_elseif (
+                        probably_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Shared),
                             20 /* % probability */
@@ -338,7 +338,7 @@ namespace SupDef
                                 std::memory_order::release
                             );
                         }
-                        unlikely_elseif (
+                        unlikely_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Exclusive)
                         )
@@ -369,7 +369,7 @@ namespace SupDef
                                 std::memory_order::release
                             );
                         }
-                        unlikely_elseif (
+                        unlikely_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Exclusive)
                         )
@@ -402,7 +402,7 @@ namespace SupDef
                                 std::memory_order::release
                             );
                         }
-                        probably_elseif (
+                        probably_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Exclusive),
                             20 /* % probability */
@@ -426,7 +426,7 @@ namespace SupDef
                                 std::memory_order::release
                             );
                         }
-                        probably_elseif (
+                        probably_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Exclusive),
                             20 /* % probability */
