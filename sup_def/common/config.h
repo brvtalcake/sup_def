@@ -45,11 +45,12 @@
 #include <sup_def/third_party/empty_macro/detect.h>
 
 #include <chaos/preprocessor/algorithm/filter.h>
-#include <chaos/preprocessor/algorithm/transform.h>
+#include <chaos/preprocessor/algorithm/for_each.h>
 #include <chaos/preprocessor/algorithm/elem.h>
 #include <chaos/preprocessor/algorithm/enumerate.h>
 #include <chaos/preprocessor/algorithm/reverse.h>
 #include <chaos/preprocessor/algorithm/size.h>
+#include <chaos/preprocessor/algorithm/transform.h>
 #include <chaos/preprocessor/arbitrary/add.h>
 #include <chaos/preprocessor/arbitrary/bool.h>
 #include <chaos/preprocessor/arbitrary/dec.h>
@@ -66,7 +67,9 @@
 #include <chaos/preprocessor/arbitrary/promote.h>
 #include <chaos/preprocessor/arbitrary/sign.h>
 #include <chaos/preprocessor/arbitrary/sub.h>
+#include <chaos/preprocessor/comparison/equal.h>
 #include <chaos/preprocessor/control/unless.h>
+#include <chaos/preprocessor/control/variadic_if.h>
 #include <chaos/preprocessor/control/while.h>
 #include <chaos/preprocessor/debug/failure.h>
 #include <chaos/preprocessor/detection/is_numeric.h>
@@ -74,6 +77,7 @@
 #include <chaos/preprocessor/facilities/push.h>
 #include <chaos/preprocessor/generics/strip.h>
 #include <chaos/preprocessor/lambda/ops.h>
+#include <chaos/preprocessor/limits.h>
 #include <chaos/preprocessor/logical/and.h>
 #include <chaos/preprocessor/logical/bool.h>
 #include <chaos/preprocessor/logical/not.h>
@@ -184,6 +188,83 @@
     #undef PP_CAT_
 #endif
 #define PP_CAT_(a, b) a ## b
+
+#undef PP_SWITCH
+#undef PP_SWITCH_IMPL
+#undef PP_SWITCH_IMPL_SEARCH_CASE
+#define PP_SWITCH(integer, defaultcase, ...)    \
+    CHAOS_PP_UNLESS(                            \
+        CHAOS_PP_IS_NUMERIC(integer)            \
+    )(CHAOS_PP_FAILURE())                       \
+    PP_SWITCH_IMPL(                             \
+        integer,                                \
+        defaultcase __VA_OPT__(,)               \
+        __VA_ARGS__                             \
+    )
+#define PP_SWITCH_IMPL(integer, defaultcase, ...)   \
+    PP_IF(                                          \
+        CHAOS_PP_AND                                \
+        (                                           \
+            CHAOS_PP_OR                             \
+            (                                       \
+                ISEMPTY(                            \
+                    __VA_ARGS__                     \
+                )                                   \
+            )(                                      \
+                ISEMPTY(                            \
+                    PP_SWITCH_IMPL_SEARCH_CASE(     \
+                        integer,                    \
+                        __VA_ARGS__                 \
+                    )                               \
+                )                                   \
+            )                                       \
+        )                                           \
+        (                                           \
+            CHAOS_PP_IS_NUMERIC(integer)            \
+        )                                           \
+    )(                                              \
+        EXPAND_ONE_TUPLE(                           \
+            defaultcase                             \
+        )                                           \
+    )(                                              \
+        EXPAND_ONE_TUPLE(                           \
+            PP_SWITCH_IMPL_SEARCH_CASE(             \
+                integer,                            \
+                __VA_ARGS__                         \
+            )                                       \
+        )                                           \
+    )
+#define PP_SWITCH_IMPL_SEARCH_CASE(integer, ...)    \
+    CHAOS_PP_EXPR(                                  \
+        CHAOS_PP_FOR_EACH(                          \
+            CHAOS_PP_LAMBDA(                        \
+                CHAOS_PP_VARIADIC_IF_(              \
+                    CHAOS_PP_EQUAL_(                \
+                        integer,                    \
+                        CHAOS_PP_ELEM_(             \
+                            0,                      \
+                            (CHAOS_PP_TUPLE)        \
+                                CHAOS_PP_ARG(1)     \
+                        )                           \
+                    )                               \
+                )(                                  \
+                    CHAOS_PP_ELEM_(                 \
+                        1,                          \
+                        (CHAOS_PP_TUPLE)            \
+                            CHAOS_PP_ARG(1)         \
+                    )                               \
+                )(                                  \
+                    CHAOS_PP_EMPTY()                \
+                )                                   \
+            ),                                      \
+            (CHAOS_PP_TUPLE) (__VA_ARGS__)          \
+        )                                           \
+    )
+
+#ifdef __INTELLISENSE__
+    #undef PP_SWITCH_IMPL_SEARCH_CASE
+    #define PP_SWITCH_IMPL_SEARCH_CASE(...) (0)
+#endif
 
 #if defined(PP_IF)
     #undef PP_IF
@@ -1557,7 +1638,7 @@
 #define probably_else(percentage, ...) else
 #define probably_while(expr, percentage, ...) while PROBABLY_BRANCH_IMPL(expr, percentage, PP_IF(ISEMPTY(__VA_ARGS__))(CLASSIC)(__VA_ARGS__))
 
-#if SUPDEF_COMPILER == 1 || SUPDEF_COMPILER == 2
+#if (SUPDEF_COMPILER == 1 || SUPDEF_COMPILER == 2) && !defined(__INTELLISENSE__)
     #ifdef __has_builtin
         #if __has_builtin(__builtin_expect_with_probability)
             #define PROBABLY_BRANCH_IMPL(expr, percentage, backend)     \
@@ -1600,7 +1681,7 @@
 #endif
 
 #undef until
-#define until(expr) while(bool(!(expr)))
+#define until(expr) while (!bool((expr)))
 
 #undef likely_until
 #define likely_until(expr) while LIKELY_BRANCH_IMPL(!(expr))
@@ -1613,8 +1694,8 @@
 
 #undef unless
 #undef else_unless
-#define unless(expr) if(bool(!(expr)))
-#define else_unless(expr) else if(bool(!(expr)))
+#define unless(expr) if (!bool((expr)))
+#define else_unless(expr) else if (!bool((expr)))
 
 #undef likely_unless
 #undef likely_else_unless
@@ -1782,6 +1863,7 @@ static_assert(FLOAT_EQ(double, 0.5, 0.5, 0.0001));
 static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 
 #undef ATTRIBUTE_COLD
+#undef symbol_cold
 #if SUPDEF_COMPILER == 1
     #define ATTRIBUTE_COLD [[__gnu__::__cold__]]
 #elif SUPDEF_COMPILER == 2 // Clang
@@ -1789,8 +1871,10 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 #else
     #define ATTRIBUTE_COLD
 #endif
+#define symbol_cold ATTRIBUTE_COLD
 
 #undef ATTRIBUTE_HOT
+#undef symbol_hot
 #if SUPDEF_COMPILER == 1
     #define ATTRIBUTE_HOT [[__gnu__::__hot__]]
 #elif SUPDEF_COMPILER == 2 // Clang
@@ -1798,6 +1882,231 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 #else
     #define ATTRIBUTE_HOT ATTRIBUTE_USED
 #endif
+#define symbol_hot ATTRIBUTE_HOT
+
+#undef ATTRIBUTE_USED
+#undef symbol_keep
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_USED [[__gnu__::__used__]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_USED [[clang::used]]
+#else
+    #define ATTRIBUTE_USED
+#endif
+#define symbol_keep ATTRIBUTE_USED
+
+#undef ATTRIBUTE_UNUSED
+#undef symbol_unused
+#ifdef __has_cpp_attribute
+    #ifdef maybe_unused
+        #error "maybe_unused shouldn't be defined"
+    #endif
+    #if __has_cpp_attribute(maybe_unused)
+        #define ATTRIBUTE_UNUSED [[maybe_unused]]
+    #endif
+#endif
+#ifndef ATTRIBUTE_UNUSED
+    #if SUPDEF_COMPILER == 1
+        #define ATTRIBUTE_UNUSED [[__gnu__::__unused__]]
+    #elif SUPDEF_COMPILER == 2 // Clang
+        #define ATTRIBUTE_UNUSED [[clang::unused]]
+    #else
+        #define ATTRIBUTE_UNUSED
+    #endif
+#endif
+#define symbol_unused ATTRIBUTE_UNUSED
+
+#undef ATTRIBUTE_FALLTHROUGH
+#undef case_fallthrough
+#ifdef __has_cpp_attribute
+    #ifdef fallthrough
+        #error "fallthrough shouldn't be defined"
+    #endif
+    #if __has_cpp_attribute(fallthrough)
+        #define ATTRIBUTE_FALLTHROUGH [[fallthrough]]
+    #endif
+#endif
+#ifndef ATTRIBUTE_FALLTHROUGH
+    #if SUPDEF_COMPILER == 1
+        #define ATTRIBUTE_FALLTHROUGH [[__gnu__::__fallthrough__]]
+    #elif SUPDEF_COMPILER == 2 // Clang
+        #define ATTRIBUTE_FALLTHROUGH [[clang::fallthrough]]
+    #else
+        #define ATTRIBUTE_FALLTHROUGH
+    #endif
+#endif
+#define case_fallthrough ATTRIBUTE_FALLTHROUGH
+
+#undef ATTRIBUTE_NODISCARD
+#undef warn_unused_result
+#ifdef __has_cpp_attribute
+    #ifdef nodiscard
+        #error "nodiscard shouldn't be defined"
+    #endif
+    #if __has_cpp_attribute(nodiscard)
+        #define ATTRIBUTE_NODISCARD(...) [[nodiscard __VA_OPT__((__VA_ARGS__))]]
+    #endif
+#endif
+#ifndef ATTRIBUTE_NODISCARD
+    #if SUPDEF_COMPILER == 1
+        #define ATTRIBUTE_NODISCARD(...) [[__gnu__::__warn_unused_result__]]
+    #elif SUPDEF_COMPILER == 2 // Clang
+        #define ATTRIBUTE_NODISCARD(...) [[clang::__warn_unused_result__]]
+    #else
+        #define ATTRIBUTE_NODISCARD(...)
+    #endif
+#endif
+#define warn_unused_result(...) ATTRIBUTE_NODISCARD(__VA_ARGS__)
+
+#undef ATTRIBUTE_NO_UNIQUE_ADDRESS
+#undef optimize_space
+#ifdef __has_cpp_attribute
+    #ifdef no_unique_address
+        #error "no_unique_address shouldn't be defined"
+    #endif
+    #if __has_cpp_attribute(no_unique_address)
+        #define ATTRIBUTE_NO_UNIQUE_ADDRESS [[no_unique_address]]
+    #endif
+#endif
+#ifndef ATTRIBUTE_NO_UNIQUE_ADDRESS
+    #if SUPDEF_COMPILER == 1
+        #define ATTRIBUTE_NO_UNIQUE_ADDRESS
+    #elif SUPDEF_COMPILER == 2 // Clang
+        #define ATTRIBUTE_NO_UNIQUE_ADDRESS
+    #else
+        #define ATTRIBUTE_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+    #endif
+#endif
+#define optimize_space ATTRIBUTE_NO_UNIQUE_ADDRESS
+
+#undef ATTRIBUTE_MAY_ALIAS
+#undef aliasing_type
+#undef declare_aliasing_type
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_MAY_ALIAS [[__gnu__::__may_alias__]]
+#elif SUPDEF_COMPILER == 2 && defined(__has_attribute)
+    #if __has_attribute(may_alias)
+        #define ATTRIBUTE_MAY_ALIAS [[clang::may_alias]]
+    #else
+        #define ATTRIBUTE_MAY_ALIAS
+    #endif
+#else
+    #define ATTRIBUTE_MAY_ALIAS
+#endif
+#define aliasing_type(type) PP_CAT(aliasing_, type)
+#define declare_aliasing_type(type, ...) typedef type ATTRIBUTE_MAY_ALIAS PP_IF(ISEMPTY(__VA_ARGS__))(aliasing_type(type))(__VA_ARGS__)
+
+#undef ATTRIBUTE_EXPECTED_THROW
+#undef should_throw
+#if SUPDEF_COMPILER == 1 && defined(__has_attribute)
+    #if __has_attribute(expected_throw)
+        #define ATTRIBUTE_EXPECTED_THROW [[__gnu__::__expected_throw__]]
+    #else
+        #define ATTRIBUTE_EXPECTED_THROW
+    #endif
+#elif SUPDEF_COMPILER == 2 && defined(__has_attribute)
+    #if __has_attribute(expected_throw)
+        #define ATTRIBUTE_EXPECTED_THROW [[clang::expected_throw]]
+    #else
+        #define ATTRIBUTE_EXPECTED_THROW
+    #endif
+#else
+    #define ATTRIBUTE_EXPECTED_THROW
+#endif
+#define should_throw ATTRIBUTE_EXPECTED_THROW
+
+#undef ATTRIBUTE_FLATTEN
+#undef flatten
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_FLATTEN [[__gnu__::__flatten__]]
+#elif SUPDEF_COMPILER == 2 && defined(__has_attribute)
+    #if __has_attribute(flatten)
+        #define ATTRIBUTE_FLATTEN [[clang::flatten]]
+    #else
+        #define ATTRIBUTE_FLATTEN
+    #endif
+#else
+    #define ATTRIBUTE_FLATTEN
+#endif
+#define flatten ATTRIBUTE_FLATTEN
+
+#undef ATTRIBUTE_NORETURN
+#undef no_return
+#ifdef __has_cpp_attribute
+    #ifdef noreturn
+        #error "noreturn shouldn't be defined"
+    #endif
+    #if __has_cpp_attribute(noreturn)
+        #define ATTRIBUTE_NORETURN [[noreturn]]
+    #endif
+#endif
+#ifndef ATTRIBUTE_NORETURN
+    #if SUPDEF_COMPILER == 1
+        #define ATTRIBUTE_NORETURN [[__gnu__::__noreturn__]]
+    #elif SUPDEF_COMPILER == 2 // Clang
+        #define ATTRIBUTE_NORETURN [[clang::noreturn]]
+    #else
+        #define ATTRIBUTE_NORETURN __declspec(noreturn)
+    #endif
+#endif
+#define no_return ATTRIBUTE_NORETURN
+
+#undef ATTRIBUTE_NOINLINE
+#undef no_inline
+#ifdef __has_cpp_attribute
+    #ifdef noinline
+        #error "noinline shouldn't be defined"
+    #endif
+    #if __has_cpp_attribute(noinline)
+        #define ATTRIBUTE_NOINLINE [[noinline]]
+    #endif
+#endif
+#ifndef ATTRIBUTE_NOINLINE
+    #if SUPDEF_COMPILER == 1
+        #define ATTRIBUTE_NOINLINE [[__gnu__::__noinline__]]
+    #elif SUPDEF_COMPILER == 2 // Clang
+        #define ATTRIBUTE_NOINLINE [[clang::noinline]]
+    #else
+        #define ATTRIBUTE_NOINLINE __declspec(noinline)
+    #endif
+#endif
+#define no_inline ATTRIBUTE_NOINLINE
+
+#undef ATTRIBUTE_ALWAYS_INLINE
+#undef always_inline
+#ifdef __has_cpp_attribute
+    #ifdef always_inline
+        #error "always_inline shouldn't be defined"
+    #endif
+    #if __has_cpp_attribute(always_inline)
+        #define ATTRIBUTE_ALWAYS_INLINE [[always_inline]]
+    #endif
+#endif
+#ifndef ATTRIBUTE_ALWAYS_INLINE
+    #if SUPDEF_COMPILER == 1
+        #define ATTRIBUTE_ALWAYS_INLINE [[__gnu__::__always_inline__]]
+    #elif SUPDEF_COMPILER == 2 // Clang
+        #define ATTRIBUTE_ALWAYS_INLINE [[clang::always_inline]]
+    #else
+        #define ATTRIBUTE_ALWAYS_INLINE __forceinline
+    #endif
+#endif
+#define always_inline ATTRIBUTE_ALWAYS_INLINE
+
+#undef ATTRIBUTE_CONST
+#undef ATTRIBUTE_PURE
+#undef no_side_effects
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_CONST [[__gnu__::__const__]]
+    #define ATTRIBUTE_PURE  [[__gnu__::__pure__]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_CONST [[clang::const]]
+    #define ATTRIBUTE_PURE  [[clang::pure]]
+#else
+    #define ATTRIBUTE_CONST
+    #define ATTRIBUTE_PURE
+#endif
+#define no_side_effects(lvl) PP_SWITCH(lvl, (CHAOS_PP_EMPTY()), (0, (CHAOS_PP_EMPTY())), (1, (ATTRIBUTE_CONST)), (2, (ATTRIBUTE_PURE)))
 
 #if 0
 #include <boost/parameter.hpp>
@@ -1927,6 +2236,8 @@ static_assert(COMPTIME_FLOAT_EQ(double, COMPTIME_SCALE(double, 0.5,  (0, 1),   (
 
 /* COMPTIME_SCALE(double, 50,   (0, 100), (0, 1), CHAOS) */
 
+/* probably_if(blah, 23) */
+/* probably_if(blah, 23, CLASSIC) */
 /* probably_if(blah, 23, CHAOS) */
 
 

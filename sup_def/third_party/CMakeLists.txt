@@ -13,6 +13,7 @@ add_library(sdthirdparty INTERFACE)
 add_dependencies(sdthirdparty build_gnulib_modules)
 target_link_libraries(sdthirdparty INTERFACE sdthirdparty_empty_macro sdthirdparty_map)
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/")
+target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/chaos-pp/")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../../")
 

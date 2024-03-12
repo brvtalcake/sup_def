@@ -32,6 +32,11 @@ namespace SupDef
 {
     namespace Util
     {
+        symbol_unused
+        symbol_keep
+        static InitDeinit _init_deinit;
+
+        warn_unused_result()
         std::string demangle(std::string s)
         {
             int status = -1;
@@ -246,7 +251,7 @@ namespace SupDef
                     {
                         if (lock_counts[id] == 0)
                         {
-                            unlikely_if (!mutex.try_lock())
+                            unless (mutex.try_lock())
                                 return false;
                             current_mode.store(
                                 std::to_underlying(LockingMode::Exclusive),
@@ -256,7 +261,8 @@ namespace SupDef
                         probably_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Shared),
-                            20 /* % probability */
+                            20 /* % probability */,
+                            CHAOS /* Backend used internally by probably_* macros */
                         )
                             return false;
                         ++lock_counts[id];
@@ -270,7 +276,7 @@ namespace SupDef
                     {
                         if (lock_counts[std::move(id)] == 0)
                         {
-                            unlikely_if (!mutex.try_lock())
+                            unless (mutex.try_lock())
                                 return false;
                             current_mode.store(
                                 std::to_underlying(LockingMode::Exclusive),
@@ -280,7 +286,8 @@ namespace SupDef
                         probably_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Shared),
-                            20 /* % probability */
+                            20 /* % probability */,
+                            CHAOS /* Backend used internally by probably_* macros */
                         )
                             return false;
                         ++lock_counts[std::move(id)];
@@ -296,7 +303,11 @@ namespace SupDef
                         unlikely_if (lock_counts[id] == 0)
                             throw InternalError("Attempted to unlock a mutex that is not locked");
                         --lock_counts[id];
-                        probably_if (lock_counts[id] == 0, 75 /* % probability */)
+                        probably_if (
+                            lock_counts[id] == 0,
+                            75 /* % probability */,
+                            CHAOS /* Backend used internally by probably_* macros */
+                        )
                         {
                             mutex.unlock();
                             current_mode.store(
@@ -314,7 +325,11 @@ namespace SupDef
                         unlikely_if (lock_counts[std::move(id)] == 0)
                             throw InternalError("Attempted to unlock a mutex that is not locked");
                         --lock_counts[std::move(id)];
-                        probably_if (lock_counts[std::move(id)] == 0, 75 /* % probability */)
+                        probably_if (
+                            lock_counts[std::move(id)] == 0,
+                            75 /* % probability */,
+                            CHAOS /* Backend used internally by probably_* macros */
+                        )
                         {
                             mutex.unlock();
                             current_mode.store(
@@ -395,7 +410,7 @@ namespace SupDef
                     {
                         if (lock_counts[id] == 0)
                         {
-                            unlikely_if (!mutex.try_lock_shared())
+                            unless (mutex.try_lock_shared())
                                 return false;
                             current_mode.store(
                                 std::to_underlying(LockingMode::Shared),
@@ -405,7 +420,8 @@ namespace SupDef
                         probably_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Exclusive),
-                            20 /* % probability */
+                            20 /* % probability */,
+                            CHAOS /* Backend used internally by probably_* macros */
                         )
                             return false;
                         ++lock_counts[id];
@@ -419,7 +435,7 @@ namespace SupDef
                     {
                         if (lock_counts[std::move(id)] == 0)
                         {
-                            unlikely_if (!mutex.try_lock_shared())
+                            unless (mutex.try_lock_shared())
                                 return false;
                             current_mode.store(
                                 std::to_underlying(LockingMode::Shared),
@@ -429,7 +445,8 @@ namespace SupDef
                         probably_else_if (
                             current_mode.load(std::memory_order::acquire) ==
                             std::to_underlying(LockingMode::Exclusive),
-                            20 /* % probability */
+                            20 /* % probability */,
+                            CHAOS /* Backend used internally by probably_* macros */
                         )
                             return false;
                         ++lock_counts[std::move(id)];
@@ -445,7 +462,11 @@ namespace SupDef
                         unlikely_if (lock_counts[id] == 0)
                             throw InternalError("Attempted to unlock a mutex that is not locked");
                         --lock_counts[id];
-                        probably_if (lock_counts[id] == 0, 75 /* % probability */)
+                        probably_if (
+                            lock_counts[id] == 0,
+                            75 /* % probability */,
+                            CHAOS /* Backend used internally by probably_* macros */
+                        )
                         {
                             mutex.unlock_shared();
                             current_mode.store(
@@ -463,7 +484,11 @@ namespace SupDef
                         unlikely_if (lock_counts[std::move(id)] == 0)
                             throw InternalError("Attempted to unlock a mutex that is not locked");
                         --lock_counts[std::move(id)];
-                        probably_if (lock_counts[std::move(id)] == 0, 75 /* % probability */)
+                        probably_if (
+                            lock_counts[std::move(id)] == 0,
+                            75 /* % probability */,
+                            CHAOS /* Backend used internally by probably_* macros */
+                        )
                         {
                             mutex.unlock_shared();
                             current_mode.store(
@@ -471,6 +496,15 @@ namespace SupDef
                                 std::memory_order::release
                             );
                         }
+                    }
+
+                    bool is_thread_holding_impl(const MutexId& id)
+                    {
+                        return lock_counts[id] > 0;
+                    }
+                    bool is_thread_holding_impl(const MutexId&& id)
+                    {
+                        return lock_counts[std::move(id)] > 0;
                     }
                 }
 #if 0
@@ -539,7 +573,7 @@ namespace SupDef
                 );
                 {
                     std::unique_lock<std::mutex> lock_counts_lock(lock_counts_mtx);
-                    if (!shared_mode && is_locked_by_other_thread_impl(id))
+                    unless (shared_mode && is_locked_by_other_thread_impl(id))
                         return 
                             std::make_pair(
                                 false,
@@ -613,7 +647,7 @@ namespace SupDef
                         
                         for (const auto& id : random_ids)
                         {
-                            if (!ids.contains(id))
+                            unless (ids.contains(id))
                             {
                                 return false;
                             }

@@ -1474,7 +1474,7 @@ namespace SupDef
 
             template <typename... Args>
                 requires std::invocable<FuncType, Args...>
-            ATTRIBUTE_HOT
+            symbol_hot
             ReturnType<Args...> wrap_func(Args&&... args)
             {
                 std::mutex mtx{};
@@ -1683,12 +1683,12 @@ namespace SupDef
             std::vector< std::pair< std::jthread, MovableAtomic<bool> > > threads;
             std::unordered_map< std::jthread::id, task_queue_t > task_queues;
 
-            std::mutex threads_mtx;
-            std::shared_mutex task_queues_mtx;
+            RecursiveSharedMutex threads_mtx;
+            RecursiveSharedMutex task_queues_mtx;
 
             // In which queue is the thread waiting for a task
             std::unordered_map< std::jthread::id, std::jthread::id > waiting_locations; 
-            std::shared_mutex waiting_locations_mtx;
+            RecursiveSharedMutex waiting_locations_mtx;
 
             std::jthread* get_thread_from_id(std::jthread::id&& id);
             std::jthread* get_thread_from_id(const std::jthread::id& id);

@@ -83,6 +83,7 @@ namespace SupDef
 {
     namespace Util
     {
+        warn_unused_result()
         std::string demangle(std::string s);
 
         static inline auto exit_code(void)
@@ -3732,6 +3733,9 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                         std::shared_mutex& mutex,
                         std::atomic<std::underlying_type_t<enum LockingMode>>& current_mode
                     );
+
+                    bool is_thread_holding_impl(const MutexId& id);
+                    bool is_thread_holding_impl(const MutexId&& id);
                 }
                 
 #if 0
@@ -3823,86 +3827,120 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
     };
 #else
 
-    class RecursiveSharedMutex
+    namespace Util
     {
-        public:
-            RecursiveSharedMutex()
-                : mtx_id(::SupDef::Util::Detail::mutex_impl::gen_new_id())
-            { }
-            RecursiveSharedMutex(const RecursiveSharedMutex&) = delete;
-            RecursiveSharedMutex(RecursiveSharedMutex&&) = delete;
-            RecursiveSharedMutex& operator=(const RecursiveSharedMutex&) = delete;
-            RecursiveSharedMutex& operator=(RecursiveSharedMutex&&) = delete;
-            ~RecursiveSharedMutex()
-            {
-                ::SupDef::Util::Detail::mutex_impl::release_id(std::move(this->mtx_id));
-            }
+        STATIC_TODO(
+            "Write a test suite for `RecursiveSharedMutex`"
+        );
+        class RecursiveSharedMutex
+        {
+            public:
+                RecursiveSharedMutex()
+                    : mtx_id(::SupDef::Util::Detail::mutex_impl::gen_new_id())
+                { }
+                RecursiveSharedMutex(const RecursiveSharedMutex&) = delete;
+                RecursiveSharedMutex(RecursiveSharedMutex&&) = delete;
+                RecursiveSharedMutex& operator=(const RecursiveSharedMutex&) = delete;
+                RecursiveSharedMutex& operator=(RecursiveSharedMutex&&) = delete;
+                ~RecursiveSharedMutex()
+                {
+                    ::SupDef::Util::Detail::mutex_impl::release_id(std::move(this->mtx_id));
+                }
 
-            void lock(void) const
-            {
-                ::SupDef::Util::Detail::mutex_impl::rec_shared::lock_impl(
-                    std::move(this->mtx_id),
-                    this->mutex,
-                    this->current_mode
-                );
-            }
+                inline void lock(void) const
+                {
+                    ::SupDef::Util::Detail::mutex_impl::rec_shared::lock_impl(
+                        std::move(this->mtx_id),
+                        this->mutex,
+                        this->current_mode
+                    );
+                }
 
-            bool try_lock(void) const
-            {
-                return ::SupDef::Util::Detail::mutex_impl::rec_shared::try_lock_impl(
-                    std::move(this->mtx_id),
-                    this->mutex,
-                    this->current_mode
-                );
-            }
+                inline bool try_lock(void) const
+                {
+                    return ::SupDef::Util::Detail::mutex_impl::rec_shared::try_lock_impl(
+                        std::move(this->mtx_id),
+                        this->mutex,
+                        this->current_mode
+                    );
+                }
 
-            void unlock(void) const
-            {
-                ::SupDef::Util::Detail::mutex_impl::rec_shared::unlock_impl(
-                    std::move(this->mtx_id),
-                    this->mutex,
-                    this->current_mode
-                );
-            }
+                inline void unlock(void) const
+                {
+                    ::SupDef::Util::Detail::mutex_impl::rec_shared::unlock_impl(
+                        std::move(this->mtx_id),
+                        this->mutex,
+                        this->current_mode
+                    );
+                }
 
-            void lock_shared(void) const
-            {
-                ::SupDef::Util::Detail::mutex_impl::rec_shared::lock_shared_impl(
-                    std::move(this->mtx_id),
-                    this->mutex,
-                    this->current_mode
-                );
-            }
+                inline void lock_shared(void) const
+                {
+                    ::SupDef::Util::Detail::mutex_impl::rec_shared::lock_shared_impl(
+                        std::move(this->mtx_id),
+                        this->mutex,
+                        this->current_mode
+                    );
+                }
 
-            bool try_lock_shared(void) const
-            {
-                return ::SupDef::Util::Detail::mutex_impl::rec_shared::try_lock_shared_impl(
-                    std::move(this->mtx_id),
-                    this->mutex,
-                    this->current_mode
-                );
-            }
+                inline bool try_lock_shared(void) const
+                {
+                    return ::SupDef::Util::Detail::mutex_impl::rec_shared::try_lock_shared_impl(
+                        std::move(this->mtx_id),
+                        this->mutex,
+                        this->current_mode
+                    );
+                }
 
-            void unlock_shared(void) const
-            {
-                ::SupDef::Util::Detail::mutex_impl::rec_shared::unlock_shared_impl(
-                    std::move(this->mtx_id),
-                    this->mutex,
-                    this->current_mode
-                );
-            }
+                inline void unlock_shared(void) const
+                {
+                    ::SupDef::Util::Detail::mutex_impl::rec_shared::unlock_shared_impl(
+                        std::move(this->mtx_id),
+                        this->mutex,
+                        this->current_mode
+                    );
+                }
 
-        private:
-            using enum ::Supdef::Util::Detail::mutex_impl::rec_shared::LockingMode;
+                inline bool is_thread_holding(void) const
+                {
+                    return ::SupDef::Util::Detail::mutex_impl::rec_shared::is_thread_holding_impl(
+                        std::move(this->mtx_id)
+                    );
+                }
 
-            mutable std::atomic<std::underlying_type_t<enum LockingMode>> current_mode = ATOMIC_VAR_INIT(std::to_underlying(LockingMode::None));
-            mutable std::shared_mutex mutex;
-            const MutexId mtx_id;
-    };
+            private:
+                using LockingMode = ::SupDef::Util::Detail::mutex_impl::rec_shared::LockingMode;
+
+                mutable std::atomic<std::underlying_type_t<LockingMode>> current_mode = ATOMIC_VAR_INIT(std::to_underlying(LockingMode::None));
+                mutable std::shared_mutex mutex;
+                const MutexId mtx_id;
+        };
+    }
 
 #endif
 
     using Util::remove_whitespaces;
+    using Util::RecursiveSharedMutex;
+}
+
+namespace SupDef
+{
+    namespace Util
+    {
+        void call_constructors();
+        void call_destructors();
+        struct InitDeinit
+        {
+            InitDeinit()
+            {
+                ::SupDef::Util::call_constructors();
+            }
+            ~InitDeinit()
+            {
+                ::SupDef::Util::call_destructors();
+            }
+        };
+    }
 }
 
 template <class T, class Container>
