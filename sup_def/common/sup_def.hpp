@@ -28,6 +28,10 @@
 #ifndef SUP_DEF_HPP
 #define SUP_DEF_HPP
 
+STATIC_TODO(
+    "Verify correctness of all std::forward's in the code"
+);
+
 // TODO: Use MAP_LIST macro instead of BOOST_PP_SEQ_FOR_EACH if possible
 // TODO: Move class declarations to different headers as with a one-class-per-header organization
 // TODO: Create a Util namespace and move all the utility / helper functions there
@@ -951,6 +955,7 @@ namespace SupDef
         return result;
     }
 
+#if 0
     template <typename T, typename E, typename FuncType, typename... Args>
     concept OrElseInvocable = std::conditional_t<
                                     std::bool_constant<sizeof...(Args) == 0>::value,
@@ -976,6 +981,7 @@ namespace SupDef
                                     std::bool_constant<std::is_nothrow_invocable<FuncType, E, Args...>::value>
                                 >::value;
 
+    STATIC_TODO("If possible, turn all `Result` variables in supdef into C++23 `std::expected` variables");
     template <typename T, typename E>
         requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
     class Result : public std::variant<T, E>
@@ -1109,6 +1115,76 @@ namespace SupDef
                 return Result(std::get<E>(*this));
             }
     };
+#else
+    template <typename T, typename E>
+        requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
+    class Result : public std::expected<
+                        std::variant<T, nullptr_t>, E
+                    >
+    {
+        private:
+            using Base = std::expected<std::variant<T, nullptr_t>, E>;
+        public:
+            using Base::Base;
+            using Base::operator=;
+
+            inline bool is_null(void) const noexcept
+            {
+                return this->has_value() && std::holds_alternative<nullptr_t>(this->value());
+            }
+
+            inline bool is_ok(void) const noexcept
+            {
+                return this->has_value() && std::holds_alternative<T>(this->value());
+            }
+
+            inline bool is_err(void) const noexcept
+            {
+                return !this->has_value();
+            }
+    };
+
+    template <typename T, typename E>
+        requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
+    always_inline
+    inline Result<T, E> make_null_result(void)
+    {
+        return Result<T, E>(std::nullptr_t());
+    }
+
+    template <typename T, typename E>
+        requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
+    always_inline
+    inline Result<T, E> make_ok_result(const T& value)
+    {
+        return Result<T, E>(value);
+    }
+
+    template <typename T, typename E>
+        requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
+    always_inline
+    inline Result<T, E> make_ok_result(T&& value)
+    {
+        return Result<T, E>(std::move(value));
+    }
+
+    template <typename T, typename E>
+        requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
+    always_inline
+    inline Result<T, E> make_err_result(const E& error)
+    {
+        return Result<T, E>(std::unexpected(error));
+    }
+
+    template <typename T, typename E>
+        requires SPECIALIZATION_OF(E, Error) || SPECIALIZATION_OF(E, Exception)
+    always_inline
+    inline Result<T, E> make_err_result(E&& error)
+    {
+        return Result<T, E>(std::unexpected(std::move(error)));
+    }
+
+#endif
 
     class ErrorPrinterBase
     {
@@ -1116,6 +1192,9 @@ namespace SupDef
             static std::mutex mtx;
     };
 
+    STATIC_TODO(
+        "Rewrite ErrorPrinter implementation"
+    );
     template <typename E>
         requires SPECIALIZATION_OF(E, Error)         || SPECIALIZATION_OF(E, Exception)
               || std::same_as<E, InternalError>      || std::same_as<E, InternalException>
@@ -1171,9 +1250,18 @@ namespace SupDef
         #endif
     }
 
+    STATIC_TODO(
+        "Rewrite all `split_string` functions"
+    );
     template <typename T, typename U>
         requires CharacterType<T> && (std::convertible_to<U, T> || CharacterType<U>) && (!std::same_as<T, U>)
-    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T>&& str, const U& delimiter) noexcept(std::is_nothrow_convertible_v<U, T> && !CharacterType<U>)
+    inline
+    std::vector<std::basic_string<T>>
+        split_string(
+            const std::basic_string<T>& str,
+            const U& delimiter
+        )
+        noexcept(std::is_nothrow_convertible_v<U, T> && !CharacterType<U>)
     {
         std::vector<std::basic_string<T>> result{};
         std::basic_stringstream<T> ss(str);
@@ -1191,7 +1279,7 @@ namespace SupDef
                     if (converted_delim_str.length() == 1)
                         converted_delim = converted_delim_str.at(0);
                     else
-                        return split_string<T, U>(std::move(str), converted_delim_str);
+                        return split_string<T, U>(str, converted_delim_str);
                 }
                 else
                     converted_delim = static_cast<T>(delimiter);
@@ -1199,9 +1287,9 @@ namespace SupDef
             catch (const std::exception& e)
             {
 #if defined(__GNUC__)
-                throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to convert delimiter to string character type in function " + std::string(__PRETTY_FUNCTION__) + " (caught exception: " + e.what() + ")");
+                throw InternalError("Failed to convert delimiter to string character type in function " + std::string(__PRETTY_FUNCTION__) + " (caught exception: " + e.what() + ")");
 #else
-                throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to convert delimiter to string character type in function " + std::string(__func__) + " (caught exception: " + e.what() + ")");
+                throw InternalError("Failed to convert delimiter to string character type in function " + std::string(__func__) + " (caught exception: " + e.what() + ")");
 #endif
                 UNREACHABLE();
                 return result;
@@ -1215,7 +1303,7 @@ namespace SupDef
 
     template <typename T, typename U>
         requires CharacterType<T> && std::same_as<T, U>
-    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T>&& str, const U& delimiter) noexcept
+    inline std::vector<std::basic_string<T>> split_string(const std::basic_string<T>& str, const U& delimiter) noexcept
     {
         std::vector<std::basic_string<T>> result{};
         std::basic_stringstream<T> ss(str);
@@ -1227,33 +1315,41 @@ namespace SupDef
 
     template <typename T, typename U>
         requires CharacterType<T> && CharacterType<U>
-    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T>&& str, const std::basic_string<U>& delim)
-    {
-        if (CONVERT(T, delim).length() == 1)
-            return split_string<T, U>(std::move(str), delim.at(0));
-        std::vector<std::basic_string<T>> result{};
-        std::remove_cv_t<decltype(std::basic_string<T>::npos)> pos = 0, prev_pos = 0;
-        while ((pos = std::move(str).find(delim, prev_pos)) != std::basic_string<T>::npos)
-        {
-            result.push_back(std::move(str).substr(prev_pos, pos - prev_pos));
-            prev_pos = pos + delim.length();
-        }
-        result.push_back(std::move(str).substr(prev_pos, pos - prev_pos));
-        return result;
-    }
-
-    template <typename T, typename U>
-        requires CharacterType<T> && CharacterType<U>
     inline std::vector<std::basic_string<T>> split_string(const std::basic_string<T>& str, const std::basic_string<U>& delim)
     {
-        return split_string<T, U>(std::basic_string<T>(str), delim);
-    }
+        if (CONVERT(T, delim).length() == 1)
+            return split_string<T, U>(str, delim.at(0));
 
-    template <typename T, typename U>
-        requires CharacterType<T> && CharacterType<U>
-    inline std::vector<std::basic_string<T>> split_string(std::basic_string<T>&& str, std::basic_string<U>&& delim)
-    {
-        return split_string<T, U>(std::move(str), delim);
+        std::vector<std::basic_string<T>> result{};
+        std::basic_string<T> converted_delim;
+        if constexpr (std::same_as<T, U>)
+            converted_delim = delim;
+        else
+        {
+            try
+            {
+                converted_delim = CONVERT(T, delim);
+            }
+            catch (const std::exception& e)
+            {
+#if defined(__GNUC__)
+                throw InternalError("Failed to convert delimiter to string character type in function " + std::string(__PRETTY_FUNCTION__) + " (caught exception: " + e.what() + ")");
+#else
+                throw InternalError("Failed to convert delimiter to string character type in function " + std::string(__func__) + " (caught exception: " + e.what() + ")");
+#endif
+                UNREACHABLE();
+            }
+        }
+        std::remove_cv_t<decltype(std::basic_string<T>::npos)> pos = 0, prev_pos = 0;
+
+        while ((pos = str.find(converted_delim, prev_pos)) != std::basic_string<T>::npos)
+        {
+            result.push_back(str.substr(prev_pos, pos - prev_pos));
+            prev_pos = pos + converted_delim.length();
+        }
+        result.push_back(str.substr(prev_pos, pos - prev_pos));
+
+        return result;
     }
     
     /**
@@ -1269,6 +1365,10 @@ namespace SupDef
 
     template <typename T>
     concept StdSuspend = std::same_as<std::suspend_always, T> || std::same_as<std::suspend_never, T>;
+
+    template <typename YieldType, typename ReturnType = YieldType, typename CoroPolicies = void, typename... CoroArgs>
+    class Coroutine
+    {};
 
     /**
      * @brief This class is meant to be the type of parsing coroutines so they can suspend themselves while indicating potential errors to the "master" function calling them.
@@ -1297,7 +1397,7 @@ namespace SupDef
                     [[noreturn]]
                     static inline Coro<T> get_return_object_on_allocation_failure()
                     {
-                        throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Failed to allocate memory for return object of coroutine");
+                        throw InternalError("Failed to allocate memory for return object of coroutine");
                     }
                     constexpr inline std::suspend_always initial_suspend() noexcept { return {}; }
                     constexpr inline std::suspend_always final_suspend() noexcept { return {}; }
@@ -1358,6 +1458,7 @@ namespace SupDef
             {
                 public:
                     using iterator_category = std::input_iterator_tag;
+                    using iterator_concept = std::input_iterator_tag;
                     using value_type = T;
                     using difference_type = std::ptrdiff_t;
                     using pointer = T*;
@@ -1521,15 +1622,108 @@ namespace SupDef
             TimedTask& operator=(const TimedTask&) = default;
             TimedTask& operator=(TimedTask&&) = default;
 
-            ATTRIBUTE_COLD
+            symbol_cold
             inline auto get_duration(void) const noexcept { return this->duration; }
 
-            ATTRIBUTE_COLD
+            symbol_cold
             inline auto get_func(void) const noexcept { return this->func; }
 
             template <typename... Args>
                 requires std::invocable<FuncType, Args...>
-            ATTRIBUTE_HOT
+            symbol_hot
+            inline ReturnType<Args...> operator()(Args&&... args)
+            {
+                return this->wrap_func(std::forward<Args>(args)...);
+            }
+    };
+
+    template <typename Floating, typename FuncType>
+        requires std::floating_point<std::remove_cvref_t<Floating>> && std::negation_v<std::is_reference<Floating>>
+    struct TimedTask<Floating, FuncType> : public TimedTaskBase
+    {
+        private:
+            static constexpr decltype(auto) to_add = std::chrono::microseconds(100);
+            using DurationType = decltype(
+                                    std::declval<std::chrono::duration<Floating, std::micro>>()
+                                  + std::declval<decltype(to_add)>()
+                                );
+            template <typename... Args>
+            using ReturnType = std::invoke_result_t<FuncType, Args...>;
+
+            DurationType duration;
+            FuncType func;
+
+            template <typename... Args>
+                requires std::invocable<FuncType, Args...>
+            symbol_hot
+            ReturnType<Args...> wrap_func(Args&&... args)
+            {
+                std::mutex mtx{};
+                std::condition_variable cv{};
+                bool done = false;
+                ReturnType<Args...> result;
+
+                std::thread t([&mtx, &cv, &done, &result, this](auto&&... args) -> void
+                {
+                    result = std::invoke(this->func, std::forward<Args>(args)...);
+
+                    std::unique_lock<std::mutex> lock(mtx);
+                    done = true;
+                    lock.unlock();
+                    
+                    cv.notify_one();
+                }, std::forward<Args>(args)...);
+                
+                {
+                    std::unique_lock<std::mutex> lock(mtx);
+                    if (!cv.wait_for(lock, this->duration, [&done]{ return done; }))
+                    {
+                        hard_assert(!done);
+                        t.detach();
+                        throw TimedOut();
+                        UNREACHABLE();
+                    }
+                }
+                
+                t.join();
+                return result;
+            }
+
+            symbol_unused
+            static consteval intmax_t get_max_10th_power(void) noexcept
+            {
+                intmax_t max = 1;
+                for (intmax_t i = 0; i < std::numeric_limits<intmax_t>::digits10; ++i)
+                    max *= ::SupDef::Util::saturated_mul<intmax_t>(max, 10);
+                hard_assert(max != std::numeric_limits<intmax_t>::max());
+                hard_assert(::SupDef::Util::saturated_mul<intmax_t>(max, 10) == std::numeric_limits<intmax_t>::max());
+                return max;
+            }
+        public:
+            /*
+             * In all constructors, treat the duration as microseconds
+             */
+            TimedTask(Floating&& duration, FuncType&& func)
+                : duration(std::chrono::duration<Floating, std::micro>(std::forward<Floating>(duration)) + to_add),
+                  func(std::forward<FuncType>(func))
+            {}
+
+            TimedTask(const TimedTask&) = default;
+            TimedTask(TimedTask&&) = default;
+            ~TimedTask() = default;
+
+            TimedTask& operator=(const TimedTask&) = default;
+            TimedTask& operator=(TimedTask&&) = default;
+
+            symbol_cold
+            inline auto get_duration(void) const noexcept { return this->duration; }
+
+            symbol_cold
+            inline auto get_func(void) const noexcept { return this->func; }
+
+            template <typename... Args>
+                requires std::invocable<FuncType, Args...>
+            symbol_hot
             inline ReturnType<Args...> operator()(Args&&... args)
             {
                 return this->wrap_func(std::forward<Args>(args)...);
@@ -1540,98 +1734,477 @@ namespace SupDef
     template <typename Rep, typename Period, typename FuncType>
     TimedTask(std::chrono::duration<Rep, Period>&&, FuncType&&) -> TimedTask<std::chrono::duration<Rep, Period>, FuncType>;
 
+    namespace ThreadPoolUtil
+    {
+        template <typename TP>
+        class ThreadPoolAccessor
+        {
+            private:
+                TP* const tp;
+            public:
+                ThreadPoolAccessor(TP* const tp) : tp(tp) {}
+                ThreadPoolAccessor(const ThreadPoolAccessor&) = delete;
+                ThreadPoolAccessor(ThreadPoolAccessor&&) = delete;
+                ~ThreadPoolAccessor() = default;
+
+                ThreadPoolAccessor& operator=(const ThreadPoolAccessor&) = delete;
+                ThreadPoolAccessor& operator=(ThreadPoolAccessor&&) = delete;
+
+                template <uint8_t AccessType, typename T>
+                    requires std::negation_v<std::is_reference<T>>
+                inline void get_access(const T& resource) const
+                {
+                    this->tp->template get_access<AccessType>(resource);
+                }
+
+                template <uint8_t AccessType, typename T>
+                    requires std::negation_v<std::is_reference<T>>
+                inline bool try_get_access(const T& resource) const
+                {
+                    return this->tp->template try_get_access<AccessType>(resource);
+                }
+
+                template <uint8_t AccessType, typename T>
+                    requires std::negation_v<std::is_reference<T>>
+                inline void release_access(const T& resource) const
+                {
+                    this->tp->template release_access<AccessType>(resource);
+                }
+        };
+        template <typename TP>
+        ThreadPoolAccessor(TP*) -> ThreadPoolAccessor<TP>;
+
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        class LockGuard_READ
+        {
+            private:
+                static constexpr uint8_t AccessType = ::SupDef::Util::RecursiveSharedMutex::READ;
+            public:
+                LockGuard_READ(TP* const tp, const T& resource)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {
+                    this->lock();
+                }
+                LockGuard_READ(TP* const tp, const T& resource, std::defer_lock_t)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {}
+                LockGuard_READ(TP* const tp, const T& resource, std::try_to_lock_t)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {
+                    this->locked = this->try_lock();
+                }
+                LockGuard_READ(TP* const tp, const T& resource, std::adopt_lock_t)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {
+                    this->locked = true;
+                }
+                        
+                LockGuard_READ(const LockGuard_READ&) = delete;
+                LockGuard_READ(LockGuard_READ&&) = delete;
+
+                ~LockGuard_READ()
+                {
+                    this->unlock();
+                }
+
+                inline void lock(void) const
+                {
+                    unlikely_if (this->locked)
+                        return;
+                    ThreadPoolAccessor(tp).template get_access<AccessType>(this->resource);
+                    this->locked = true;
+                }
+
+                inline bool try_lock(void) const
+                {
+                    unlikely_if (this->locked)
+                        return true;
+                    if (ThreadPoolAccessor(tp).template try_get_access<AccessType>(this->resource))
+                    {
+                        this->locked = true;
+                        return true;
+                    }
+                    return false;
+                }
+
+                inline void unlock(void) const
+                {
+                    unlikely_unless (this->locked)
+                        return;
+                    ThreadPoolAccessor(tp).template release_access<AccessType>(this->resource);
+                    this->locked = false;
+                }
+            private:
+                mutable bool locked;
+                TP* const tp;
+                const T* const resource;
+        };
+
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        class LockGuard_WRITE
+        {
+            private:
+                static constexpr uint8_t AccessType = ::SupDef::Util::RecursiveSharedMutex::WRITE;
+            public:
+                LockGuard_WRITE(TP* const tp, const T& resource)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {
+                    this->lock();
+                }
+                LockGuard_WRITE(TP* const tp, const T& resource, std::defer_lock_t)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {}
+                LockGuard_WRITE(TP* const tp, const T& resource, std::try_to_lock_t)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {
+                    this->locked = this->try_lock();
+                }
+                LockGuard_WRITE(TP* const tp, const T& resource, std::adopt_lock_t)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {
+                    this->locked = true;
+                }
+                        
+                LockGuard_WRITE(const LockGuard_WRITE&) = delete;
+                LockGuard_WRITE(LockGuard_WRITE&&) = delete;
+
+                ~LockGuard_WRITE()
+                {
+                    this->unlock();
+                }
+
+                inline void lock(void) const
+                {
+                    unlikely_if (this->locked)
+                        return;
+                    ThreadPoolAccessor(tp).template get_access<AccessType>(this->resource);
+                    this->locked = true;
+                }
+
+                inline bool try_lock(void) const
+                {
+                    unlikely_if (this->locked)
+                        return true;
+                    if (ThreadPoolAccessor(tp).template try_get_access<AccessType>(this->resource))
+                    {
+                        this->locked = true;
+                        return true;
+                    }
+                    return false;
+                }
+
+                inline void unlock(void) const
+                {
+                    unlikely_unless (this->locked)
+                        return;
+                    ThreadPoolAccessor(tp).template release_access<AccessType>(this->resource);
+                    this->locked = false;
+                }
+            private:
+                mutable bool locked;
+                TP* const tp;
+                const T* const resource;
+        };
+
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        class LockGuard_READ_WRITE
+        {
+            private:
+                static constexpr uint8_t AccessType = ::SupDef::Util::RecursiveSharedMutex::READ_WRITE;
+            public:
+                LockGuard_READ_WRITE(TP* const tp, const T& resource)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {
+                    this->lock();
+                }
+                LockGuard_READ_WRITE(TP* const tp, const T& resource, std::defer_lock_t)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {}
+                LockGuard_READ_WRITE(TP* const tp, const T& resource, std::try_to_lock_t)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {
+                    this->locked = this->try_lock();
+                }
+                LockGuard_READ_WRITE(TP* const tp, const T& resource, std::adopt_lock_t)
+                    : locked(false), tp(tp), resource(std::addressof(resource))
+                {
+                    this->locked = true;
+                }
+                        
+                LockGuard_READ_WRITE(const LockGuard_READ_WRITE&) = delete;
+                LockGuard_READ_WRITE(LockGuard_READ_WRITE&&) = delete;
+
+                ~LockGuard_READ_WRITE()
+                {
+                    this->unlock();
+                }
+
+                inline void lock(void) const
+                {
+                    unlikely_if (this->locked)
+                        return;
+                    ThreadPoolAccessor(tp).template get_access<AccessType>(this->resource);
+                    this->locked = true;
+                }
+
+                inline bool try_lock(void) const
+                {
+                    unlikely_if (this->locked)
+                        return true;
+                    if (ThreadPoolAccessor(tp).template try_get_access<AccessType>(this->resource))
+                    {
+                        this->locked = true;
+                        return true;
+                    }
+                    return false;
+                }
+
+                inline void unlock(void) const
+                {
+                    unlikely_unless (this->locked)
+                        return;
+                    ThreadPoolAccessor(tp).template release_access<AccessType>(this->resource);
+                    this->locked = false;
+                }
+            private:
+                mutable bool locked;
+                TP* const tp;
+                const T* const resource;
+        };
+
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_READ(TP*, const T&) -> LockGuard_READ<TP, T>;
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_READ(TP*, const T&, std::defer_lock_t) -> LockGuard_READ<TP, T>;
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_READ(TP*, const T&, std::try_to_lock_t) -> LockGuard_READ<TP, T>;
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_READ(TP*, const T&, std::adopt_lock_t) -> LockGuard_READ<TP, T>;
+
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_WRITE(TP*, const T&) -> LockGuard_WRITE<TP, T>;
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_WRITE(TP*, const T&, std::defer_lock_t) -> LockGuard_WRITE<TP, T>;
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_WRITE(TP*, const T&, std::try_to_lock_t) -> LockGuard_WRITE<TP, T>;
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_WRITE(TP*, const T&, std::adopt_lock_t) -> LockGuard_WRITE<TP, T>;
+
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_READ_WRITE(TP*, const T&) -> LockGuard_READ_WRITE<TP, T>;
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_READ_WRITE(TP*, const T&, std::defer_lock_t) -> LockGuard_READ_WRITE<TP, T>;
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_READ_WRITE(TP*, const T&, std::try_to_lock_t) -> LockGuard_READ_WRITE<TP, T>;
+        template <typename TP, typename T>
+            requires std::negation_v<std::is_reference<T>>
+        LockGuard_READ_WRITE(TP*, const T&, std::adopt_lock_t) -> LockGuard_READ_WRITE<TP, T>;
+
+
+#undef LOCK_GUARD
+#define LOCK_GUARD(LOCK_TYPE) PP_CAT(::SupDef::ThreadPoolUtil::LockGuard_, LOCK_TYPE)
+
+    }
+
     template <typename ThreadPoolType, typename ThreadPoolRequiredAliases>
-        requires
-            requires {
-                typename ThreadPoolRequiredAliases::task_queue_t;
-                typename ThreadPoolRequiredAliases::task_queue_t::value_type;
-                typename ThreadPoolRequiredAliases::task_queue_t::StopRequired;
-            }
+    concept ThreadPoolBaseRequireClause = requires {
+        typename ThreadPoolRequiredAliases::task_queue_t;
+        typename ThreadPoolRequiredAliases::task_queue_t::value_type;
+        typename ThreadPoolRequiredAliases::task_queue_t::StopRequired;
+        typename ThreadPoolRequiredAliases::function_type;
+    };
+
+    template <typename ThreadPoolType, typename ThreadPoolRequiredAliases>
+        requires ThreadPoolBaseRequireClause<ThreadPoolType, ThreadPoolRequiredAliases>
     class ThreadPoolBase
     {
-        private:
-            using get_next_task_return_type = typename ThreadPoolRequiredAliases::task_queue_t::value_type;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<ThreadPoolType>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<const ThreadPoolType>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<volatile ThreadPoolType>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<const volatile ThreadPoolType>;
+
+        friend class ThreadPoolUtil::ThreadPoolAccessor<ThreadPoolBase>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<const ThreadPoolBase>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<volatile ThreadPoolBase>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<const volatile ThreadPoolBase>;
+
+        public:
+            using task_queue_t = ThreadPoolRequiredAliases::task_queue_t;
+            using function_type = ThreadPoolRequiredAliases::function_type;
             
-            static get_next_task_return_type
-                get_next_task(ThreadPoolType* const this_ptr, std::stop_token stoken)
+        private:
+            using ThisType = ThreadPoolBase<ThreadPoolType, ThreadPoolRequiredAliases>;
+            template <typename T>
+                requires std::negation_v<std::is_reference<T>>
+            RecursiveSharedMutex& get_mtx(const T& resource);
+            template <typename T>
+                requires std::negation_v<std::is_reference<T>>
+            const RecursiveSharedMutex& get_mtx(const T& resource) const;
+
+        public:
+            using ::SupDef::Util::RecursiveSharedMutex::READ;
+            using ::SupDef::Util::RecursiveSharedMutex::WRITE;
+            using ::SupDef::Util::RecursiveSharedMutex::READ_WRITE;
+
+            /**
+             * @brief Get access to a resource
+             * 
+             * @tparam AccessType Either `READ`, `WRITE` or `READ_WRITE`
+             * @tparam T The type of the resource
+             * @param resource The resource to get access to
+             * 
+             * @example get_access<READ>(this->task_queues);
+             */
+            template <uint8_t AccessType, typename T>
+                requires std::negation_v<std::is_reference<T>>
+            inline void get_access(const T& resource) const;
+
+            template <uint8_t AccessType, typename T>
+            inline void get_access(const T* const resource) const
             {
-                // If current thread's queue is empty, try to steal a task from another thread
-                // else, return `this_ptr->task_queues[std::this_thread::get_id()].wait_for_next()`
-                TODO(
-                    "Instead of `wait_for_next`, use `wait_for_next_or` with the predicate `!stoken.stop_requested()`"
-                );
-                
-                using task_queue_stop_required = typename ThreadPoolRequiredAliases::task_queue_t::StopRequired;
-                
-                static const auto stoken_stop_requested_pred = [](const std::stop_token& stoken) -> bool
-                {
-                    return stoken.stop_requested();
-                };
-                static const auto to_invoke_if_true = []() -> void
-                {
-                    throw task_queue_stop_required();
-                };
-                
-                std::shared_lock<std::shared_mutex> lock(this_ptr->map_mtx); // Get READ access to the map
-                if (this_ptr->task_queues[std::this_thread::get_id()].empty())
-                {
-                    std::jthread::id most_busy_thread_id = this_ptr->get_most_busy_thread(true);
-                    if (this_ptr->task_queues[most_busy_thread_id].empty())
-                        goto just_wait_ours;
-                    else
-                    {
-                        std::unique_lock<std::shared_mutex> lock2(this_ptr->waiting_locations_mtx);
-                        this_ptr->waiting_locations[std::this_thread::get_id()] = most_busy_thread_id;
-                        lock2.unlock();
-                        lock.unlock();
-                        return this_ptr->task_queues[most_busy_thread_id].wait_for_next_or(stoken_stop_requested_pred, to_invoke_if_true, stoken);
-                    }
-                }
-            just_wait_ours:
-                std::unique_lock<std::shared_mutex> lock2(this_ptr->waiting_locations_mtx);
-                this_ptr->waiting_locations[std::this_thread::get_id()] = std::this_thread::get_id();
-                lock2.unlock();
-                lock.unlock();
-                return this_ptr->task_queues[std::this_thread::get_id()].wait_for_next_or(stoken_stop_requested_pred, to_invoke_if_true, stoken);
+                this->get_access<AccessType>(*resource);
             }
+
+            template <uint8_t AccessType, typename T>
+                requires std::negation_v<std::is_reference<T>>
+            inline bool try_get_access(const T& resource) const;
+            
+            template <uint8_t AccessType, typename T>
+            inline bool try_get_access(const T* const resource) const
+            {
+                return this->try_get_access<AccessType>(*resource);
+            }
+
+            template <uint8_t AccessType, typename T>
+                requires std::negation_v<std::is_reference<T>>
+            inline void release_access(const T& resource) const;
+
+            template <uint8_t AccessType, typename T>
+            inline void release_access(const T* const resource) const
+            {
+                this->release_access<AccessType>(*resource);
+            }
+
+        private:
+            using get_next_task_return_type = task_queue_t::value_type;
+            
+            get_next_task_return_type get_next_task(std::stop_token stoken);
 
         protected:
-            static void thread_main(std::stop_token stoken, const ThreadPoolType* const const_this_ptr, size_t index)
+            void thread_main(std::stop_token stoken, size_t index);
+
+            template <typename T>
+            struct MovableAtomic : public std::atomic<T>
             {
-                using task_queue_t = typename ThreadPoolRequiredAliases::task_queue_t;
-                using task_queue_stop_required = task_queue_t::StopRequired;
+                MovableAtomic() = default;
+                MovableAtomic(MovableAtomic&& other) : std::atomic<T>(other.load()) { other.store(T()); }
+                MovableAtomic& operator=(MovableAtomic&& other) { this->exchange(other.load()); other.store(T()); return *this; }
 
-#if 0
-                const ThreadPoolType& const_ref = *const_this_ptr;
-                ThreadPoolType& ref = const_cast<ThreadPoolType&>(const_ref);
-                ThreadPoolType* const this_ptr = std::addressof(ref);
-#else
-                ThreadPoolType* const this_ptr = std::addressof(const_cast<ThreadPoolType&>(*const_this_ptr));
+                // Import all std::atomic<T> constructors and assignment operators
+                using std::atomic<T>::atomic;
+                using std::atomic<T>::operator=;
+            };
+
+            std::vector< std::pair< std::jthread, MovableAtomic<bool> > > threads;
+            std::unordered_map< std::jthread::id, task_queue_t > task_queues;
+            // In which queue is the thread waiting for a task
+            std::unordered_map< std::jthread::id, std::jthread::id > waiting_locations;
+
+        private:
+            RecursiveSharedMutex threads_mtx;
+            RecursiveSharedMutex task_queues_mtx;
+            RecursiveSharedMutex waiting_locations_mtx;
+
+#ifdef DECLARE_FRIENDS3
+    PUSH_MACRO(DECLARE_FRIENDS3)
 #endif
+#undef DECLARE_FRIENDS3
 
-                /* delctype(auto) this_ptr = dynamic_cast<ThreadPoolType* const>(this); */
-                while (this_ptr->threads.at(index).second.load(std::memory_order::acquire) != true); // Wait for the go signal
-                do
-                {
-                    try
-                    {
-                        // `get_next_task()` will throw `task_queue_stop_required` if the thread should stop
-                        auto&& task = get_next_task(this_ptr, stoken);
-                        std::invoke(std::move(task));
-                    }
-                    catch (const task_queue_stop_required& e)
-                    {
-                        continue;
-                        // It will stop if the stop token is requested
-                        // If we were waiting on another thread's queue, it will just reenter the loop
-                        // and retry to steal a task
-                    }
-                    catch (...)
-                    {
-                        UNREACHABLE("Unhandled exception of type `", ::SupDef::Util::demangle(std::current_exception().__cxa_exception_type()->name()), "`");
-                    }
-                } while (!stoken.stop_requested());
-            }
+#ifdef DECLARE_FRIENDS2
+    PUSH_MACRO(DECLARE_FRIENDS2)
+#endif
+#undef DECLARE_FRIENDS2
+
+#ifdef DECLARE_FRIENDS
+    PUSH_MACRO(DECLARE_FRIENDS)
+#endif
+#undef DECLARE_FRIENDS
+
+#define DECLARE_FRIENDS3(mode, member, t1, t2)      \
+    friend class ThreadPoolUtil::LockGuard_##mode < \
+        t1,                                         \
+        std::remove_cvref_t<                        \
+            decltype(                               \
+                std::declval<t2>().member           \
+            )                                       \
+        >                                           \
+    >;                                              \
+    friend class ThreadPoolUtil::LockGuard_##mode < \
+        const t1,                                   \
+        std::remove_cvref_t<                        \
+            decltype(                               \
+                std::declval<t2>().member           \
+            )                                       \
+        >                                           \
+    >;                                              \
+    friend class ThreadPoolUtil::LockGuard_##mode < \
+        volatile t1,                                \
+        std::remove_cvref_t<                        \
+            decltype(                               \
+                std::declval<t2>().member           \
+            )                                       \
+        >                                           \
+    >;                                              \
+    friend class ThreadPoolUtil::LockGuard_##mode < \
+        const volatile t1,                          \
+        std::remove_cvref_t<                        \
+            decltype(                               \
+                std::declval<t2>().member           \
+            )                                       \
+        >                                           \
+    >
+#define DECLARE_FRIENDS2(mode, member)              \
+    DECLARE_FRIENDS3(                               \
+        mode,                                       \
+        member,                                     \
+        ThreadPoolType,                             \
+        ThisType                                    \
+    );                                              \
+    DECLARE_FRIENDS3(                               \
+        mode,                                       \
+        member,                                     \
+        ThisType,                                   \
+        ThisType                                    \
+    );
+#define DECLARE_FRIENDS(mode)                       \
+    DECLARE_FRIENDS2(mode, threads);                \
+    DECLARE_FRIENDS2(mode, task_queues);            \
+    DECLARE_FRIENDS2(mode, waiting_locations)
+
+            DECLARE_FRIENDS(READ);
+            DECLARE_FRIENDS(WRITE);
+            DECLARE_FRIENDS(READ_WRITE);
+
+#undef DECLARE_FRIENDS
+#undef DECLARE_FRIENDS2
+#undef DECLARE_FRIENDS3
+POP_MACRO(DECLARE_FRIENDS)
+POP_MACRO(DECLARE_FRIENDS2)
+POP_MACRO(DECLARE_FRIENDS3)
     };
 
     struct ThreadPoolAliases
@@ -1649,51 +2222,96 @@ namespace SupDef
 
     // TO BE TESTED
     class ThreadPool
-    : virtual private ThreadPoolAliases
-    , virtual private ThreadPoolBase<ThreadPool, ThreadPoolAliases>
+    : private ThreadPoolBase<ThreadPool, ThreadPoolAliases>
     {
         STATIC_TODO(
             "Make it possible to know if there is still tasks running in the thread pool (or in the queues)"
         );
+        friend class ThreadPoolBase<ThreadPool, ThreadPoolAliases>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<ThreadPool>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<const ThreadPool>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<volatile ThreadPool>;
+        friend class ThreadPoolUtil::ThreadPoolAccessor<const volatile ThreadPool>;
+
+#ifdef DECLARE_FRIENDS3
+    PUSH_MACRO(DECLARE_FRIENDS3)
+#endif
+#undef DECLARE_FRIENDS3
+
+#ifdef DECLARE_FRIENDS2
+    PUSH_MACRO(DECLARE_FRIENDS2)
+#endif
+#undef DECLARE_FRIENDS2
+
+#ifdef DECLARE_FRIENDS
+    PUSH_MACRO(DECLARE_FRIENDS)
+#endif
+#undef DECLARE_FRIENDS
+
+#define DECLARE_FRIENDS3(mode, member, t1, t2)      \
+    friend class ThreadPoolUtil::LockGuard_##mode < \
+        t1,                                         \
+        std::remove_cvref_t<                        \
+            decltype(                               \
+                std::declval<t2>().member           \
+            )                                       \
+        >                                           \
+    >;                                              \
+    friend class ThreadPoolUtil::LockGuard_##mode < \
+        const t1,                                   \
+        std::remove_cvref_t<                        \
+            decltype(                               \
+                std::declval<t2>().member           \
+            )                                       \
+        >                                           \
+    >;                                              \
+    friend class ThreadPoolUtil::LockGuard_##mode < \
+        volatile t1,                                \
+        std::remove_cvref_t<                        \
+            decltype(                               \
+                std::declval<t2>().member           \
+            )                                       \
+        >                                           \
+    >;                                              \
+    friend class ThreadPoolUtil::LockGuard_##mode < \
+        const volatile t1,                          \
+        std::remove_cvref_t<                        \
+            decltype(                               \
+                std::declval<t2>().member           \
+            )                                       \
+        >                                           \
+    >
+#define DECLARE_FRIENDS2(mode, member)              \
+    DECLARE_FRIENDS3(                               \
+        mode,                                       \
+        member,                                     \
+        ThreadPool,                                 \
+        ThreadPool                                  \
+    )
+#define DECLARE_FRIENDS(mode)                       \
+    DECLARE_FRIENDS2(mode, threads);                \
+    DECLARE_FRIENDS2(mode, task_queues);            \
+    DECLARE_FRIENDS2(mode, waiting_locations)
+
+        DECLARE_FRIENDS(READ);
+        DECLARE_FRIENDS(WRITE);
+        DECLARE_FRIENDS(READ_WRITE);
+
+#undef DECLARE_FRIENDS
+#undef DECLARE_FRIENDS2
+#undef DECLARE_FRIENDS3
+POP_MACRO(DECLARE_FRIENDS)
+POP_MACRO(DECLARE_FRIENDS2)
+POP_MACRO(DECLARE_FRIENDS3)
+        
         private:
-            friend class ThreadPoolBase<ThreadPool, ThreadPoolAliases>;
-            
             using BaseType1 = ThreadPoolAliases;
             using BaseType2 = ThreadPoolBase<ThreadPool, ThreadPoolAliases>;
 
-            enum : uint8_t
-            {
-                READ = 1 << 0,
-                WRITE = 1 << 1,
-                READ_WRITE = READ | WRITE
-            };
-            
-            template <typename T>
-            struct MovableAtomic : public std::atomic<T>
-            {
-                MovableAtomic() = default;
-                MovableAtomic(MovableAtomic&& other) : std::atomic<T>(other.load()) { other.store(T()); }
-                MovableAtomic& operator=(MovableAtomic&& other) { this->exchange(other.load()); other.store(T()); return *this; }
-
-                // Import all std::atomic<T> constructors and assignment operators
-                using std::atomic<T>::atomic;
-                using std::atomic<T>::operator=;
-            };
-            
-            std::vector< std::pair< std::jthread, MovableAtomic<bool> > > threads;
-            std::unordered_map< std::jthread::id, task_queue_t > task_queues;
-
-            RecursiveSharedMutex threads_mtx;
-            RecursiveSharedMutex task_queues_mtx;
-
-            // In which queue is the thread waiting for a task
-            std::unordered_map< std::jthread::id, std::jthread::id > waiting_locations; 
-            RecursiveSharedMutex waiting_locations_mtx;
-
             std::jthread* get_thread_from_id(std::jthread::id&& id);
             std::jthread* get_thread_from_id(const std::jthread::id& id);
-            std::jthread::id get_most_busy_thread(bool already_locked);
-            std::jthread::id get_least_busy_thread(bool already_locked);
+            std::jthread::id get_most_busy_thread(void);
+            std::jthread::id get_least_busy_thread(void);
 
             void request_thread_stop(std::jthread::id&& id);
             void request_thread_stop(const std::jthread::id& id);
@@ -1701,6 +2319,8 @@ namespace SupDef
 
         public:
             using TaskTimeoutError = typename TimedTaskBase::TimedOut;
+
+            void wrap_thread_main(std::stop_token stoken, size_t index);
 
             explicit ThreadPool(const size_t nb_threads = std::jthread::hardware_concurrency());
             ThreadPool(const ThreadPool&) = delete;
@@ -1722,7 +2342,9 @@ namespace SupDef
                 typename FuncType, typename... Args,
                 typename ReturnType = std::invoke_result_t<FuncType&&, Args&&...>
             >
-                requires std::invocable<FuncType, Args...> && (!IsCoro<ReturnType>)
+                requires std::invocable<FuncType, Args...>
+                    && (!IsCoro<ReturnType>)
+                    && (std::is_copy_constructible_v<std::remove_reference_t<Args>> && ...)
             std::future<ReturnType> enqueue(FuncType&& func, Args&&... args);
 
             template <
@@ -1730,7 +2352,9 @@ namespace SupDef
                 typename FuncType, typename... Args,
                 typename ReturnType = std::invoke_result_t<FuncType&&, Args&&...>
             >
-                requires std::invocable<FuncType, Args...> && (!IsCoro<ReturnType>)
+                requires std::invocable<FuncType, Args...> 
+                    && (!IsCoro<ReturnType>)
+                    && (std::is_copy_constructible_v<std::remove_reference_t<Args>> && ...)
             std::future<ReturnType> enqueue(std::chrono::duration<Rep, Period>&& timeout, FuncType&& func, Args&&... args);
     };
 
@@ -2469,36 +3093,36 @@ namespace SupDef
             inline StreamType& operator<<(const char_type* str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) << str;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) << str;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const char_type& c)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) << c;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const std::basic_string_view<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) << str;
                 return *(*this->stream_ptr);
             }
@@ -2530,27 +3154,27 @@ namespace SupDef
             inline StreamType& operator>>(char_type* str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) >> str;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator>>(std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) >> str;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator>>(char_type& c)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) >> c;
                 return *(*this->stream_ptr);
             }
@@ -2559,25 +3183,25 @@ namespace SupDef
             inline typename File_StreamMethodsImplHelper<StreamType, char_type*, std::streamsize, char_type>::ResultOfGetline getline(char_type* str, std::streamsize count, char_type delim)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use getline on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use getline on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to getline on a File_StreamMethodsImpl object which has a closed stream");
                 return (*this->stream_ptr)->getline(str, count, delim);
             }
             inline typename File_StreamMethodsImplHelper<StreamType, std::basic_string<char_type>&, char_type>::ResultOfGetline getline(std::basic_string<char_type>& str, char_type delim)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to getline on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to getline on a File_StreamMethodsImpl object which has a closed stream");
                 return std::getline(*(*this->stream_ptr), str, delim);
             }
             inline typename File_StreamMethodsImplHelper<StreamType, std::basic_string<char_type>&>::ResultOfGetline getline(std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to getline on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to getline on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to getline on a File_StreamMethodsImpl object which has a closed stream");
                 return std::getline(*(*this->stream_ptr), str);
             }
 
@@ -2606,36 +3230,36 @@ namespace SupDef
             inline StreamType& operator<<(const char_type* str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) << str;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) << str;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const char_type& c)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) << c;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator<<(const std::basic_string_view<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator<< on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) << str;
                 return *(*this->stream_ptr);
             }
@@ -2643,27 +3267,27 @@ namespace SupDef
             inline StreamType& operator>>(char_type* str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) >> str;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator>>(std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) >> str;
                 return *(*this->stream_ptr);
             }
             inline StreamType& operator>>(char_type& c)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt to use operator>> on a File_StreamMethodsImpl object which has a closed stream");
                 *(*this->stream_ptr) >> c;
                 return *(*this->stream_ptr);
             }
@@ -2672,25 +3296,25 @@ namespace SupDef
             inline typename File_StreamMethodsImplHelper<StreamType, char_type*, std::streamsize, char_type>::ResultOfGetline getline(char_type* str, std::streamsize count, char_type delim)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt getline on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt getline on a File_StreamMethodsImpl object which has a closed stream");
                 return (*this->stream_ptr)->getline(str, count, delim);
             }
             inline typename File_StreamMethodsImplHelper<StreamType, std::basic_string<char_type>&, char_type>::ResultOfGetline getline(std::basic_string<char_type>& str, char_type delim)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt getline on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt getline on a File_StreamMethodsImpl object which has a closed stream");
                 return std::getline(*(*this->stream_ptr), str, delim);
             }
             inline typename File_StreamMethodsImplHelper<StreamType, std::basic_string<char_type>&>::ResultOfGetline getline(std::basic_string<char_type>& str)
             {
                 if (!(*this->stream_ptr).has_value())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has no stream");
+                    throw InternalError("Attempt getline on a File_StreamMethodsImpl object which has no stream");
                 if (!(*this->stream_ptr)->is_open())
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt getline on a File_StreamMethodsImpl object which has a closed stream");
+                    throw InternalError("Attempt getline on a File_StreamMethodsImpl object which has a closed stream");
                 return std::getline(*(*this->stream_ptr), str);
             }
     };
@@ -2713,19 +3337,19 @@ namespace SupDef
             File(std::filesystem::path&& p, std::ios_base::openmode mode) : File_StreamMethodsImpl<T>(*this), path(std::move(p)), stream(std::in_place, this->path, mode)
             {
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
+                    throw InternalError("File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
             File(std::filesystem::path& p, std::ios_base::openmode mode) : File_StreamMethodsImpl<T>(*this), path(p), stream(std::in_place, this->path, mode)
             {
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
+                    throw InternalError("File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
             
             File(const File& other) = delete;
             File(File&& other) : File_StreamMethodsImpl<T>(*this), path(std::move(other.path)), stream(std::move(other.stream))
             {
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
+                    throw InternalError("File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
 
             File& operator=(const File& other) = delete;
@@ -2735,7 +3359,7 @@ namespace SupDef
                 this->stream = std::move(other.stream);
                 this->stream_ptr = std::addressof(this->stream);
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
+                    throw InternalError("File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
                 return *this;
             }
 
@@ -2769,7 +3393,7 @@ namespace SupDef
                 this->stream.reset();
                 this->stream_ptr = std::addressof(this->stream);
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
+                    throw InternalError("File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
 
             void restart(std::filesystem::path&& p, std::ios_base::openmode mode)
@@ -2779,7 +3403,7 @@ namespace SupDef
                 this->stream.emplace(this->path, mode);
                 this->stream_ptr = std::addressof(this->stream);
                 if (DIFFERENT_ANY(this->stream, (*this->stream_ptr)))
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
+                    throw InternalError("File_StreamMethodsImpl base class has a reference to a different stream than the one in the File class");
             }
 
             void close()
@@ -2873,9 +3497,9 @@ namespace SupDef
             virtual void restart(FilePathType&& p, std::ios_base::openmode mode)
             {
                 this->restart();
-                auto unconverted = std::move(p);
+                FilePathType unconverted = p;
                 this->path = std::move(p);
-                this->open(CONVERT(std::filesystem::path, unconverted), mode);
+                this->open(CONVERT(std::filesystem::path, std::move(unconverted)), mode);
             }
 
             virtual void restart(const FilePathType& p, std::ios_base::openmode mode)
@@ -2984,15 +3608,16 @@ namespace SupDef
             std::vector<PragmaDef<T>> super_defines;
             std::vector<PragmaInc<T, U>> imports;
 
+            using Base = File<std::basic_ifstream<T>, U>;
         public:
-            SrcFile() : File<std::basic_ifstream<T>, U>(), super_defines(), imports() {}
+            SrcFile() : Base(), super_defines(), imports() {}
 
             template <typename PathType>
-                requires FilePath<PathType> && std::constructible_from<File<std::basic_ifstream<T>, U>, PathType&&, std::ios_base::openmode>
+                requires FilePath<PathType> && std::constructible_from<Base, PathType&&, std::ios_base::openmode>
             SrcFile(
                 PathType&& p,
                 std::ios_base::openmode mode = (std::ios_base::in | std::ios_base::binary)
-            ) : File<std::basic_ifstream<T>, U>(std::forward<PathType>(p), mode), super_defines(), imports()
+            ) : Base(std::forward<PathType>(p), mode), super_defines(), imports()
             { }
             
             SrcFile(SrcFile& other) = delete;
@@ -3020,7 +3645,7 @@ namespace SupDef
 
             inline void restart() override
             {
-                this->File<std::basic_ifstream<T>, U>::restart();
+                this->Base::restart();
                 this->super_defines.clear();
                 this->imports.clear();
             }
@@ -3031,8 +3656,8 @@ namespace SupDef
             ) override
             {
                 if (mode & std::ios_base::out)
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to open a SrcFile in write mode");
-                this->File<std::basic_ifstream<T>, U>::restart(std::forward<U>(p), mode);
+                    throw InternalError("Attempt to open a SrcFile in write mode");
+                this->Base::restart(std::forward<U>(p), mode);
                 this->super_defines.clear();
                 this->imports.clear();
             }
@@ -3043,17 +3668,17 @@ namespace SupDef
             ) override
             {
                 if (mode & std::ios_base::out)
-                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "Attempt to open a SrcFile in write mode");
-                this->File<std::basic_ifstream<T>, U>::restart(p, mode);
+                    throw InternalError("Attempt to open a SrcFile in write mode");
+                this->Base::restart(p, mode);
                 this->super_defines.clear();
                 this->imports.clear();
             }
 
             inline SrcFile& operator=(SrcFile&& other) noexcept
             {
-                this->File<std::basic_ifstream<T>, U>::operator=(std::move(other));
-                this->super_defines = other.super_defines;
-                this->imports = other.imports;
+                this->super_defines = std::move(other.super_defines);
+                this->imports = std::move(other.imports);
+                this->Base::operator=(std::move(other));
                 return *this;
             }
             inline SrcFile& operator=(SrcFile& other) = delete;
@@ -3441,6 +4066,10 @@ namespace SupDef
 #if !defined(ENGINE)
     #define ENGINE SupDef::Engine<char, std::filesystem::path>
 #endif
+
+#undef NEED_ExpInst_TEMPLATES
+#define NEED_ExpInst_TEMPLATES 1
+#include <sup_def/common/exp_inst.cpp>
 
 #endif
 

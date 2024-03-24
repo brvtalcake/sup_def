@@ -104,6 +104,20 @@ namespace SupDef
             return exit_code();
         }
 
+        static_assert(std::alignment_of_v<max_align_t> == __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+
+        declare_aliasing_type(void);
+
+        malloc_like(1, 2)
+        aliasing_type(void)* static_alloc(size_t size, size_t alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+
+        calloc_like(1, 2, 3)
+        aliasing_type(void)* static_calloc(size_t count, size_t size, size_t alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+
+        nonnull_params(1)
+        void static_free(aliasing_type(void)* ptr);
+
+
         static_assert(IsOneOf<int, int, char, float>);
         static_assert(IsOneOf<int, char, float, int>);
         static_assert(IsOneOf<int, int>);
@@ -2278,7 +2292,7 @@ namespace SupDef
         [[noreturn]]
         static inline void hard_assert_fail(bool cond, const char* cond_str, const char* file, int line, const char* func)
         {
-            if (!cond)
+            likely_unless (cond)
             {
                 std::cerr << "Hard assertion failed: " << cond_str << "\n"
                           << "File: " << file << "\n"
@@ -2286,6 +2300,7 @@ namespace SupDef
                           << "Function: " << func << "\n";
                 SUPDEF_EXIT();
             }
+            UNREACHABLE("Only call hard_assert_fail when `cond` is `false`");
         }
 
         template <typename T>
@@ -2557,7 +2572,7 @@ namespace SupDef
                     return this->queue.back();
                 }
 
-                [[nodiscard]]
+                warn_unused_result()
                 bool empty() const
                 {
                     std::lock_guard<std::mutex> lock(this->mutex);
@@ -2704,9 +2719,11 @@ namespace SupDef
                 }
 
                 ThreadSafeQueue(const ThreadSafeQueue&) = delete;
-                ThreadSafeQueue(ThreadSafeQueue&& other) : queue(std::move(other.queue))
+                ThreadSafeQueue(ThreadSafeQueue&& other)
+                    : queue(std::move(other.queue)),
+                      stop_required_state(other.stop_required_state.load(std::memory_order::relaxed))
                 {
-                    if (this->queue.empty())
+                    likely_if (this->queue.empty())
                         this->empty_state.store(true, std::memory_order::relaxed);
                     else
                     {
@@ -2745,7 +2762,19 @@ namespace SupDef
                 }
 
                 ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
-                ThreadSafeQueue& operator=(ThreadSafeQueue&&) = delete;
+                ThreadSafeQueue& operator=(ThreadSafeQueue&& other)
+                {
+                    this->queue = std::move(other.queue);
+                    this->stop_required_state.store(other.stop_required_state.load(std::memory_order::relaxed), std::memory_order::relaxed);
+                    likely_if (this->queue.empty())
+                        this->empty_state.store(true, std::memory_order::relaxed);
+                    else
+                    {
+                        this->empty_state.store(false, std::memory_order::relaxed);
+                        this->queue_cv.notify_all();
+                    }
+                    return *this;
+                }
 
                 ~ThreadSafeQueue()
                 {
@@ -2769,7 +2798,7 @@ namespace SupDef
                     return this->queue.back();
                 }
 
-                [[nodiscard]]
+                warn_unused_result()
                 bool empty() const
                 {
                     std::lock_guard<std::mutex> lock(this->mutex);
@@ -2862,6 +2891,7 @@ namespace SupDef
                 }
 
                 // Wait until another thread pushes something (and pray for the implementation to use Linux futexes so it's efficient)
+                warn_unused_result()
                 value_type wait_for_next()
                 {
                     decltype(auto) this_ptr = this;
@@ -3505,7 +3535,7 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
         private:
             ContractType type;            
 
-            [[nodiscard]]
+            warn_unused_result()
             std::string get_contract_type_str(ContractType type) const noexcept
             {
                 using namespace std::string_literals;
@@ -3769,71 +3799,76 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
 
     using Util::Detail::mutex_impl::MutexId;
 
-#if 0
-    class RecursiveMutex
-    {
-        public:
-            RecursiveMutex()
-                : mtx_id(Detail::mutex_impl::gen_new_id())
-            { }
-            RecursiveMutex(const RecursiveMutex&) = delete;
-            RecursiveMutex(RecursiveMutex&&) = delete;
-            RecursiveMutex& operator=(const RecursiveMutex&) = delete;
-            RecursiveMutex& operator=(RecursiveMutex&&) = delete;
-            ~RecursiveMutex()
-            {
-                Detail::mutex_impl::release_id(this->mtx_id);
-            }
-
-            void lock(void)
-            {
-                std::ignore = Detail::mutex_impl::increment_lock_count(
-                    this->mtx_id,
-                    [this](const uint_fast64_t lock_count) -> void
-                    {
-                        if (lock_count == 1)
-                            this->mutex.lock();
-                    }
-                );
-            }
-
-            bool try_lock(void)
-            {
-                auto [locked, lock_count] = Detail::mutex_impl::try_increment_lock_count(
-                    this->mtx_id,
-                    [this](const uint_fast64_t lock_count) -> void
-                    {
-                        if (lock_count == 1)
-                            this->mutex.lock();
-                    }
-                );
-                return locked;
-            }
-
-            void unlock(void)
-            {
-                std::ignore = Detail::mutex_impl::decrement_lock_count(
-                    this->mtx_id,
-                    [this](const uint_fast64_t lock_count) -> void
-                    {
-                        if (lock_count == 0)
-                            this->mutex.unlock();
-                    }
-                );
-            }
-        private:
-            std::mutex mutex;
-            MutexId mtx_id;
-    };
-#else
-
     namespace Util
     {
         STATIC_TODO(
-            "Write a test suite for `RecursiveSharedMutex`"
+            "Prove that `RecursiveSharedMutex` is correctly implemented and working"
         );
         class RecursiveSharedMutex
         {
+            public:
+                enum : uint8_t
+                {
+                    READ = 1 << 0,
+                    WRITE = 1 << 1,
+                    READ_WRITE = READ | WRITE
+                };
+
+                template <typename T>
+                    requires std::convertible_to<T, uint8_t>
+                inline void lock(T&& mode) const
+                {
+                    switch (static_cast<uint8_t>(std::forward<T>(mode)))
+                    {
+                        case READ:
+                            this->lock_shared();
+                            break;
+                        case WRITE:
+                            case_fallthrough;
+                        case READ_WRITE:
+                            this->lock();
+                            break;
+                        default:
+                            throw InternalError("Invalid mode for `RecursiveSharedMutex::lock`");
+                    }
+                }
+
+                template <typename T>
+                    requires std::convertible_to<T, uint8_t>
+                inline bool try_lock(T&& mode) const
+                {
+                    switch (static_cast<uint8_t>(std::forward<T>(mode)))
+                    {
+                        case READ:
+                            return this->try_lock_shared();
+                        case WRITE:
+                            case_fallthrough;
+                        case READ_WRITE:
+                            return this->try_lock();
+                        default:
+                            throw InternalError("Invalid mode for `RecursiveSharedMutex::try_lock`");
+                    }
+                }
+
+                template <typename T>
+                    requires std::convertible_to<T, uint8_t>
+                inline void unlock(T&& mode) const
+                {
+                    switch (static_cast<uint8_t>(std::forward<T>(mode)))
+                    {
+                        case READ:
+                            this->unlock_shared();
+                            break;
+                        case WRITE:
+                            case_fallthrough;
+                        case READ_WRITE:
+                            this->unlock();
+                            break;
+                        default:
+                            throw InternalError("Invalid mode for `RecursiveSharedMutex::unlock`");
+                    }
+                }
+
             public:
                 RecursiveSharedMutex()
                     : mtx_id(::SupDef::Util::Detail::mutex_impl::gen_new_id())
@@ -3844,13 +3879,13 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 RecursiveSharedMutex& operator=(RecursiveSharedMutex&&) = delete;
                 ~RecursiveSharedMutex()
                 {
-                    ::SupDef::Util::Detail::mutex_impl::release_id(std::move(this->mtx_id));
+                    ::SupDef::Util::Detail::mutex_impl::release_id(this->mtx_id);
                 }
 
                 inline void lock(void) const
                 {
                     ::SupDef::Util::Detail::mutex_impl::rec_shared::lock_impl(
-                        std::move(this->mtx_id),
+                        this->mtx_id,
                         this->mutex,
                         this->current_mode
                     );
@@ -3859,7 +3894,7 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 inline bool try_lock(void) const
                 {
                     return ::SupDef::Util::Detail::mutex_impl::rec_shared::try_lock_impl(
-                        std::move(this->mtx_id),
+                        this->mtx_id,
                         this->mutex,
                         this->current_mode
                     );
@@ -3868,7 +3903,7 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 inline void unlock(void) const
                 {
                     ::SupDef::Util::Detail::mutex_impl::rec_shared::unlock_impl(
-                        std::move(this->mtx_id),
+                        this->mtx_id,
                         this->mutex,
                         this->current_mode
                     );
@@ -3877,7 +3912,7 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 inline void lock_shared(void) const
                 {
                     ::SupDef::Util::Detail::mutex_impl::rec_shared::lock_shared_impl(
-                        std::move(this->mtx_id),
+                        this->mtx_id,
                         this->mutex,
                         this->current_mode
                     );
@@ -3886,7 +3921,7 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 inline bool try_lock_shared(void) const
                 {
                     return ::SupDef::Util::Detail::mutex_impl::rec_shared::try_lock_shared_impl(
-                        std::move(this->mtx_id),
+                        this->mtx_id,
                         this->mutex,
                         this->current_mode
                     );
@@ -3895,16 +3930,17 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 inline void unlock_shared(void) const
                 {
                     ::SupDef::Util::Detail::mutex_impl::rec_shared::unlock_shared_impl(
-                        std::move(this->mtx_id),
+                        this->mtx_id,
                         this->mutex,
                         this->current_mode
                     );
                 }
 
+                symbol_cold
                 inline bool is_thread_holding(void) const
                 {
                     return ::SupDef::Util::Detail::mutex_impl::rec_shared::is_thread_holding_impl(
-                        std::move(this->mtx_id)
+                        this->mtx_id
                     );
                 }
 
@@ -3915,9 +3951,37 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 mutable std::shared_mutex mutex;
                 const MutexId mtx_id;
         };
+
+        template <typename R = uintptr_t, typename T>
+        static inline R get_address_value(T* const ptr)
+        {
+            return static_cast<R>(reinterpret_cast<uintptr_t>(ptr));
+        }
+
+        template <typename R = uintptr_t, typename T>
+            requires std::negation_v<std::is_pointer<T>>
+        static inline R get_address_value(T& ref)
+        {
+            return static_cast<R>(reinterpret_cast<uintptr_t>(std::addressof(ref)));
+        }
     }
 
-#endif
+#undef ADDRESS_VALUE
+/**
+ * @def ADDRESS_VALUE(optional_type)(ptr_or_ref)
+ * @brief Get the address value of a pointer or a reference
+ * 
+ */
+#define ADDRESS_VALUE(...)                  \
+    PP_IF(                                  \
+        ISEMPTY(__VA_ARGS__)                \
+    )(                                      \
+        ::SupDef::Util::get_address_value   \
+    )(                                      \
+        ::SupDef::Util::get_address_value<  \
+            FIRST_ARG(__VA_ARGS__)          \
+        >                                   \
+    )
 
     using Util::remove_whitespaces;
     using Util::RecursiveSharedMutex;

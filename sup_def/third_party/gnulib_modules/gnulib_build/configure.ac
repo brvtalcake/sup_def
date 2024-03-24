@@ -19,6 +19,7 @@ m4_pattern_allow([^gl_LIBOBJS$])dnl a variable
 m4_pattern_allow([^gl_LTLIBOBJS$])dnl a variable
 
 # Pre-early section.
+gl_USE_SYSTEM_EXTENSIONS
 gl_PROG_AR_RANLIB
 
 AM_CONDITIONAL([GL_COND_LIBTOOL], [false])
@@ -37,6 +38,14 @@ gl_m4_base='glm4'
   gl_COMMON
   gl_source_base='gllib'
   gl_source_base_prefix=
+  AC_REQUIRE([gl_EXTERN_INLINE])
+  gl_FUNC_MEMSET_EXPLICIT
+  gl_CONDITIONAL([GL_COND_OBJ_MEMSET_EXPLICIT], [test $HAVE_MEMSET_EXPLICIT = 0])
+  AM_COND_IF([GL_COND_OBJ_MEMSET_EXPLICIT], [
+    gl_PREREQ_MEMSET_EXPLICIT
+  ])
+  gl_STRING_MODULE_INDICATOR([memset_explicit])
+  gt_TYPE_SSIZE_T
   gl_C_BOOL
   AC_CHECK_HEADERS_ONCE([stdckdint.h])
   if test $ac_cv_header_stdckdint_h = yes; then
@@ -45,6 +54,22 @@ gl_m4_base='glm4'
     GL_GENERATE_STDCKDINT_H=true
   fi
   gl_CONDITIONAL_HEADER([stdckdint.h])
+  AC_PROG_MKDIR_P
+  gl_STDDEF_H
+  gl_STDDEF_H_REQUIRE_DEFAULTS
+  gl_CONDITIONAL_HEADER([stddef.h])
+  AC_PROG_MKDIR_P
+  gl_STDLIB_H
+  gl_STDLIB_H_REQUIRE_DEFAULTS
+  AC_PROG_MKDIR_P
+  gl_STRING_H
+  gl_STRING_H_REQUIRE_DEFAULTS
+  AC_PROG_MKDIR_P
+  gl_SYS_TYPES_H
+  gl_SYS_TYPES_H_REQUIRE_DEFAULTS
+  AC_PROG_MKDIR_P
+  gl_UNISTD_H
+  gl_UNISTD_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
   m4_ifval(gl_LIBSOURCES_LIST, [
     m4_syscmd([test ! -d ]m4_defn([gl_LIBSOURCES_DIR])[ ||

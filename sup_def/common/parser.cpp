@@ -426,10 +426,27 @@ namespace SupDef
         {
             return std::make_tuple(content, line, line);
         };
+        auto mk_expected_ret = [&mk_valid_pragmaloc](
+            const std::basic_string<T>& content, /* A path, in our case here */
+            const string_size_type<T>& line /* Start line and end line are the same here */
+        ) -> Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>
+        {
+            return ::SupDef::make_ok_result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>(mk_valid_pragmaloc(content, line));
+        };
+        auto mk_null_ret = [ ](void) -> Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>
+        {
+            return ::SupDef::make_null_result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>();
+        };
+        auto mk_unexpected_ret = [ ](
+            const Error<T, std::filesystem::path>& err
+        ) -> Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>
+        {
+            return ::SupDef::make_err_result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>(err);
+        };
 
         if (this->file_content.empty() || this->lines.empty())
         {
-            ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty or lines are empty\n") };
+            ret = mk_unexpected_ret(Error<T, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty or lines are empty\n"));
             co_return ret;
         }
 
@@ -467,14 +484,14 @@ namespace SupDef
                     pos_t err_line = line_.at(where).line();
                     pos_t err_col = line_.at(where).col();
                     auto real_line = this->lines_raw.at(err_line);
-                    ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                         ExcType::SYNTAX_ERROR,
                         "You cannot mix `<>` with `\"\"` in import pragmas",
                         this->file_path,
                         err_line + 1,
                         err_col + 1,
                         real_line
-                    ) };
+                    ));
                     co_yield ret;
                     continue;
                 }
@@ -489,18 +506,18 @@ namespace SupDef
                     pos_t err_line = line_.at(where).line();
                     pos_t err_col = line_.at(where).col();
                     auto real_line = this->lines_raw.at(err_line);
-                    ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                         ExcType::SYNTAX_ERROR,
                         "Empty import path",
                         this->file_path,
                         err_line + 1,
                         err_col + 1,
                         real_line
-                    ) };
+                    ));
                     co_yield ret;
                     continue;
                 }
-                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ mk_valid_pragmaloc(inc_path, curr_line) };
+                ret = mk_expected_ret(inc_path, curr_line);
                 // Delete the full line from this->lines (since the pragma is supposed to take the full line)
                 /* this->lines_raw.erase(this->lines_raw.begin() + i); */
                 this->lines.erase(this->lines.begin() + i);
@@ -516,14 +533,14 @@ namespace SupDef
                     pos_t err_line = line_.at(quote_pos).line();
                     pos_t err_col = line_.at(quote_pos).col();
                     auto real_line = this->lines_raw.at(err_line);
-                    ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                         ExcType::SYNTAX_ERROR,
                         "You cannot mix `\"\"` with `<>` in import pragmas",
                         this->file_path,
                         err_line + 1,
                         err_col + 1,
                         real_line
-                    ) };
+                    ));
                     co_yield ret;
                     continue;
                 }
@@ -538,18 +555,18 @@ namespace SupDef
                     pos_t err_line = line_.at(where).line();
                     pos_t err_col = line_.at(where).col();
                     auto real_line = this->lines_raw.at(err_line);
-                    ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                         ExcType::SYNTAX_ERROR,
                         "Empty import path",
                         this->file_path,
                         err_line + 1,
                         err_col + 1,
                         real_line
-                    ) };
+                    ));
                     co_yield ret;
                     continue;
                 }
-                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ mk_valid_pragmaloc(inc_path, curr_line) };
+                ret = mk_expected_ret(inc_path, curr_line);
                 // Delete the full line from this->lines (since the pragma is supposed to take the full line)
                 /* this->lines_raw.erase(this->lines_raw.begin() + i); */
                 this->lines.erase(this->lines.begin() + i);
@@ -570,14 +587,14 @@ namespace SupDef
                     pos_t err_line = line_.at(where).line();
                     pos_t err_col = line_.at(where).col();
                     auto real_line = this->lines_raw.at(err_line);
-                    ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                    ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                         ExcType::SYNTAX_ERROR,
                         "Invalid import path",
                         this->file_path,
                         err_line + 1,
                         err_col + 1,
                         real_line
-                    ) };
+                    ));
                     co_yield ret;
                     continue;
                 }
@@ -588,7 +605,7 @@ namespace SupDef
                 std::basic_string<T> inc_path = remove_whitespaces(match_res[1].str());
                 if (inc_path.empty())
                     SupDef::Util::unreachable();
-                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ mk_valid_pragmaloc(inc_path, curr_line) };
+                ret = mk_expected_ret(inc_path, curr_line);
                 // Delete the full line from this->lines (since the pragma is supposed to take the full line)
                 /* this->lines_raw.erase(this->lines_raw.begin() + i); */
                 this->lines.erase(this->lines.begin() + i);
@@ -604,14 +621,14 @@ namespace SupDef
                 pos_t err_line = line_.at(include_keyword_pos).line();
                 pos_t err_col = line_.at(include_keyword_pos).col();
                 auto real_line = this->lines_raw.at(err_line);
-                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                     ExcType::SYNTAX_ERROR,
                     "Include pragmas must have a path",
                     this->file_path,
                     err_line + 1,
                     err_col + 1,
                     real_line
-                ) };
+                ));
                 co_yield ret;
                 continue;
             }
@@ -623,14 +640,14 @@ namespace SupDef
                 pos_t err_line = line_.at(include_keyword_pos).line();
                 pos_t err_col = line_.at(include_keyword_pos).col();
                 auto real_line = this->lines_raw.at(err_line);
-                ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>{ Error<T, std::filesystem::path>(
+                ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                     ExcType::SYNTAX_ERROR,
                     "Include pragmas must have a path",
                     this->file_path,
                     err_line + 1,
                     err_col + 1,
                     real_line
-                ) };
+                ));
                 co_yield ret;
                 continue;
             }
@@ -659,7 +676,7 @@ namespace SupDef
                     this->file_content.push_back(MK_CHAR(0, 0, c));
             }
         }
-        ret = Result<Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>(nullptr);
+        ret = mk_null_ret();
         co_return ret;
     }
 #endif
@@ -689,9 +706,25 @@ namespace SupDef
         using RetType = Result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>;
         RetType ret;
 
+        auto mk_expected_ret = [&mk_valid_pragmaloc](
+            const std::basic_string<T>& content, /* A path, in our case here */
+            const string_size_type<T>& start_line, /* Start line */
+            const string_size_type<T>& end_line /* End line */
+        ) -> RetType {
+            return ::SupDef::make_ok_result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>(mk_valid_pragmaloc(content, start_line, end_line));
+        };
+        auto mk_null_ret = [ ](void) -> RetType {
+            return ::SupDef::make_null_result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>();
+        };
+        auto mk_unexpected_ret = [ ](
+            const Error<T, std::filesystem::path>& err
+        ) -> RetType {
+            return ::SupDef::make_err_result<typename Parser<T>::pragma_loc_type, Error<T, std::filesystem::path>>(err);
+        };
+
         if (this->file_content.empty() || this->lines.empty())
         {
-            ret = Error<T, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty");
+            ret = mk_unexpected_ret(Error<T, std::filesystem::path>(ExcType::INTERNAL_ERROR, "File content is empty"));
             co_return ret;
         }
         
@@ -732,14 +765,14 @@ namespace SupDef
                         auto err_line = line_.at(begin_kwd_pos).line();
                         auto err_col = line_.at(begin_kwd_pos).col();
                         auto real_line = this->lines_raw.at(err_line);
-                        ret = Error<T, std::filesystem::path>(
+                        ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                             ExcType::SYNTAX_ERROR,
                             "Pragma start found while already in a supdef block",
                             this->file_path,
                             err_line + 1,
                             err_col + 1,
                             real_line
-                        );
+                        ));
                         // For now, straight up `co_return` as we don't want to parse anymore, since it would be useless
                         // and probably cause more errors
                         co_return ret;
@@ -762,14 +795,14 @@ namespace SupDef
                         auto err_line = line_.at(0).line();
                         auto err_col = line_.at(0).col();
                         auto real_line = this->lines_raw.at(err_line);
-                        ret = Error<T, std::filesystem::path>(
+                        ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                             ExcType::SYNTAX_ERROR,
                             "Pragma end found not at start of line",
                             this->file_path,
                             err_line + 1,
                             err_col + 1,
                             real_line
-                        );
+                        ));
                         co_return ret;
                     }
                     if (!in_supdef_body)
@@ -778,14 +811,14 @@ namespace SupDef
                         auto err_line = line_.at(end_kwd_pos).line();
                         auto err_col = line_.at(end_kwd_pos).col();
                         auto real_line = this->lines_raw.at(err_line);
-                        ret = Error<T, std::filesystem::path>(
+                        ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                             ExcType::SYNTAX_ERROR,
                             "Pragma end found while not in a supdef block",
                             this->file_path,
                             err_line + 1,
                             err_col + 1,
                             real_line
-                        );
+                        ));
                         co_return ret; // (same comment as above)
                     }
                     if (remove_whitespaces(match_res[1].str(), true) != supdef_name)
@@ -806,14 +839,14 @@ namespace SupDef
                             }
                             return res;
                         };
-                        ret = Error<T, std::filesystem::path>(
+                        ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                             ExcType::SYNTAX_ERROR,
                             "Pragma end found with a different supdef name than the start (should be `"s + CONVERT(char, remove_whitespaces(get_first_line(pragma_content), true)) + "` instead)"s,
                             this->file_path,
                             err_line + 1,
                             err_col + 1,
                             real_line
-                        );
+                        ));
                         co_return ret;
                     }
                     pragma_end_pos = curr_line;
@@ -822,7 +855,7 @@ namespace SupDef
                     /* this->lines_raw.erase(this->lines_raw.begin() + i); */
                     i--;
                     // Add pragma start and end to location vector
-                    ret = mk_valid_pragmaloc(pragma_content, pragma_start_pos, pragma_end_pos);
+                    ret = mk_expected_ret(pragma_content, pragma_start_pos, pragma_end_pos);
                     co_yield ret;
                     in_supdef_body = false;
                 }
@@ -838,10 +871,10 @@ namespace SupDef
             }
             catch (const std::exception& e)
             {
-                ret = Error<T, std::filesystem::path>(
+                ret = mk_unexpected_ret(Error<T, std::filesystem::path>(
                     ExcType::INTERNAL_ERROR,
                     "Caught exception while parsing supdefinitions (in function `" + std::string(__PRETTY_FUNCTION__) + "`): " + std::string(e.what()) + "\n"
-                );
+                ));
                 co_return ret;
             }
             catch (...)
@@ -881,13 +914,11 @@ namespace SupDef
                     this->file_content.push_back(MK_CHAR(0, 0, c));
             }
         }
-        ret = nullptr; // Indicate the end
+        ret = mk_null_ret();
 #undef MK_CHAR
         co_return ret;
     }
 
-    // Explicitely instantiate Parser class for all needed character types
-    EXP_INST_CLASS(Parser, (char), (wchar_t), (char8_t), (char16_t), (char32_t))
 #if defined(SUPDEF_DEBUG)
     /* EXP_INST_FUNC(Parser<char>::print_content, (void, (std::ostream&))); */
     // Explicitely instantiate print_content 

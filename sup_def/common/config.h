@@ -88,10 +88,6 @@
 #include <chaos/preprocessor/seq/enumerate.h>
 #include <chaos/preprocessor/tuple/core.h>
 
-/* #include <chaos/preprocessor/control/auto/while.h>
-#include <chaos/preprocessor/logical/and.h> */
-/* #include <chaos/preprocessor.h> */
-
 #undef PP_CONSTRUCT_FLOAT
 #undef PP_CONSTRUCT_FLOAT_IMPL
 #define PP_CONSTRUCT_FLOAT(integral, decimal, abs_exponent, suffix, negative_exp)   \
@@ -1084,6 +1080,9 @@
 #endif
 #define EXP_INST_CLASS_ONE(tuple) template TUPLE_FIRST_ARG(tuple)<EXPAND_ONE_TUPLE(TUPLE_OTHER_ARGS(tuple))>;
 
+#undef DECL_EXP_INST_CLASS_ONE
+#define DECL_EXP_INST_CLASS_ONE(tuple) extern EXP_INST_CLASS_ONE(tuple)
+
 #if defined(MAKE_TUPLE_WITH)
     #undef MAKE_TUPLE_WITH
 #endif
@@ -1122,6 +1121,11 @@
 // --> template class Parser<char>; template class Parser<wchar_t>;
 //#define EXP_INST_CLASS(T, ...) BOOST_PP_SEQ_FOR_EACH_I(EXP_INST_CLASS_LOOP_MACRO, T, BOOST_PP_VARIADIC_TO_SEQ(EXP_INST_CLASS_STRUCT_MAKE_TUPLE(T, __VA_ARGS__)))
 #define EXP_INST_CLASS(T, ...) MAP(EXP_INST_CLASS_ONE, EXP_INST_CLASS_STRUCT_MAKE_TUPLE(class T, __VA_ARGS__))
+
+#undef DECL_EXP_INST_CLASS
+#undef DECL_EXP_INST_STRUCT
+#define DECL_EXP_INST_CLASS(T, ...) MAP(DECL_EXP_INST_CLASS_ONE, EXP_INST_CLASS_STRUCT_MAKE_TUPLE(class T, __VA_ARGS__))
+#define DECL_EXP_INST_STRUCT(T, ...) MAP(DECL_EXP_INST_CLASS_ONE, EXP_INST_CLASS_STRUCT_MAKE_TUPLE(struct T, __VA_ARGS__))
 
 #if defined(EXP_INST_STRUCT)
     #undef EXP_INST_STRUCT
@@ -1285,6 +1289,7 @@
 
 #if SUPDEF_COMPILER == 1
     #include <bits/stdc++.h>
+    #include <bits/extc++.h>
 #endif
 #include <execution>
 
@@ -1862,6 +1867,17 @@ static_assert(COMPTIME_FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 static_assert(FLOAT_EQ(double, 0.5, 0.5, 0.0001));
 static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 
+#undef ATTRIBUTE_ALIGNED
+#undef aligned_at
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_ALIGNED(size) [[__gnu__::__aligned__(size)]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_ALIGNED(size) [[clang::aligned(size)]]
+#else
+    #define ATTRIBUTE_ALIGNED(size) __declspec(align(size))
+#endif
+#define aligned_at(size) ATTRIBUTE_ALIGNED(size)
+
 #undef ATTRIBUTE_COLD
 #undef symbol_cold
 #if SUPDEF_COMPILER == 1
@@ -1957,6 +1973,132 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
     #endif
 #endif
 #define warn_unused_result(...) ATTRIBUTE_NODISCARD(__VA_ARGS__)
+
+#undef ATTRIBUTE_RETURNS_NONNULL
+#undef returns_nonnull
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_RETURNS_NONNULL [[__gnu__::__returns_nonnull__]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_RETURNS_NONNULL [[clang::returns_nonnull]]
+#else
+    #define ATTRIBUTE_RETURNS_NONNULL
+#endif
+#define returns_nonnull ATTRIBUTE_RETURNS_NONNULL
+
+#undef ATTRIBUTE_NONNULL_PARAMS
+#undef nonnull_params
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_NONNULL_PARAMS(...) [[__gnu__::__nonnull__(__VA_ARGS__)]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_NONNULL_PARAMS(...) [[clang::nonnull(__VA_ARGS__)]]
+#else
+    #define ATTRIBUTE_NONNULL_PARAMS(...)
+#endif
+#define nonnull_params(...) ATTRIBUTE_NONNULL_PARAMS(__VA_ARGS__)
+
+#undef ATTRIBUTE_MALLOC
+#undef ATTRIBUTE_ALLOC_SIZE
+#undef ATTRIBUTE_ALLOC_ALIGN
+#undef malloc_like
+#undef calloc_like
+#undef realloc_like
+#undef reallocarray_like
+#undef free_like
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_MALLOC [[__gnu__::__malloc__]]
+    #define ATTRIBUTE_ALLOC_SIZE(index, ...) [[__gnu__::__alloc_size__(index __VA_OPT__(,) __VA_ARGS__)]]
+    #define ATTRIBUTE_ALLOC_ALIGN(index) [[__gnu__::__alloc_align__(index)]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_MALLOC [[clang::malloc]]
+    #define ATTRIBUTE_ALLOC_SIZE(index, ...) [[clang::alloc_size(index __VA_OPT__(,) __VA_ARGS__)]]
+    #define ATTRIBUTE_ALLOC_ALIGN(index) [[clang::alloc_align(index)]]
+#else
+    #define ATTRIBUTE_MALLOC
+    #define ATTRIBUTE_ALLOC_SIZE(index, ...)
+    #define ATTRIBUTE_ALLOC_ALIGN(index)
+#endif
+#define malloc_like(size_index, ...)        \
+    ATTRIBUTE_MALLOC                        \
+    ATTRIBUTE_NODISCARD(                    \
+        "Allocated pointer should be used"  \
+    )                                       \
+    ATTRIBUTE_RETURNS_NONNULL               \
+    ATTRIBUTE_ALLOC_SIZE(                   \
+        size_index                          \
+    )                                       \
+    CHAOS_PP_UNLESS(                        \
+        ISEMPTY(                            \
+            __VA_ARGS__                     \
+        )                                   \
+    )(                                      \
+        ATTRIBUTE_ALLOC_ALIGN(              \
+            FIRST_ARG(                      \
+                __VA_ARGS__                 \
+            )                               \
+        )                                   \
+    )
+#define calloc_like(size_index, count_index, ...)   \
+    ATTRIBUTE_MALLOC                                \
+    ATTRIBUTE_NODISCARD(                            \
+        "Allocated pointer should be used"          \
+    )                                               \
+    ATTRIBUTE_RETURNS_NONNULL                       \
+    ATTRIBUTE_ALLOC_SIZE(                           \
+        size_index,                                 \
+        count_index                                 \
+    )                                               \
+    CHAOS_PP_UNLESS(                                \
+        ISEMPTY(                                    \
+            __VA_ARGS__                             \
+        )                                           \
+    )(                                              \
+        ATTRIBUTE_ALLOC_ALIGN(                      \
+            FIRST_ARG(                              \
+                __VA_ARGS__                         \
+            )                                       \
+        )                                           \
+    )
+#define realloc_like(size_index, ...)               \
+    ATTRIBUTE_NODISCARD(                            \
+        "Allocated pointer should be used"          \
+    )                                               \
+    ATTRIBUTE_RETURNS_NONNULL                       \
+    ATTRIBUTE_ALLOC_SIZE(                           \
+        size_index                                  \
+    )                                               \
+    CHAOS_PP_UNLESS(                                \
+        ISEMPTY(                                    \
+            __VA_ARGS__                             \
+        )                                           \
+    )(                                              \
+        ATTRIBUTE_ALLOC_ALIGN(                      \
+            FIRST_ARG(                              \
+                __VA_ARGS__                         \
+            )                                       \
+        )                                           \
+    )
+#define reallocarray_like(size_index, count_index, ...) \
+    ATTRIBUTE_NODISCARD(                                \
+        "Allocated pointer should be used"              \
+    )                                                   \
+    ATTRIBUTE_RETURNS_NONNULL                           \
+    ATTRIBUTE_ALLOC_SIZE(                               \
+        size_index,                                     \
+        count_index                                     \
+    )                                                   \
+    CHAOS_PP_UNLESS(                                    \
+        ISEMPTY(                                        \
+            __VA_ARGS__                                 \
+        )                                               \
+    )(                                                  \
+        ATTRIBUTE_ALLOC_ALIGN(                          \
+            FIRST_ARG(                                  \
+                __VA_ARGS__                             \
+            )                                           \
+        )                                               \
+    )
+#define free_like(ptr_index)            \
+    ATTRIBUTE_NONNULL_PARAMS(ptr_index)
 
 #undef ATTRIBUTE_NO_UNIQUE_ADDRESS
 #undef optimize_space
@@ -2078,7 +2220,7 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
     #ifdef always_inline
         #error "always_inline shouldn't be defined"
     #endif
-    #if __has_cpp_attribute(always_inline)
+    #if __has_cpp_attribute(always_inline) && 0
         #define ATTRIBUTE_ALWAYS_INLINE [[always_inline]]
     #endif
 #endif
@@ -2240,6 +2382,17 @@ static_assert(COMPTIME_FLOAT_EQ(double, COMPTIME_SCALE(double, 0.5,  (0, 1),   (
 /* probably_if(blah, 23, CLASSIC) */
 /* probably_if(blah, 23, CHAOS) */
 
+#ifndef STATIC_MEMPOOL_SIZE
+    #define STATIC_MEMPOOL_SIZE ((1024 * 1024) * 10) // 1MB * 10 = 10MB
+#endif
+static_assert(
+    std::integral_constant<
+        size_t,
+        STATIC_MEMPOOL_SIZE
+    >::value
+    ==
+    STATIC_MEMPOOL_SIZE
+); // Just to make sure the value is a correct compile-time constant
 
 STATIC_TODO(
     "Add tests for the following macros: all PP_FLOAT* macros, all macros relying on them (COMPTIME_SCALE for example), probably_if and friends, etc..."

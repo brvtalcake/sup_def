@@ -33,7 +33,6 @@
 
 namespace SupDef
 {
-    EXP_INST_STRUCT(PragmaDef, (char), (wchar_t), (char8_t), (char16_t), (char32_t))
 }
 
 #else

@@ -2,7 +2,7 @@ include(FindPython3)
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-set(WANTED_GNULIB_MODULES "stdckdint" #[[ "alloca" "malloca" "memset_explicit" ]])
+set(WANTED_GNULIB_MODULES "stdckdint" "memset_explicit"#[[ "alloca" "malloca" "memset_explicit" ]])
 
 # TODO: Run the build_gnulib_modules target only when processing the CMakeLists.txt file
 # i.e. it should rather be a `execute_process` command

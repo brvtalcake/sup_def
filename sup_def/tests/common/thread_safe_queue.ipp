@@ -70,6 +70,7 @@ BOOST_AUTO_TEST_CASE(test_thread_safe_queue1,
 BOOST_AUTO_TEST_CASE(test_thread_safe_queue2,
     * BoostTest::description("Second test case for `SupDef::Util::ThreadSafeQueue` : tests basic operations in consumer-producer environment")
     * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+    * BoostTest::depends_on("thread_safe_queue/test_thread_safe_queue1")
 )
 {
     using ::SupDef::Util::ThreadSafeQueue;
@@ -121,6 +122,7 @@ BOOST_AUTO_TEST_CASE(test_thread_safe_queue2,
 BOOST_AUTO_TEST_CASE(test_thread_safe_queue3,
     * BoostTest::description("Third test case for `SupDef::Util::ThreadSafeQueue` : tests queue.request_stop()")
     * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+    * BoostTest::depends_on("thread_safe_queue/test_thread_safe_queue2")
 )
 {
     using ::SupDef::Util::ThreadSafeQueue;
@@ -138,7 +140,7 @@ BOOST_AUTO_TEST_CASE(test_thread_safe_queue3,
         {
             try
             {
-                queue.wait_for_next();
+                std::ignore = queue.wait_for_next();
             }
             catch (const ThreadSafeQueue<int>::StopRequired& e)
             {
@@ -180,6 +182,7 @@ POP_MACRO(ARR_SIZE)
 BOOST_AUTO_TEST_CASE(test_thread_safe_queue4,
     * BoostTest::description("Fourth test case for `SupDef::Util::ThreadSafeQueue` : tests basic operations in multiple-consumer-producer environment")
     * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+    * BoostTest::depends_on("thread_safe_queue/test_thread_safe_queue3")
 )
 {
     constexpr size_t NB_CONSUMERS = 5;
@@ -273,6 +276,52 @@ POP_MACRO(ARR_SIZE)
         BOOST_TEST(!any_other);
     }
     BOOST_TEST(res.size() == vec.size());
+}
+
+BOOST_AUTO_TEST_CASE(test_thread_safe_queue5,
+    * BoostTest::description("Fifht test case for `SupDef::Util::ThreadSafeQueue` : tests wait_for_next_or()")
+    * BoostTest::timeout(SUPDEF_TEST_DEFAULT_TIMEOUT)
+    * BoostTest::depends_on("thread_safe_queue/test_thread_safe_queue4")
+)
+{
+    using ::SupDef::Util::ThreadSafeQueue;
+    using namespace std::chrono_literals;
+
+    ThreadSafeQueue<std::byte> queue;
+    auto lambda = [&queue](std::stop_token stoken)
+    {
+        try
+        {
+            std::ignore = queue.wait_for_next_or([&stoken](){ return stoken.stop_requested(); }, [](){ throw int(-1); });
+        }
+        catch (const int& e)
+        {
+            BOOST_TEST(e == -1);
+        }
+        catch (const ThreadSafeQueue<std::byte>::StopRequired& e)
+        {
+            return;
+        }
+        catch (const std::exception& e)
+        {
+            BOOST_TEST_ERROR(e.what());
+        }
+    };
+    std::vector<std::jthread> threads;
+    for (size_t i = 0; i < 5; ++i)
+        threads.emplace_back(lambda);
+        
+    std::this_thread::sleep_for(2s);
+
+    for (auto&& thread : threads)
+        thread.request_stop();
+    queue.notify_all();
+    for (auto&& thread : threads)
+        thread.join();
+    queue.request_stop();
+
+    BOOST_TEST(queue.empty());
+    BOOST_TEST(queue.size() == 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

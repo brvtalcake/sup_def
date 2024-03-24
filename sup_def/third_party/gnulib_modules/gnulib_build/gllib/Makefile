@@ -112,12 +112,26 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = x86_64-pc-linux-gnu
 host_triplet = x86_64-pc-linux-gnu
+am__append_1 = memset_explicit.c
 subdir = gllib
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/glm4/00gnulib.m4 \
-	$(top_srcdir)/glm4/c-bool.m4 \
+	$(top_srcdir)/glm4/absolute-header.m4 \
+	$(top_srcdir)/glm4/c-bool.m4 $(top_srcdir)/glm4/codeset.m4 \
+	$(top_srcdir)/glm4/extensions.m4 \
+	$(top_srcdir)/glm4/extern-inline.m4 \
 	$(top_srcdir)/glm4/gnulib-common.m4 \
-	$(top_srcdir)/glm4/zzgnulib.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/glm4/include_next.m4 \
+	$(top_srcdir)/glm4/locale-fr.m4 \
+	$(top_srcdir)/glm4/memset_explicit.m4 \
+	$(top_srcdir)/glm4/off_t.m4 $(top_srcdir)/glm4/ssize_t.m4 \
+	$(top_srcdir)/glm4/stddef_h.m4 $(top_srcdir)/glm4/stdlib_h.m4 \
+	$(top_srcdir)/glm4/string_h.m4 \
+	$(top_srcdir)/glm4/sys_types_h.m4 \
+	$(top_srcdir)/glm4/unistd_h.m4 \
+	$(top_srcdir)/glm4/warn-on-use.m4 \
+	$(top_srcdir)/glm4/wchar_t.m4 $(top_srcdir)/glm4/zzgnulib.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(noinst_HEADERS) \
@@ -134,7 +148,10 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgnu_a_AR = $(AR) $(ARFLAGS)
 am__DEPENDENCIES_1 =
-am_libgnu_a_OBJECTS = dummy.$(OBJEXT)
+am__libgnu_a_SOURCES_DIST = memset_explicit.c unistd.c
+am__objects_1 =  \
+	memset_explicit.$(OBJEXT)
+am_libgnu_a_OBJECTS = $(am__objects_1) unistd.$(OBJEXT)
 libgnu_a_OBJECTS = $(am_libgnu_a_OBJECTS)
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
@@ -151,7 +168,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I. -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/dummy.Po
+am__depfiles_remade = ./$(DEPDIR)/memset_explicit.Po \
+	./$(DEPDIR)/unistd.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -166,7 +184,7 @@ am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libgnu_a_SOURCES) $(EXTRA_libgnu_a_SOURCES)
-DIST_SOURCES = $(libgnu_a_SOURCES) $(EXTRA_libgnu_a_SOURCES)
+DIST_SOURCES = $(am__libgnu_a_SOURCES_DIST) $(EXTRA_libgnu_a_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -260,20 +278,338 @@ ECHO_T =
 EGREP = /usr/bin/grep -E
 ETAGS = etags
 EXEEXT = 
+GL_GNULIB_ACCESS = 0
+GL_GNULIB_ALIGNED_ALLOC = 0
+GL_GNULIB_ATOLL = 0
+GL_GNULIB_CALLOC_GNU = 0
+GL_GNULIB_CALLOC_POSIX = 0
+GL_GNULIB_CANONICALIZE_FILE_NAME = 0
+GL_GNULIB_CHDIR = 0
+GL_GNULIB_CHOWN = 0
+GL_GNULIB_CLOSE = 0
+GL_GNULIB_COPY_FILE_RANGE = 0
+GL_GNULIB_DUP = 0
+GL_GNULIB_DUP2 = 0
+GL_GNULIB_DUP3 = 0
+GL_GNULIB_ENVIRON = 0
+GL_GNULIB_EUIDACCESS = 0
+GL_GNULIB_EXECL = 0
+GL_GNULIB_EXECLE = 0
+GL_GNULIB_EXECLP = 0
+GL_GNULIB_EXECV = 0
+GL_GNULIB_EXECVE = 0
+GL_GNULIB_EXECVP = 0
+GL_GNULIB_EXECVPE = 0
+GL_GNULIB_EXPLICIT_BZERO = 0
+GL_GNULIB_FACCESSAT = 0
+GL_GNULIB_FCHDIR = 0
+GL_GNULIB_FCHOWNAT = 0
+GL_GNULIB_FDATASYNC = 0
+GL_GNULIB_FFSL = 0
+GL_GNULIB_FFSLL = 0
+GL_GNULIB_FREE_POSIX = 0
+GL_GNULIB_FSYNC = 0
+GL_GNULIB_FTRUNCATE = 0
+GL_GNULIB_GETCWD = 0
+GL_GNULIB_GETDOMAINNAME = 0
+GL_GNULIB_GETDTABLESIZE = 0
+GL_GNULIB_GETENTROPY = 0
+GL_GNULIB_GETGROUPS = 0
+GL_GNULIB_GETHOSTNAME = 0
+GL_GNULIB_GETLOADAVG = 0
+GL_GNULIB_GETLOGIN = 0
+GL_GNULIB_GETLOGIN_R = 0
+GL_GNULIB_GETOPT_POSIX = 0
+GL_GNULIB_GETPAGESIZE = 0
+GL_GNULIB_GETPASS = 0
+GL_GNULIB_GETPASS_GNU = 0
+GL_GNULIB_GETPROGNAME = 0
+GL_GNULIB_GETSUBOPT = 0
+GL_GNULIB_GETUSERSHELL = 0
+GL_GNULIB_GRANTPT = 0
+GL_GNULIB_GROUP_MEMBER = 0
+GL_GNULIB_ISATTY = 0
+GL_GNULIB_LCHOWN = 0
+GL_GNULIB_LINK = 0
+GL_GNULIB_LINKAT = 0
+GL_GNULIB_LSEEK = 0
+GL_GNULIB_MALLOC_GNU = 0
+GL_GNULIB_MALLOC_POSIX = 0
+GL_GNULIB_MBSCASECMP = 0
+GL_GNULIB_MBSCASESTR = 0
+GL_GNULIB_MBSCHR = 0
+GL_GNULIB_MBSCSPN = 0
+GL_GNULIB_MBSLEN = 0
+GL_GNULIB_MBSNCASECMP = 0
+GL_GNULIB_MBSNLEN = 0
+GL_GNULIB_MBSPBRK = 0
+GL_GNULIB_MBSPCASECMP = 0
+GL_GNULIB_MBSRCHR = 0
+GL_GNULIB_MBSSEP = 0
+GL_GNULIB_MBSSPN = 0
+GL_GNULIB_MBSSTR = 0
+GL_GNULIB_MBSTOK_R = 0
+GL_GNULIB_MBSTOWCS = 0
+GL_GNULIB_MBTOWC = 0
+GL_GNULIB_MDA_ACCESS = 1
+GL_GNULIB_MDA_CHDIR = 1
+GL_GNULIB_MDA_CLOSE = 1
+GL_GNULIB_MDA_DUP = 1
+GL_GNULIB_MDA_DUP2 = 1
+GL_GNULIB_MDA_ECVT = 1
+GL_GNULIB_MDA_EXECL = 1
+GL_GNULIB_MDA_EXECLE = 1
+GL_GNULIB_MDA_EXECLP = 1
+GL_GNULIB_MDA_EXECV = 1
+GL_GNULIB_MDA_EXECVE = 1
+GL_GNULIB_MDA_EXECVP = 1
+GL_GNULIB_MDA_EXECVPE = 1
+GL_GNULIB_MDA_FCVT = 1
+GL_GNULIB_MDA_GCVT = 1
+GL_GNULIB_MDA_GETCWD = 1
+GL_GNULIB_MDA_GETPID = 1
+GL_GNULIB_MDA_ISATTY = 1
+GL_GNULIB_MDA_LSEEK = 1
+GL_GNULIB_MDA_MEMCCPY = 1
+GL_GNULIB_MDA_MKTEMP = 1
+GL_GNULIB_MDA_PUTENV = 1
+GL_GNULIB_MDA_READ = 1
+GL_GNULIB_MDA_RMDIR = 1
+GL_GNULIB_MDA_STRDUP = 1
+GL_GNULIB_MDA_SWAB = 1
+GL_GNULIB_MDA_UNLINK = 1
+GL_GNULIB_MDA_WRITE = 1
+GL_GNULIB_MEMCHR = 0
+GL_GNULIB_MEMMEM = 0
+GL_GNULIB_MEMPCPY = 0
+GL_GNULIB_MEMRCHR = 0
+GL_GNULIB_MEMSET_EXPLICIT = 1
+GL_GNULIB_MKDTEMP = 0
+GL_GNULIB_MKOSTEMP = 0
+GL_GNULIB_MKOSTEMPS = 0
+GL_GNULIB_MKSTEMP = 0
+GL_GNULIB_MKSTEMPS = 0
+GL_GNULIB_PIPE = 0
+GL_GNULIB_PIPE2 = 0
+GL_GNULIB_POSIX_MEMALIGN = 0
+GL_GNULIB_POSIX_OPENPT = 0
+GL_GNULIB_PREAD = 0
+GL_GNULIB_PTSNAME = 0
+GL_GNULIB_PTSNAME_R = 0
+GL_GNULIB_PUTENV = 0
+GL_GNULIB_PWRITE = 0
+GL_GNULIB_QSORT_R = 0
+GL_GNULIB_RAND = 0
+GL_GNULIB_RANDOM = 0
+GL_GNULIB_RANDOM_R = 0
+GL_GNULIB_RAWMEMCHR = 0
+GL_GNULIB_READ = 0
+GL_GNULIB_READLINK = 0
+GL_GNULIB_READLINKAT = 0
+GL_GNULIB_REALLOCARRAY = 0
+GL_GNULIB_REALLOC_GNU = 0
+GL_GNULIB_REALLOC_POSIX = 0
+GL_GNULIB_REALPATH = 0
+GL_GNULIB_RMDIR = 0
+GL_GNULIB_RPMATCH = 0
+GL_GNULIB_SECURE_GETENV = 0
+GL_GNULIB_SETENV = 0
+GL_GNULIB_SETHOSTNAME = 0
+GL_GNULIB_SIGABBREV_NP = 0
+GL_GNULIB_SIGDESCR_NP = 0
+GL_GNULIB_SLEEP = 0
+GL_GNULIB_STPCPY = 0
+GL_GNULIB_STPNCPY = 0
+GL_GNULIB_STRCASESTR = 0
+GL_GNULIB_STRCHRNUL = 0
+GL_GNULIB_STRDUP = 0
+GL_GNULIB_STRERROR = 0
+GL_GNULIB_STRERRORNAME_NP = 0
+GL_GNULIB_STRERROR_R = 0
+GL_GNULIB_STRNCAT = 0
+GL_GNULIB_STRNDUP = 0
+GL_GNULIB_STRNLEN = 0
+GL_GNULIB_STRPBRK = 0
+GL_GNULIB_STRSEP = 0
+GL_GNULIB_STRSIGNAL = 0
+GL_GNULIB_STRSTR = 0
+GL_GNULIB_STRTOD = 0
+GL_GNULIB_STRTOK_R = 0
+GL_GNULIB_STRTOL = 0
+GL_GNULIB_STRTOLD = 0
+GL_GNULIB_STRTOLL = 0
+GL_GNULIB_STRTOUL = 0
+GL_GNULIB_STRTOULL = 0
+GL_GNULIB_STRVERSCMP = 0
+GL_GNULIB_SYMLINK = 0
+GL_GNULIB_SYMLINKAT = 0
+GL_GNULIB_SYSTEM_POSIX = 0
+GL_GNULIB_TRUNCATE = 0
+GL_GNULIB_TTYNAME_R = 0
+GL_GNULIB_UNISTD_H_GETOPT = 0
+GL_GNULIB_UNISTD_H_NONBLOCKING = 0
+GL_GNULIB_UNISTD_H_SIGPIPE = 0
+GL_GNULIB_UNLINK = 0
+GL_GNULIB_UNLINKAT = 0
+GL_GNULIB_UNLOCKPT = 0
+GL_GNULIB_UNSETENV = 0
+GL_GNULIB_USLEEP = 0
+GL_GNULIB_WCTOMB = 0
+GL_GNULIB_WRITE = 0
+GL_GNULIB__EXIT = 0
 GREP = /usr/bin/grep
+HAVE_ALIGNED_ALLOC = 1
+HAVE_ATOLL = 1
+HAVE_CANONICALIZE_FILE_NAME = 1
+HAVE_CHOWN = 1
+HAVE_COPY_FILE_RANGE = 1
+HAVE_DECL_ECVT = 1
+HAVE_DECL_ENVIRON = 1
+HAVE_DECL_EXECVPE = 1
+HAVE_DECL_FCHDIR = 1
+HAVE_DECL_FCVT = 1
+HAVE_DECL_FDATASYNC = 1
+HAVE_DECL_GCVT = 1
+HAVE_DECL_GETDOMAINNAME = 1
+HAVE_DECL_GETLOADAVG = 1
+HAVE_DECL_GETLOGIN = 1
+HAVE_DECL_GETLOGIN_R = 1
+HAVE_DECL_GETPAGESIZE = 1
+HAVE_DECL_GETUSERSHELL = 1
+HAVE_DECL_INITSTATE = 1
+HAVE_DECL_MEMMEM = 1
+HAVE_DECL_MEMRCHR = 1
+HAVE_DECL_PROGRAM_INVOCATION_NAME = 1
+HAVE_DECL_SETENV = 1
+HAVE_DECL_SETHOSTNAME = 1
+HAVE_DECL_SETSTATE = 1
+HAVE_DECL_STRDUP = 1
+HAVE_DECL_STRERROR_R = 1
+HAVE_DECL_STRNDUP = 1
+HAVE_DECL_STRNLEN = 1
+HAVE_DECL_STRSIGNAL = 1
+HAVE_DECL_STRTOK_R = 1
+HAVE_DECL_TRUNCATE = 1
+HAVE_DECL_TTYNAME_R = 1
+HAVE_DECL_UNSETENV = 1
+HAVE_DUP3 = 1
+HAVE_EUIDACCESS = 1
+HAVE_EXECVPE = 1
+HAVE_EXPLICIT_BZERO = 1
+HAVE_FACCESSAT = 1
+HAVE_FCHDIR = 1
+HAVE_FCHOWNAT = 1
+HAVE_FDATASYNC = 1
+HAVE_FFSL = 1
+HAVE_FFSLL = 1
+HAVE_FSYNC = 1
+HAVE_FTRUNCATE = 1
+HAVE_GETDTABLESIZE = 1
+HAVE_GETENTROPY = 1
+HAVE_GETGROUPS = 1
+HAVE_GETHOSTNAME = 1
+HAVE_GETLOGIN = 1
+HAVE_GETPAGESIZE = 1
+HAVE_GETPASS = 1
+HAVE_GETPROGNAME = 1
+HAVE_GETSUBOPT = 1
+HAVE_GRANTPT = 1
+HAVE_GROUP_MEMBER = 1
+HAVE_INITSTATE = 1
+HAVE_LCHOWN = 1
+HAVE_LINK = 1
+HAVE_LINKAT = 1
+HAVE_MAX_ALIGN_T = 1
+HAVE_MBSLEN = 0
+HAVE_MBTOWC = 1
+HAVE_MEMPCPY = 1
+HAVE_MEMSET_EXPLICIT = 0
+HAVE_MKDTEMP = 1
+HAVE_MKOSTEMP = 1
+HAVE_MKOSTEMPS = 1
+HAVE_MKSTEMP = 1
+HAVE_MKSTEMPS = 1
+HAVE_OS_H = 0
+HAVE_PIPE = 1
+HAVE_PIPE2 = 1
+HAVE_POSIX_MEMALIGN = 1
+HAVE_POSIX_OPENPT = 1
+HAVE_PREAD = 1
+HAVE_PTSNAME = 1
+HAVE_PTSNAME_R = 1
+HAVE_PWRITE = 1
+HAVE_QSORT_R = 1
+HAVE_RANDOM = 1
+HAVE_RANDOM_H = 1
+HAVE_RANDOM_R = 1
+HAVE_RAWMEMCHR = 1
+HAVE_READLINK = 1
+HAVE_READLINKAT = 1
+HAVE_REALLOCARRAY = 1
+HAVE_REALPATH = 1
+HAVE_RPMATCH = 1
+HAVE_SECURE_GETENV = 1
+HAVE_SETENV = 1
+HAVE_SETHOSTNAME = 1
+HAVE_SETSTATE = 1
+HAVE_SIGABBREV_NP = 1
+HAVE_SIGDESCR_NP = 1
+HAVE_SLEEP = 1
+HAVE_STPCPY = 1
+HAVE_STPNCPY = 1
+HAVE_STRCASESTR = 1
+HAVE_STRCHRNUL = 1
+HAVE_STRERRORNAME_NP = 1
+HAVE_STRPBRK = 1
+HAVE_STRSEP = 1
+HAVE_STRTOD = 1
+HAVE_STRTOL = 1
+HAVE_STRTOLD = 1
+HAVE_STRTOLL = 1
+HAVE_STRTOUL = 1
+HAVE_STRTOULL = 1
+HAVE_STRUCT_RANDOM_DATA = 1
+HAVE_STRVERSCMP = 1
+HAVE_SYMLINK = 1
+HAVE_SYMLINKAT = 1
+HAVE_SYS_LOADAVG_H = 0
+HAVE_SYS_PARAM_H = 0
+HAVE_UNISTD_H = 1
+HAVE_UNLINKAT = 1
+HAVE_UNLOCKPT = 1
+HAVE_USLEEP = 1
+HAVE_WCHAR_T = 1
+HAVE__EXIT = 1
+INCLUDE_NEXT = include_next
+INCLUDE_NEXT_AS_FIRST_DIRECTIVE = include_next
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
+LC_COLLATE_IMPLEMENTED = true
+LC_MONETARY_IMPLEMENTED = true
+LC_NUMERIC_IMPLEMENTED = true
+LC_TIME_IMPLEMENTED = true
 LDFLAGS = 
 LIBGNU_LIBDEPS = 
 LIBGNU_LTLIBDEPS = 
 LIBOBJS = 
 LIBS = 
+LOCALE_FR_UTF8 = fr_FR.UTF-8
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} '/home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/build-aux/missing' makeinfo
 MKDIR_P = /usr/bin/mkdir -p
+NEXT_AS_FIRST_DIRECTIVE_STDDEF_H = <stddef.h>
+NEXT_AS_FIRST_DIRECTIVE_STDLIB_H = <stdlib.h>
+NEXT_AS_FIRST_DIRECTIVE_STRING_H = <string.h>
+NEXT_AS_FIRST_DIRECTIVE_SYS_TYPES_H = <sys/types.h>
+NEXT_AS_FIRST_DIRECTIVE_UNISTD_H = <unistd.h>
+NEXT_STDDEF_H = <stddef.h>
+NEXT_STDLIB_H = <stdlib.h>
+NEXT_STRING_H = <string.h>
+NEXT_SYS_TYPES_H = <sys/types.h>
+NEXT_UNISTD_H = <unistd.h>
 OBJEXT = o
 PACKAGE = dummy
 PACKAGE_BUGREPORT = 
@@ -283,12 +619,132 @@ PACKAGE_TARNAME = dummy
 PACKAGE_URL = 
 PACKAGE_VERSION = 0
 PATH_SEPARATOR = :
+PRAGMA_COLUMNS = 
+PRAGMA_SYSTEM_HEADER = #pragma GCC system_header
 RANLIB = ranlib
+REPLACE_ACCESS = 0
+REPLACE_ALIGNED_ALLOC = 0
+REPLACE_CALLOC_FOR_CALLOC_GNU = 0
+REPLACE_CALLOC_FOR_CALLOC_POSIX = 0
+REPLACE_CANONICALIZE_FILE_NAME = 0
+REPLACE_CHOWN = 0
+REPLACE_CLOSE = 0
+REPLACE_COPY_FILE_RANGE = 0
+REPLACE_DUP = 0
+REPLACE_DUP2 = 0
+REPLACE_DUP3 = 0
+REPLACE_EXECL = 0
+REPLACE_EXECLE = 0
+REPLACE_EXECLP = 0
+REPLACE_EXECV = 0
+REPLACE_EXECVE = 0
+REPLACE_EXECVP = 0
+REPLACE_EXECVPE = 0
+REPLACE_FACCESSAT = 0
+REPLACE_FCHDIR = 0
+REPLACE_FCHOWNAT = 0
+REPLACE_FDATASYNC = 0
+REPLACE_FFSLL = 0
+REPLACE_FREE = 0
+REPLACE_FTRUNCATE = 0
+REPLACE_GETCWD = 0
+REPLACE_GETDOMAINNAME = 0
+REPLACE_GETDTABLESIZE = 0
+REPLACE_GETENTROPY = 0
+REPLACE_GETGROUPS = 0
+REPLACE_GETLOADAVG = 0
+REPLACE_GETLOGIN_R = 0
+REPLACE_GETPAGESIZE = 0
+REPLACE_GETPASS = 0
+REPLACE_GETPASS_FOR_GETPASS_GNU = 0
+REPLACE_GETPROGNAME = 0
+REPLACE_GETSUBOPT = 0
+REPLACE_INITSTATE = 0
+REPLACE_ISATTY = 0
+REPLACE_LCHOWN = 0
+REPLACE_LINK = 0
+REPLACE_LINKAT = 0
+REPLACE_LSEEK = 0
+REPLACE_MALLOC_FOR_MALLOC_GNU = 0
+REPLACE_MALLOC_FOR_MALLOC_POSIX = 0
+REPLACE_MBSTOWCS = 0
+REPLACE_MBTOWC = 0
+REPLACE_MB_CUR_MAX = 0
+REPLACE_MEMCHR = 0
+REPLACE_MEMMEM = 0
+REPLACE_MEMPCPY = 0
+REPLACE_MKOSTEMP = 0
+REPLACE_MKOSTEMPS = 0
+REPLACE_MKSTEMP = 0
+REPLACE_NULL = 0
+REPLACE_PIPE2 = 0
+REPLACE_POSIX_MEMALIGN = 0
+REPLACE_POSIX_OPENPT = 0
+REPLACE_PREAD = 0
+REPLACE_PTSNAME = 0
+REPLACE_PTSNAME_R = 0
+REPLACE_PUTENV = 0
+REPLACE_PWRITE = 0
+REPLACE_QSORT_R = 0
+REPLACE_RAND = 0
+REPLACE_RANDOM = 0
+REPLACE_RANDOM_R = 0
+REPLACE_READ = 0
+REPLACE_READLINK = 0
+REPLACE_READLINKAT = 0
+REPLACE_REALLOCARRAY = 0
+REPLACE_REALLOC_FOR_REALLOC_GNU = 0
+REPLACE_REALLOC_FOR_REALLOC_POSIX = 0
+REPLACE_REALPATH = 0
+REPLACE_RMDIR = 0
+REPLACE_SETENV = 0
+REPLACE_SETHOSTNAME = 0
+REPLACE_SETSTATE = 0
+REPLACE_SLEEP = 0
+REPLACE_STPCPY = 0
+REPLACE_STPNCPY = 0
+REPLACE_STRCASESTR = 0
+REPLACE_STRCHRNUL = 0
+REPLACE_STRDUP = 0
+REPLACE_STRERROR = 0
+REPLACE_STRERRORNAME_NP = 0
+REPLACE_STRERROR_R = 0
+REPLACE_STRNCAT = 0
+REPLACE_STRNDUP = 0
+REPLACE_STRNLEN = 0
+REPLACE_STRSIGNAL = 0
+REPLACE_STRSTR = 0
+REPLACE_STRTOD = 0
+REPLACE_STRTOK_R = 0
+REPLACE_STRTOL = 0
+REPLACE_STRTOLD = 0
+REPLACE_STRTOLL = 0
+REPLACE_STRTOUL = 0
+REPLACE_STRTOULL = 0
+REPLACE_STRVERSCMP = 0
+REPLACE_SYMLINK = 0
+REPLACE_SYMLINKAT = 0
+REPLACE_TRUNCATE = 0
+REPLACE_TTYNAME_R = 0
+REPLACE_UNLINK = 0
+REPLACE_UNLINKAT = 0
+REPLACE_UNSETENV = 0
+REPLACE_USLEEP = 0
+REPLACE_WCTOMB = 0
+REPLACE_WRITE = 0
+REPLACE__EXIT = 0
 SET_MAKE = 
 SHELL = /bin/bash
 STDCKDINT_H = stdckdint.h
+STDDEF_H = stddef.h
 STRIP = 
+UNDEFINE_STRTOK_R = 0
+UNISTD_H_HAVE_SYS_RANDOM_H = 0
+UNISTD_H_HAVE_WINSOCK2_H = 0
+UNISTD_H_HAVE_WINSOCK2_H_AND_USE_SOCKETS = 0
 VERSION = 0
+WINDOWS_64_BIT_OFF_T = 0
+WINDOWS_STAT_INODES = 0
 abs_builddir = /home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/gllib
 abs_srcdir = /home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/gllib
 abs_top_builddir = /home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build
@@ -348,10 +804,16 @@ SUBDIRS =
 noinst_HEADERS = 
 noinst_LIBRARIES = libgnu.a
 noinst_LTLIBRARIES = 
-EXTRA_DIST = intprops-internal.h stdckdint.in.h
-BUILT_SOURCES = $(STDCKDINT_H)
+EXTRA_DIST = _Noreturn.h arg-nonnull.h c++defs.h warn-on-use.h \
+	intprops-internal.h stdckdint.in.h stddef.in.h stdlib.in.h \
+	string.in.h sys_types.in.h unistd.in.h
+BUILT_SOURCES = $(STDCKDINT_H) $(STDDEF_H) stdlib.h string.h \
+	sys/types.h unistd.h
 SUFFIXES = 
-MOSTLYCLEANFILES = core *.stackdump stdckdint.h stdckdint.h-t
+MOSTLYCLEANFILES = core *.stackdump stdckdint.h stdckdint.h-t stddef.h \
+	stddef.h-t stdlib.h stdlib.h-t1 stdlib.h-t2 stdlib.h-t3 \
+	string.h string.h-t1 string.h-t2 sys/types.h sys/types.h-t \
+	unistd.h unistd.h-t1 unistd.h-t2 unistd.h-t3 unistd.h-t4
 MOSTLYCLEANDIRS = 
 CLEANFILES = 
 DISTCLEANFILES = 
@@ -359,10 +821,15 @@ MAINTAINERCLEANFILES =
 # No GNU Make output.
 AM_CPPFLAGS = -DGNULIB_STRICT_CHECKING=1
 AM_CFLAGS = 
-libgnu_a_SOURCES = dummy.c
+libgnu_a_SOURCES = $(am__append_1) unistd.c
 libgnu_a_LIBADD = $(gl_LIBOBJS)
 libgnu_a_DEPENDENCIES = $(gl_LIBOBJS)
 EXTRA_libgnu_a_SOURCES = 
+
+# Use this preprocessor expression to decide whether #include_next works.
+# Do not rely on a 'configure'-time test for this, since the expression
+# might appear in an installed header, which is used by some other compiler.
+HAVE_INCLUDE_NEXT = (__GNUC__ || __clang__ || 60000000 <= __DECC_VER)
 
 # In 'sed', replace the pattern space with a "DO NOT EDIT" comment.
 SED_HEADER_NOEDIT = s,.*,/* DO NOT EDIT! GENERATED AUTOMATICALLY! */,
@@ -378,6 +845,26 @@ SED_HEADER_TO_AT_t = $(SED_HEADER_STDOUT) -n -e 'w $@-t'
 
 # Use $(gl_V_at) instead of $(AM_V_GEN) or $(AM_V_at) on a line that
 gl_V_at = $(AM_V_GEN)
+
+# Because this Makefile snippet defines a variable used by other
+# gnulib Makefile snippets, it must be present in all makefiles that
+# need it. This is ensured by the applicability 'all' defined above.
+_NORETURN_H = $(srcdir)/_Noreturn.h
+
+# Because this Makefile snippet defines a variable used by other
+# gnulib Makefile snippets, it must be present in all makefiles that
+# need it. This is ensured by the applicability 'all' defined above.
+ARG_NONNULL_H = $(srcdir)/arg-nonnull.h
+
+# Because this Makefile snippet defines a variable used by other
+# gnulib Makefile snippets, it must be present in all makefiles that
+# need it. This is ensured by the applicability 'all' defined above.
+CXXDEFS_H = $(srcdir)/c++defs.h
+
+# Because this Makefile snippet defines a variable used by other
+# gnulib Makefile snippets, it must be present in all makefiles that
+# need it. This is ensured by the applicability 'all' defined above.
+WARN_ON_USE_H = $(srcdir)/warn-on-use.h
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -438,7 +925,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/dummy.Po # am--include-marker
+include ./$(DEPDIR)/memset_explicit.Po # am--include-marker
+include ./$(DEPDIR)/unistd.Po # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -665,7 +1153,8 @@ clean-am: clean-generic clean-noinstLIBRARIES clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-recursive
-		-rm -f ./$(DEPDIR)/dummy.Po
+		-rm -f ./$(DEPDIR)/memset_explicit.Po
+	-rm -f ./$(DEPDIR)/unistd.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-local distclean-tags
@@ -711,7 +1200,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
-		-rm -f ./$(DEPDIR)/dummy.Po
+		-rm -f ./$(DEPDIR)/memset_explicit.Po
+	-rm -f ./$(DEPDIR)/unistd.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic \
 	maintainer-clean-local
@@ -760,6 +1250,514 @@ stdckdint.h: stdckdint.in.h $(top_builddir)/config.status
 	$(AM_V_at)mv $@-t $@
 #stdckdint.h: $(top_builddir)/config.status
 #	rm -f $@
+
+# We need the following in order to create <stddef.h> when the system
+# doesn't have one that works with the given compiler.
+stddef.h: stddef.in.h $(top_builddir)/config.status
+	$(gl_V_at)$(SED_HEADER_STDOUT) \
+	      -e 's|@''GUARD_PREFIX''@|GL|g' \
+	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|#pragma GCC system_header|g' \
+	      -e 's|@''PRAGMA_COLUMNS''@||g' \
+	      -e 's|@''NEXT_STDDEF_H''@|$(NEXT_STDDEF_H)|g' \
+	      -e 's|@''HAVE_MAX_ALIGN_T''@|$(HAVE_MAX_ALIGN_T)|g' \
+	      -e 's|@''HAVE_WCHAR_T''@|$(HAVE_WCHAR_T)|g' \
+	      -e 's|@''REPLACE_NULL''@|$(REPLACE_NULL)|g' \
+	      $(srcdir)/stddef.in.h > $@-t
+	$(AM_V_at)mv $@-t $@
+#stddef.h: $(top_builddir)/config.status
+#	rm -f $@
+
+# We need the following in order to create <stdlib.h> when the system
+# doesn't have one that works with the given compiler.
+stdlib.h: stdlib.in.h $(top_builddir)/config.status $(CXXDEFS_H) \
+  $(_NORETURN_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+	$(gl_V_at)$(SED_HEADER_STDOUT) \
+	      -e 's|@''GUARD_PREFIX''@|GL|g' \
+	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|#pragma GCC system_header|g' \
+	      -e 's|@''PRAGMA_COLUMNS''@||g' \
+	      -e 's|@''NEXT_STDLIB_H''@|$(NEXT_STDLIB_H)|g' \
+	      -e 's/@''GNULIB__EXIT''@/$(GL_GNULIB__EXIT)/g' \
+	      -e 's/@''GNULIB_ALIGNED_ALLOC''@/$(GL_GNULIB_ALIGNED_ALLOC)/g' \
+	      -e 's/@''GNULIB_ATOLL''@/$(GL_GNULIB_ATOLL)/g' \
+	      -e 's/@''GNULIB_CALLOC_GNU''@/$(GL_GNULIB_CALLOC_GNU)/g' \
+	      -e 's/@''GNULIB_CALLOC_POSIX''@/$(GL_GNULIB_CALLOC_POSIX)/g' \
+	      -e 's/@''GNULIB_CANONICALIZE_FILE_NAME''@/$(GL_GNULIB_CANONICALIZE_FILE_NAME)/g' \
+	      -e 's/@''GNULIB_FREE_POSIX''@/$(GL_GNULIB_FREE_POSIX)/g' \
+	      -e 's/@''GNULIB_GETLOADAVG''@/$(GL_GNULIB_GETLOADAVG)/g' \
+	      -e 's/@''GNULIB_GETPROGNAME''@/$(GL_GNULIB_GETPROGNAME)/g' \
+	      -e 's/@''GNULIB_GETSUBOPT''@/$(GL_GNULIB_GETSUBOPT)/g' \
+	      -e 's/@''GNULIB_GRANTPT''@/$(GL_GNULIB_GRANTPT)/g' \
+	      -e 's/@''GNULIB_MALLOC_GNU''@/$(GL_GNULIB_MALLOC_GNU)/g' \
+	      -e 's/@''GNULIB_MALLOC_POSIX''@/$(GL_GNULIB_MALLOC_POSIX)/g' \
+	      -e 's/@''GNULIB_MBSTOWCS''@/$(GL_GNULIB_MBSTOWCS)/g' \
+	      -e 's/@''GNULIB_MBTOWC''@/$(GL_GNULIB_MBTOWC)/g' \
+	      -e 's/@''GNULIB_MKDTEMP''@/$(GL_GNULIB_MKDTEMP)/g' \
+	      -e 's/@''GNULIB_MKOSTEMP''@/$(GL_GNULIB_MKOSTEMP)/g' \
+	      -e 's/@''GNULIB_MKOSTEMPS''@/$(GL_GNULIB_MKOSTEMPS)/g' \
+	      -e 's/@''GNULIB_MKSTEMP''@/$(GL_GNULIB_MKSTEMP)/g' \
+	      -e 's/@''GNULIB_MKSTEMPS''@/$(GL_GNULIB_MKSTEMPS)/g' \
+	      -e 's/@''GNULIB_POSIX_MEMALIGN''@/$(GL_GNULIB_POSIX_MEMALIGN)/g' \
+	      -e 's/@''GNULIB_POSIX_OPENPT''@/$(GL_GNULIB_POSIX_OPENPT)/g' \
+	      -e 's/@''GNULIB_PTSNAME''@/$(GL_GNULIB_PTSNAME)/g' \
+	      -e 's/@''GNULIB_PTSNAME_R''@/$(GL_GNULIB_PTSNAME_R)/g' \
+	      -e 's/@''GNULIB_PUTENV''@/$(GL_GNULIB_PUTENV)/g' \
+	      -e 's/@''GNULIB_QSORT_R''@/$(GL_GNULIB_QSORT_R)/g' \
+	      -e 's/@''GNULIB_RAND''@/$(GL_GNULIB_RAND)/g' \
+	      -e 's/@''GNULIB_RANDOM''@/$(GL_GNULIB_RANDOM)/g' \
+	      -e 's/@''GNULIB_RANDOM_R''@/$(GL_GNULIB_RANDOM_R)/g' \
+	      -e 's/@''GNULIB_REALLOC_GNU''@/$(GL_GNULIB_REALLOC_GNU)/g' \
+	      -e 's/@''GNULIB_REALLOC_POSIX''@/$(GL_GNULIB_REALLOC_POSIX)/g' \
+	      -e 's/@''GNULIB_REALLOCARRAY''@/$(GL_GNULIB_REALLOCARRAY)/g' \
+	      -e 's/@''GNULIB_REALPATH''@/$(GL_GNULIB_REALPATH)/g' \
+	      -e 's/@''GNULIB_RPMATCH''@/$(GL_GNULIB_RPMATCH)/g' \
+	      -e 's/@''GNULIB_SECURE_GETENV''@/$(GL_GNULIB_SECURE_GETENV)/g' \
+	      -e 's/@''GNULIB_SETENV''@/$(GL_GNULIB_SETENV)/g' \
+	      -e 's/@''GNULIB_STRTOD''@/$(GL_GNULIB_STRTOD)/g' \
+	      -e 's/@''GNULIB_STRTOL''@/$(GL_GNULIB_STRTOL)/g' \
+	      -e 's/@''GNULIB_STRTOLD''@/$(GL_GNULIB_STRTOLD)/g' \
+	      -e 's/@''GNULIB_STRTOLL''@/$(GL_GNULIB_STRTOLL)/g' \
+	      -e 's/@''GNULIB_STRTOUL''@/$(GL_GNULIB_STRTOUL)/g' \
+	      -e 's/@''GNULIB_STRTOULL''@/$(GL_GNULIB_STRTOULL)/g' \
+	      -e 's/@''GNULIB_SYSTEM_POSIX''@/$(GL_GNULIB_SYSTEM_POSIX)/g' \
+	      -e 's/@''GNULIB_UNLOCKPT''@/$(GL_GNULIB_UNLOCKPT)/g' \
+	      -e 's/@''GNULIB_UNSETENV''@/$(GL_GNULIB_UNSETENV)/g' \
+	      -e 's/@''GNULIB_WCTOMB''@/$(GL_GNULIB_WCTOMB)/g' \
+	      -e 's/@''GNULIB_MDA_ECVT''@/$(GL_GNULIB_MDA_ECVT)/g' \
+	      -e 's/@''GNULIB_MDA_FCVT''@/$(GL_GNULIB_MDA_FCVT)/g' \
+	      -e 's/@''GNULIB_MDA_GCVT''@/$(GL_GNULIB_MDA_GCVT)/g' \
+	      -e 's/@''GNULIB_MDA_MKTEMP''@/$(GL_GNULIB_MDA_MKTEMP)/g' \
+	      -e 's/@''GNULIB_MDA_PUTENV''@/$(GL_GNULIB_MDA_PUTENV)/g' \
+	      < $(srcdir)/stdlib.in.h > $@-t1
+	$(AM_V_at)sed \
+	      -e 's|@''HAVE__EXIT''@|$(HAVE__EXIT)|g' \
+	      -e 's|@''HAVE_ALIGNED_ALLOC''@|$(HAVE_ALIGNED_ALLOC)|g' \
+	      -e 's|@''HAVE_ATOLL''@|$(HAVE_ATOLL)|g' \
+	      -e 's|@''HAVE_CANONICALIZE_FILE_NAME''@|$(HAVE_CANONICALIZE_FILE_NAME)|g' \
+	      -e 's|@''HAVE_DECL_ECVT''@|$(HAVE_DECL_ECVT)|g' \
+	      -e 's|@''HAVE_DECL_FCVT''@|$(HAVE_DECL_FCVT)|g' \
+	      -e 's|@''HAVE_DECL_GCVT''@|$(HAVE_DECL_GCVT)|g' \
+	      -e 's|@''HAVE_DECL_GETLOADAVG''@|$(HAVE_DECL_GETLOADAVG)|g' \
+	      -e 's|@''HAVE_DECL_PROGRAM_INVOCATION_NAME''@|$(HAVE_DECL_PROGRAM_INVOCATION_NAME)|g' \
+	      -e 's|@''HAVE_GETPROGNAME''@|$(HAVE_GETPROGNAME)|g' \
+	      -e 's|@''HAVE_GETSUBOPT''@|$(HAVE_GETSUBOPT)|g' \
+	      -e 's|@''HAVE_GRANTPT''@|$(HAVE_GRANTPT)|g' \
+	      -e 's|@''HAVE_INITSTATE''@|$(HAVE_INITSTATE)|g' \
+	      -e 's|@''HAVE_DECL_INITSTATE''@|$(HAVE_DECL_INITSTATE)|g' \
+	      -e 's|@''HAVE_MBTOWC''@|$(HAVE_MBTOWC)|g' \
+	      -e 's|@''HAVE_MKDTEMP''@|$(HAVE_MKDTEMP)|g' \
+	      -e 's|@''HAVE_MKOSTEMP''@|$(HAVE_MKOSTEMP)|g' \
+	      -e 's|@''HAVE_MKOSTEMPS''@|$(HAVE_MKOSTEMPS)|g' \
+	      -e 's|@''HAVE_MKSTEMP''@|$(HAVE_MKSTEMP)|g' \
+	      -e 's|@''HAVE_MKSTEMPS''@|$(HAVE_MKSTEMPS)|g' \
+	      -e 's|@''HAVE_POSIX_MEMALIGN''@|$(HAVE_POSIX_MEMALIGN)|g' \
+	      -e 's|@''HAVE_POSIX_OPENPT''@|$(HAVE_POSIX_OPENPT)|g' \
+	      -e 's|@''HAVE_PTSNAME''@|$(HAVE_PTSNAME)|g' \
+	      -e 's|@''HAVE_PTSNAME_R''@|$(HAVE_PTSNAME_R)|g' \
+	      -e 's|@''HAVE_QSORT_R''@|$(HAVE_QSORT_R)|g' \
+	      -e 's|@''HAVE_RANDOM''@|$(HAVE_RANDOM)|g' \
+	      -e 's|@''HAVE_RANDOM_H''@|$(HAVE_RANDOM_H)|g' \
+	      -e 's|@''HAVE_RANDOM_R''@|$(HAVE_RANDOM_R)|g' \
+	      -e 's|@''HAVE_REALLOCARRAY''@|$(HAVE_REALLOCARRAY)|g' \
+	      -e 's|@''HAVE_REALPATH''@|$(HAVE_REALPATH)|g' \
+	      -e 's|@''HAVE_RPMATCH''@|$(HAVE_RPMATCH)|g' \
+	      -e 's|@''HAVE_SECURE_GETENV''@|$(HAVE_SECURE_GETENV)|g' \
+	      -e 's|@''HAVE_DECL_SETENV''@|$(HAVE_DECL_SETENV)|g' \
+	      -e 's|@''HAVE_SETSTATE''@|$(HAVE_SETSTATE)|g' \
+	      -e 's|@''HAVE_DECL_SETSTATE''@|$(HAVE_DECL_SETSTATE)|g' \
+	      -e 's|@''HAVE_STRTOD''@|$(HAVE_STRTOD)|g' \
+	      -e 's|@''HAVE_STRTOL''@|$(HAVE_STRTOL)|g' \
+	      -e 's|@''HAVE_STRTOLD''@|$(HAVE_STRTOLD)|g' \
+	      -e 's|@''HAVE_STRTOLL''@|$(HAVE_STRTOLL)|g' \
+	      -e 's|@''HAVE_STRTOUL''@|$(HAVE_STRTOUL)|g' \
+	      -e 's|@''HAVE_STRTOULL''@|$(HAVE_STRTOULL)|g' \
+	      -e 's|@''HAVE_STRUCT_RANDOM_DATA''@|$(HAVE_STRUCT_RANDOM_DATA)|g' \
+	      -e 's|@''HAVE_SYS_LOADAVG_H''@|$(HAVE_SYS_LOADAVG_H)|g' \
+	      -e 's|@''HAVE_UNLOCKPT''@|$(HAVE_UNLOCKPT)|g' \
+	      -e 's|@''HAVE_DECL_UNSETENV''@|$(HAVE_DECL_UNSETENV)|g' \
+	      < $@-t1 > $@-t2
+	$(AM_V_at)sed \
+	      -e 's|@''REPLACE__EXIT''@|$(REPLACE__EXIT)|g' \
+	      -e 's|@''REPLACE_ALIGNED_ALLOC''@|$(REPLACE_ALIGNED_ALLOC)|g' \
+	      -e 's|@''REPLACE_CALLOC_FOR_CALLOC_GNU''@|$(REPLACE_CALLOC_FOR_CALLOC_GNU)|g' \
+	      -e 's|@''REPLACE_CALLOC_FOR_CALLOC_POSIX''@|$(REPLACE_CALLOC_FOR_CALLOC_POSIX)|g' \
+	      -e 's|@''REPLACE_CANONICALIZE_FILE_NAME''@|$(REPLACE_CANONICALIZE_FILE_NAME)|g' \
+	      -e 's|@''REPLACE_FREE''@|$(REPLACE_FREE)|g' \
+	      -e 's|@''REPLACE_GETLOADAVG''@|$(REPLACE_GETLOADAVG)|g' \
+	      -e 's|@''REPLACE_GETPROGNAME''@|$(REPLACE_GETPROGNAME)|g' \
+	      -e 's|@''REPLACE_GETSUBOPT''@|$(REPLACE_GETSUBOPT)|g' \
+	      -e 's|@''REPLACE_INITSTATE''@|$(REPLACE_INITSTATE)|g' \
+	      -e 's|@''REPLACE_MALLOC_FOR_MALLOC_GNU''@|$(REPLACE_MALLOC_FOR_MALLOC_GNU)|g' \
+	      -e 's|@''REPLACE_MALLOC_FOR_MALLOC_POSIX''@|$(REPLACE_MALLOC_FOR_MALLOC_POSIX)|g' \
+	      -e 's|@''REPLACE_MB_CUR_MAX''@|$(REPLACE_MB_CUR_MAX)|g' \
+	      -e 's|@''REPLACE_MBSTOWCS''@|$(REPLACE_MBSTOWCS)|g' \
+	      -e 's|@''REPLACE_MBTOWC''@|$(REPLACE_MBTOWC)|g' \
+	      -e 's|@''REPLACE_MKOSTEMP''@|$(REPLACE_MKOSTEMP)|g' \
+	      -e 's|@''REPLACE_MKOSTEMPS''@|$(REPLACE_MKOSTEMPS)|g' \
+	      -e 's|@''REPLACE_MKSTEMP''@|$(REPLACE_MKSTEMP)|g' \
+	      -e 's|@''REPLACE_POSIX_MEMALIGN''@|$(REPLACE_POSIX_MEMALIGN)|g' \
+	      -e 's|@''REPLACE_POSIX_OPENPT''@|$(REPLACE_POSIX_OPENPT)|g' \
+	      -e 's|@''REPLACE_PTSNAME''@|$(REPLACE_PTSNAME)|g' \
+	      -e 's|@''REPLACE_PTSNAME_R''@|$(REPLACE_PTSNAME_R)|g' \
+	      -e 's|@''REPLACE_PUTENV''@|$(REPLACE_PUTENV)|g' \
+	      -e 's|@''REPLACE_QSORT_R''@|$(REPLACE_QSORT_R)|g' \
+	      -e 's|@''REPLACE_RAND''@|$(REPLACE_RAND)|g' \
+	      -e 's|@''REPLACE_RANDOM''@|$(REPLACE_RANDOM)|g' \
+	      -e 's|@''REPLACE_RANDOM_R''@|$(REPLACE_RANDOM_R)|g' \
+	      -e 's|@''REPLACE_REALLOC_FOR_REALLOC_GNU''@|$(REPLACE_REALLOC_FOR_REALLOC_GNU)|g' \
+	      -e 's|@''REPLACE_REALLOC_FOR_REALLOC_POSIX''@|$(REPLACE_REALLOC_FOR_REALLOC_POSIX)|g' \
+	      -e 's|@''REPLACE_REALLOCARRAY''@|$(REPLACE_REALLOCARRAY)|g' \
+	      -e 's|@''REPLACE_REALPATH''@|$(REPLACE_REALPATH)|g' \
+	      -e 's|@''REPLACE_SETENV''@|$(REPLACE_SETENV)|g' \
+	      -e 's|@''REPLACE_SETSTATE''@|$(REPLACE_SETSTATE)|g' \
+	      -e 's|@''REPLACE_STRTOD''@|$(REPLACE_STRTOD)|g' \
+	      -e 's|@''REPLACE_STRTOL''@|$(REPLACE_STRTOL)|g' \
+	      -e 's|@''REPLACE_STRTOLD''@|$(REPLACE_STRTOLD)|g' \
+	      -e 's|@''REPLACE_STRTOLL''@|$(REPLACE_STRTOLL)|g' \
+	      -e 's|@''REPLACE_STRTOUL''@|$(REPLACE_STRTOUL)|g' \
+	      -e 's|@''REPLACE_STRTOULL''@|$(REPLACE_STRTOULL)|g' \
+	      -e 's|@''REPLACE_UNSETENV''@|$(REPLACE_UNSETENV)|g' \
+	      -e 's|@''REPLACE_WCTOMB''@|$(REPLACE_WCTOMB)|g' \
+	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+	      -e '/definition of _Noreturn/r $(_NORETURN_H)' \
+	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+	      < $@-t2 > $@-t3
+	$(AM_V_at)rm -f $@-t1 $@-t2
+	$(AM_V_at)mv $@-t3 $@
+
+# We need the following in order to create <string.h> when the system
+# doesn't have one that works with the given compiler.
+string.h: string.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+	$(gl_V_at)$(SED_HEADER_STDOUT) \
+	      -e 's|@''GUARD_PREFIX''@|GL|g' \
+	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|#pragma GCC system_header|g' \
+	      -e 's|@''PRAGMA_COLUMNS''@||g' \
+	      -e 's|@''NEXT_STRING_H''@|$(NEXT_STRING_H)|g' \
+	      -e 's/@''GNULIB_EXPLICIT_BZERO''@/$(GL_GNULIB_EXPLICIT_BZERO)/g' \
+	      -e 's/@''GNULIB_FFSL''@/$(GL_GNULIB_FFSL)/g' \
+	      -e 's/@''GNULIB_FFSLL''@/$(GL_GNULIB_FFSLL)/g' \
+	      -e 's/@''GNULIB_MBSLEN''@/$(GL_GNULIB_MBSLEN)/g' \
+	      -e 's/@''GNULIB_MBSNLEN''@/$(GL_GNULIB_MBSNLEN)/g' \
+	      -e 's/@''GNULIB_MBSCHR''@/$(GL_GNULIB_MBSCHR)/g' \
+	      -e 's/@''GNULIB_MBSRCHR''@/$(GL_GNULIB_MBSRCHR)/g' \
+	      -e 's/@''GNULIB_MBSSTR''@/$(GL_GNULIB_MBSSTR)/g' \
+	      -e 's/@''GNULIB_MBSCASECMP''@/$(GL_GNULIB_MBSCASECMP)/g' \
+	      -e 's/@''GNULIB_MBSNCASECMP''@/$(GL_GNULIB_MBSNCASECMP)/g' \
+	      -e 's/@''GNULIB_MBSPCASECMP''@/$(GL_GNULIB_MBSPCASECMP)/g' \
+	      -e 's/@''GNULIB_MBSCASESTR''@/$(GL_GNULIB_MBSCASESTR)/g' \
+	      -e 's/@''GNULIB_MBSCSPN''@/$(GL_GNULIB_MBSCSPN)/g' \
+	      -e 's/@''GNULIB_MBSPBRK''@/$(GL_GNULIB_MBSPBRK)/g' \
+	      -e 's/@''GNULIB_MBSSPN''@/$(GL_GNULIB_MBSSPN)/g' \
+	      -e 's/@''GNULIB_MBSSEP''@/$(GL_GNULIB_MBSSEP)/g' \
+	      -e 's/@''GNULIB_MBSTOK_R''@/$(GL_GNULIB_MBSTOK_R)/g' \
+	      -e 's/@''GNULIB_MEMCHR''@/$(GL_GNULIB_MEMCHR)/g' \
+	      -e 's/@''GNULIB_MEMMEM''@/$(GL_GNULIB_MEMMEM)/g' \
+	      -e 's/@''GNULIB_MEMPCPY''@/$(GL_GNULIB_MEMPCPY)/g' \
+	      -e 's/@''GNULIB_MEMRCHR''@/$(GL_GNULIB_MEMRCHR)/g' \
+	      -e 's/@''GNULIB_MEMSET_EXPLICIT''@/$(GL_GNULIB_MEMSET_EXPLICIT)/g' \
+	      -e 's/@''GNULIB_RAWMEMCHR''@/$(GL_GNULIB_RAWMEMCHR)/g' \
+	      -e 's/@''GNULIB_STPCPY''@/$(GL_GNULIB_STPCPY)/g' \
+	      -e 's/@''GNULIB_STPNCPY''@/$(GL_GNULIB_STPNCPY)/g' \
+	      -e 's/@''GNULIB_STRCHRNUL''@/$(GL_GNULIB_STRCHRNUL)/g' \
+	      -e 's/@''GNULIB_STRDUP''@/$(GL_GNULIB_STRDUP)/g' \
+	      -e 's/@''GNULIB_STRNCAT''@/$(GL_GNULIB_STRNCAT)/g' \
+	      -e 's/@''GNULIB_STRNDUP''@/$(GL_GNULIB_STRNDUP)/g' \
+	      -e 's/@''GNULIB_STRNLEN''@/$(GL_GNULIB_STRNLEN)/g' \
+	      -e 's/@''GNULIB_STRPBRK''@/$(GL_GNULIB_STRPBRK)/g' \
+	      -e 's/@''GNULIB_STRSEP''@/$(GL_GNULIB_STRSEP)/g' \
+	      -e 's/@''GNULIB_STRSTR''@/$(GL_GNULIB_STRSTR)/g' \
+	      -e 's/@''GNULIB_STRCASESTR''@/$(GL_GNULIB_STRCASESTR)/g' \
+	      -e 's/@''GNULIB_STRTOK_R''@/$(GL_GNULIB_STRTOK_R)/g' \
+	      -e 's/@''GNULIB_STRERROR''@/$(GL_GNULIB_STRERROR)/g' \
+	      -e 's/@''GNULIB_STRERROR_R''@/$(GL_GNULIB_STRERROR_R)/g' \
+	      -e 's/@''GNULIB_STRERRORNAME_NP''@/$(GL_GNULIB_STRERRORNAME_NP)/g' \
+	      -e 's/@''GNULIB_SIGABBREV_NP''@/$(GL_GNULIB_SIGABBREV_NP)/g' \
+	      -e 's/@''GNULIB_SIGDESCR_NP''@/$(GL_GNULIB_SIGDESCR_NP)/g' \
+	      -e 's/@''GNULIB_STRSIGNAL''@/$(GL_GNULIB_STRSIGNAL)/g' \
+	      -e 's/@''GNULIB_STRVERSCMP''@/$(GL_GNULIB_STRVERSCMP)/g' \
+	      -e 's/@''GNULIB_MDA_MEMCCPY''@/$(GL_GNULIB_MDA_MEMCCPY)/g' \
+	      -e 's/@''GNULIB_MDA_STRDUP''@/$(GL_GNULIB_MDA_STRDUP)/g' \
+	      -e 's/@''GNULIB_FREE_POSIX''@/$(GL_GNULIB_FREE_POSIX)/g' \
+	      < $(srcdir)/string.in.h > $@-t1
+	$(AM_V_at)sed \
+	      -e 's|@''HAVE_EXPLICIT_BZERO''@|$(HAVE_EXPLICIT_BZERO)|g' \
+	      -e 's|@''HAVE_FFSL''@|$(HAVE_FFSL)|g' \
+	      -e 's|@''HAVE_FFSLL''@|$(HAVE_FFSLL)|g' \
+	      -e 's|@''HAVE_MBSLEN''@|$(HAVE_MBSLEN)|g' \
+	      -e 's|@''HAVE_DECL_MEMMEM''@|$(HAVE_DECL_MEMMEM)|g' \
+	      -e 's|@''HAVE_MEMPCPY''@|$(HAVE_MEMPCPY)|g' \
+	      -e 's|@''HAVE_DECL_MEMRCHR''@|$(HAVE_DECL_MEMRCHR)|g' \
+	      -e 's|@''HAVE_MEMSET_EXPLICIT''@|$(HAVE_MEMSET_EXPLICIT)|g' \
+	      -e 's|@''HAVE_RAWMEMCHR''@|$(HAVE_RAWMEMCHR)|g' \
+	      -e 's|@''HAVE_STPCPY''@|$(HAVE_STPCPY)|g' \
+	      -e 's|@''HAVE_STPNCPY''@|$(HAVE_STPNCPY)|g' \
+	      -e 's|@''HAVE_STRCHRNUL''@|$(HAVE_STRCHRNUL)|g' \
+	      -e 's|@''HAVE_DECL_STRDUP''@|$(HAVE_DECL_STRDUP)|g' \
+	      -e 's|@''HAVE_DECL_STRNDUP''@|$(HAVE_DECL_STRNDUP)|g' \
+	      -e 's|@''HAVE_DECL_STRNLEN''@|$(HAVE_DECL_STRNLEN)|g' \
+	      -e 's|@''HAVE_STRPBRK''@|$(HAVE_STRPBRK)|g' \
+	      -e 's|@''HAVE_STRSEP''@|$(HAVE_STRSEP)|g' \
+	      -e 's|@''HAVE_STRCASESTR''@|$(HAVE_STRCASESTR)|g' \
+	      -e 's|@''HAVE_DECL_STRTOK_R''@|$(HAVE_DECL_STRTOK_R)|g' \
+	      -e 's|@''HAVE_DECL_STRERROR_R''@|$(HAVE_DECL_STRERROR_R)|g' \
+	      -e 's|@''HAVE_STRERRORNAME_NP''@|$(HAVE_STRERRORNAME_NP)|g' \
+	      -e 's|@''HAVE_SIGABBREV_NP''@|$(HAVE_SIGABBREV_NP)|g' \
+	      -e 's|@''HAVE_SIGDESCR_NP''@|$(HAVE_SIGDESCR_NP)|g' \
+	      -e 's|@''HAVE_DECL_STRSIGNAL''@|$(HAVE_DECL_STRSIGNAL)|g' \
+	      -e 's|@''HAVE_STRVERSCMP''@|$(HAVE_STRVERSCMP)|g' \
+	      -e 's|@''REPLACE_FFSLL''@|$(REPLACE_FFSLL)|g' \
+	      -e 's|@''REPLACE_MEMCHR''@|$(REPLACE_MEMCHR)|g' \
+	      -e 's|@''REPLACE_MEMMEM''@|$(REPLACE_MEMMEM)|g' \
+	      -e 's|@''REPLACE_MEMPCPY''@|$(REPLACE_MEMPCPY)|g' \
+	      -e 's|@''REPLACE_FREE''@|$(REPLACE_FREE)|g' \
+	      -e 's|@''REPLACE_STPCPY''@|$(REPLACE_STPCPY)|g' \
+	      -e 's|@''REPLACE_STPNCPY''@|$(REPLACE_STPNCPY)|g' \
+	      -e 's|@''REPLACE_STRCHRNUL''@|$(REPLACE_STRCHRNUL)|g' \
+	      -e 's|@''REPLACE_STRDUP''@|$(REPLACE_STRDUP)|g' \
+	      -e 's|@''REPLACE_STRNCAT''@|$(REPLACE_STRNCAT)|g' \
+	      -e 's|@''REPLACE_STRNDUP''@|$(REPLACE_STRNDUP)|g' \
+	      -e 's|@''REPLACE_STRNLEN''@|$(REPLACE_STRNLEN)|g' \
+	      -e 's|@''REPLACE_STRSTR''@|$(REPLACE_STRSTR)|g' \
+	      -e 's|@''REPLACE_STRCASESTR''@|$(REPLACE_STRCASESTR)|g' \
+	      -e 's|@''REPLACE_STRTOK_R''@|$(REPLACE_STRTOK_R)|g' \
+	      -e 's|@''REPLACE_STRERROR''@|$(REPLACE_STRERROR)|g' \
+	      -e 's|@''REPLACE_STRERROR_R''@|$(REPLACE_STRERROR_R)|g' \
+	      -e 's|@''REPLACE_STRERRORNAME_NP''@|$(REPLACE_STRERRORNAME_NP)|g' \
+	      -e 's|@''REPLACE_STRSIGNAL''@|$(REPLACE_STRSIGNAL)|g' \
+	      -e 's|@''REPLACE_STRVERSCMP''@|$(REPLACE_STRVERSCMP)|g' \
+	      -e 's|@''UNDEFINE_STRTOK_R''@|$(UNDEFINE_STRTOK_R)|g' \
+	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+	      < $@-t1 > $@-t2
+	$(AM_V_at)rm -f $@-t1
+	$(AM_V_at)mv $@-t2 $@
+
+# We need the following in order to create <sys/types.h> when the system
+# doesn't have one that works with the given compiler.
+sys/types.h: sys_types.in.h $(top_builddir)/config.status
+	$(AM_V_GEN)$(MKDIR_P) 'sys'
+	$(AM_V_at)$(SED_HEADER_STDOUT) \
+	      -e 's|@''GUARD_PREFIX''@|GL|g' \
+	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|#pragma GCC system_header|g' \
+	      -e 's|@''PRAGMA_COLUMNS''@||g' \
+	      -e 's|@''NEXT_SYS_TYPES_H''@|$(NEXT_SYS_TYPES_H)|g' \
+	      -e 's|@''WINDOWS_64_BIT_OFF_T''@|$(WINDOWS_64_BIT_OFF_T)|g' \
+	      -e 's|@''WINDOWS_STAT_INODES''@|$(WINDOWS_STAT_INODES)|g' \
+	      $(srcdir)/sys_types.in.h > $@-t
+	$(AM_V_at)mv $@-t $@
+
+# We need the following in order to create an empty placeholder for
+# <unistd.h> when the system doesn't have one.
+unistd.h: unistd.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+	$(gl_V_at)$(SED_HEADER_STDOUT) \
+	      -e 's|@''GUARD_PREFIX''@|GL|g' \
+	      -e 's|@''HAVE_UNISTD_H''@|$(HAVE_UNISTD_H)|g' \
+	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|#pragma GCC system_header|g' \
+	      -e 's|@''PRAGMA_COLUMNS''@||g' \
+	      -e 's|@''NEXT_UNISTD_H''@|$(NEXT_UNISTD_H)|g' \
+	      -e 's|@''WINDOWS_64_BIT_OFF_T''@|$(WINDOWS_64_BIT_OFF_T)|g' \
+	      -e 's/@''GNULIB_ACCESS''@/$(GL_GNULIB_ACCESS)/g' \
+	      -e 's/@''GNULIB_CHDIR''@/$(GL_GNULIB_CHDIR)/g' \
+	      -e 's/@''GNULIB_CHOWN''@/$(GL_GNULIB_CHOWN)/g' \
+	      -e 's/@''GNULIB_CLOSE''@/$(GL_GNULIB_CLOSE)/g' \
+	      -e 's/@''GNULIB_COPY_FILE_RANGE''@/$(GL_GNULIB_COPY_FILE_RANGE)/g' \
+	      -e 's/@''GNULIB_DUP''@/$(GL_GNULIB_DUP)/g' \
+	      -e 's/@''GNULIB_DUP2''@/$(GL_GNULIB_DUP2)/g' \
+	      -e 's/@''GNULIB_DUP3''@/$(GL_GNULIB_DUP3)/g' \
+	      -e 's/@''GNULIB_ENVIRON''@/$(GL_GNULIB_ENVIRON)/g' \
+	      -e 's/@''GNULIB_EUIDACCESS''@/$(GL_GNULIB_EUIDACCESS)/g' \
+	      -e 's/@''GNULIB_EXECL''@/$(GL_GNULIB_EXECL)/g' \
+	      -e 's/@''GNULIB_EXECLE''@/$(GL_GNULIB_EXECLE)/g' \
+	      -e 's/@''GNULIB_EXECLP''@/$(GL_GNULIB_EXECLP)/g' \
+	      -e 's/@''GNULIB_EXECV''@/$(GL_GNULIB_EXECV)/g' \
+	      -e 's/@''GNULIB_EXECVE''@/$(GL_GNULIB_EXECVE)/g' \
+	      -e 's/@''GNULIB_EXECVP''@/$(GL_GNULIB_EXECVP)/g' \
+	      -e 's/@''GNULIB_EXECVPE''@/$(GL_GNULIB_EXECVPE)/g' \
+	      -e 's/@''GNULIB_FACCESSAT''@/$(GL_GNULIB_FACCESSAT)/g' \
+	      -e 's/@''GNULIB_FCHDIR''@/$(GL_GNULIB_FCHDIR)/g' \
+	      -e 's/@''GNULIB_FCHOWNAT''@/$(GL_GNULIB_FCHOWNAT)/g' \
+	      -e 's/@''GNULIB_FDATASYNC''@/$(GL_GNULIB_FDATASYNC)/g' \
+	      -e 's/@''GNULIB_FSYNC''@/$(GL_GNULIB_FSYNC)/g' \
+	      -e 's/@''GNULIB_FTRUNCATE''@/$(GL_GNULIB_FTRUNCATE)/g' \
+	      < $(srcdir)/unistd.in.h > $@-t1
+	$(AM_V_at)sed \
+	      -e 's/@''GNULIB_GETCWD''@/$(GL_GNULIB_GETCWD)/g' \
+	      -e 's/@''GNULIB_GETDOMAINNAME''@/$(GL_GNULIB_GETDOMAINNAME)/g' \
+	      -e 's/@''GNULIB_GETDTABLESIZE''@/$(GL_GNULIB_GETDTABLESIZE)/g' \
+	      -e 's/@''GNULIB_GETENTROPY''@/$(GL_GNULIB_GETENTROPY)/g' \
+	      -e 's/@''GNULIB_GETGROUPS''@/$(GL_GNULIB_GETGROUPS)/g' \
+	      -e 's/@''GNULIB_GETHOSTNAME''@/$(GL_GNULIB_GETHOSTNAME)/g' \
+	      -e 's/@''GNULIB_GETLOGIN''@/$(GL_GNULIB_GETLOGIN)/g' \
+	      -e 's/@''GNULIB_GETLOGIN_R''@/$(GL_GNULIB_GETLOGIN_R)/g' \
+	      -e 's/@''GNULIB_GETOPT_POSIX''@/$(GL_GNULIB_GETOPT_POSIX)/g' \
+	      -e 's/@''GNULIB_GETPAGESIZE''@/$(GL_GNULIB_GETPAGESIZE)/g' \
+	      -e 's/@''GNULIB_GETPASS''@/$(GL_GNULIB_GETPASS)/g' \
+	      -e 's/@''GNULIB_GETPASS_GNU''@/$(GL_GNULIB_GETPASS_GNU)/g' \
+	      -e 's/@''GNULIB_GETUSERSHELL''@/$(GL_GNULIB_GETUSERSHELL)/g' \
+	      -e 's/@''GNULIB_GROUP_MEMBER''@/$(GL_GNULIB_GROUP_MEMBER)/g' \
+	      -e 's/@''GNULIB_ISATTY''@/$(GL_GNULIB_ISATTY)/g' \
+	      -e 's/@''GNULIB_LCHOWN''@/$(GL_GNULIB_LCHOWN)/g' \
+	      -e 's/@''GNULIB_LINK''@/$(GL_GNULIB_LINK)/g' \
+	      -e 's/@''GNULIB_LINKAT''@/$(GL_GNULIB_LINKAT)/g' \
+	      -e 's/@''GNULIB_LSEEK''@/$(GL_GNULIB_LSEEK)/g' \
+	      -e 's/@''GNULIB_PIPE''@/$(GL_GNULIB_PIPE)/g' \
+	      -e 's/@''GNULIB_PIPE2''@/$(GL_GNULIB_PIPE2)/g' \
+	      -e 's/@''GNULIB_PREAD''@/$(GL_GNULIB_PREAD)/g' \
+	      -e 's/@''GNULIB_PWRITE''@/$(GL_GNULIB_PWRITE)/g' \
+	      -e 's/@''GNULIB_READ''@/$(GL_GNULIB_READ)/g' \
+	      -e 's/@''GNULIB_READLINK''@/$(GL_GNULIB_READLINK)/g' \
+	      -e 's/@''GNULIB_READLINKAT''@/$(GL_GNULIB_READLINKAT)/g' \
+	      -e 's/@''GNULIB_RMDIR''@/$(GL_GNULIB_RMDIR)/g' \
+	      -e 's/@''GNULIB_SETHOSTNAME''@/$(GL_GNULIB_SETHOSTNAME)/g' \
+	      -e 's/@''GNULIB_SLEEP''@/$(GL_GNULIB_SLEEP)/g' \
+	      -e 's/@''GNULIB_SYMLINK''@/$(GL_GNULIB_SYMLINK)/g' \
+	      -e 's/@''GNULIB_SYMLINKAT''@/$(GL_GNULIB_SYMLINKAT)/g' \
+	      -e 's/@''GNULIB_TRUNCATE''@/$(GL_GNULIB_TRUNCATE)/g' \
+	      -e 's/@''GNULIB_TTYNAME_R''@/$(GL_GNULIB_TTYNAME_R)/g' \
+	      -e 's/@''GNULIB_UNISTD_H_GETOPT''@/0$(GL_GNULIB_UNISTD_H_GETOPT)/g' \
+	      -e 's/@''GNULIB_UNISTD_H_NONBLOCKING''@/$(GL_GNULIB_UNISTD_H_NONBLOCKING)/g' \
+	      -e 's/@''GNULIB_UNISTD_H_SIGPIPE''@/$(GL_GNULIB_UNISTD_H_SIGPIPE)/g' \
+	      -e 's/@''GNULIB_UNLINK''@/$(GL_GNULIB_UNLINK)/g' \
+	      -e 's/@''GNULIB_UNLINKAT''@/$(GL_GNULIB_UNLINKAT)/g' \
+	      -e 's/@''GNULIB_USLEEP''@/$(GL_GNULIB_USLEEP)/g' \
+	      -e 's/@''GNULIB_WRITE''@/$(GL_GNULIB_WRITE)/g' \
+	      -e 's/@''GNULIB_MDA_ACCESS''@/$(GL_GNULIB_MDA_ACCESS)/g' \
+	      -e 's/@''GNULIB_MDA_CHDIR''@/$(GL_GNULIB_MDA_CHDIR)/g' \
+	      -e 's/@''GNULIB_MDA_CLOSE''@/$(GL_GNULIB_MDA_CLOSE)/g' \
+	      -e 's/@''GNULIB_MDA_DUP''@/$(GL_GNULIB_MDA_DUP)/g' \
+	      -e 's/@''GNULIB_MDA_DUP2''@/$(GL_GNULIB_MDA_DUP2)/g' \
+	      -e 's/@''GNULIB_MDA_EXECL''@/$(GL_GNULIB_MDA_EXECL)/g' \
+	      -e 's/@''GNULIB_MDA_EXECLE''@/$(GL_GNULIB_MDA_EXECLE)/g' \
+	      -e 's/@''GNULIB_MDA_EXECLP''@/$(GL_GNULIB_MDA_EXECLP)/g' \
+	      -e 's/@''GNULIB_MDA_EXECV''@/$(GL_GNULIB_MDA_EXECV)/g' \
+	      -e 's/@''GNULIB_MDA_EXECVE''@/$(GL_GNULIB_MDA_EXECVE)/g' \
+	      -e 's/@''GNULIB_MDA_EXECVP''@/$(GL_GNULIB_MDA_EXECVP)/g' \
+	      -e 's/@''GNULIB_MDA_EXECVPE''@/$(GL_GNULIB_MDA_EXECVPE)/g' \
+	      -e 's/@''GNULIB_MDA_GETCWD''@/$(GL_GNULIB_MDA_GETCWD)/g' \
+	      -e 's/@''GNULIB_MDA_GETPID''@/$(GL_GNULIB_MDA_GETPID)/g' \
+	      -e 's/@''GNULIB_MDA_ISATTY''@/$(GL_GNULIB_MDA_ISATTY)/g' \
+	      -e 's/@''GNULIB_MDA_LSEEK''@/$(GL_GNULIB_MDA_LSEEK)/g' \
+	      -e 's/@''GNULIB_MDA_READ''@/$(GL_GNULIB_MDA_READ)/g' \
+	      -e 's/@''GNULIB_MDA_RMDIR''@/$(GL_GNULIB_MDA_RMDIR)/g' \
+	      -e 's/@''GNULIB_MDA_SWAB''@/$(GL_GNULIB_MDA_SWAB)/g' \
+	      -e 's/@''GNULIB_MDA_UNLINK''@/$(GL_GNULIB_MDA_UNLINK)/g' \
+	      -e 's/@''GNULIB_MDA_WRITE''@/$(GL_GNULIB_MDA_WRITE)/g' \
+	      < $@-t1 > $@-t2
+	$(AM_V_at)sed \
+	      -e 's|@''HAVE_CHOWN''@|$(HAVE_CHOWN)|g' \
+	      -e 's|@''HAVE_COPY_FILE_RANGE''@|$(HAVE_COPY_FILE_RANGE)|g' \
+	      -e 's|@''HAVE_DUP3''@|$(HAVE_DUP3)|g' \
+	      -e 's|@''HAVE_EUIDACCESS''@|$(HAVE_EUIDACCESS)|g' \
+	      -e 's|@''HAVE_EXECVPE''@|$(HAVE_EXECVPE)|g' \
+	      -e 's|@''HAVE_FACCESSAT''@|$(HAVE_FACCESSAT)|g' \
+	      -e 's|@''HAVE_FCHDIR''@|$(HAVE_FCHDIR)|g' \
+	      -e 's|@''HAVE_FCHOWNAT''@|$(HAVE_FCHOWNAT)|g' \
+	      -e 's|@''HAVE_FDATASYNC''@|$(HAVE_FDATASYNC)|g' \
+	      -e 's|@''HAVE_FSYNC''@|$(HAVE_FSYNC)|g' \
+	      -e 's|@''HAVE_FTRUNCATE''@|$(HAVE_FTRUNCATE)|g' \
+	      -e 's|@''HAVE_GETDTABLESIZE''@|$(HAVE_GETDTABLESIZE)|g' \
+	      -e 's|@''HAVE_GETENTROPY''@|$(HAVE_GETENTROPY)|g' \
+	      -e 's|@''HAVE_GETGROUPS''@|$(HAVE_GETGROUPS)|g' \
+	      -e 's|@''HAVE_GETHOSTNAME''@|$(HAVE_GETHOSTNAME)|g' \
+	      -e 's|@''HAVE_GETPAGESIZE''@|$(HAVE_GETPAGESIZE)|g' \
+	      -e 's|@''HAVE_GETPASS''@|$(HAVE_GETPASS)|g' \
+	      -e 's|@''HAVE_GROUP_MEMBER''@|$(HAVE_GROUP_MEMBER)|g' \
+	      -e 's|@''HAVE_LCHOWN''@|$(HAVE_LCHOWN)|g' \
+	      -e 's|@''HAVE_LINK''@|$(HAVE_LINK)|g' \
+	      -e 's|@''HAVE_LINKAT''@|$(HAVE_LINKAT)|g' \
+	      -e 's|@''HAVE_PIPE''@|$(HAVE_PIPE)|g' \
+	      -e 's|@''HAVE_PIPE2''@|$(HAVE_PIPE2)|g' \
+	      -e 's|@''HAVE_PREAD''@|$(HAVE_PREAD)|g' \
+	      -e 's|@''HAVE_PWRITE''@|$(HAVE_PWRITE)|g' \
+	      -e 's|@''HAVE_READLINK''@|$(HAVE_READLINK)|g' \
+	      -e 's|@''HAVE_READLINKAT''@|$(HAVE_READLINKAT)|g' \
+	      -e 's|@''HAVE_SETHOSTNAME''@|$(HAVE_SETHOSTNAME)|g' \
+	      -e 's|@''HAVE_SLEEP''@|$(HAVE_SLEEP)|g' \
+	      -e 's|@''HAVE_SYMLINK''@|$(HAVE_SYMLINK)|g' \
+	      -e 's|@''HAVE_SYMLINKAT''@|$(HAVE_SYMLINKAT)|g' \
+	      -e 's|@''HAVE_UNLINKAT''@|$(HAVE_UNLINKAT)|g' \
+	      -e 's|@''HAVE_USLEEP''@|$(HAVE_USLEEP)|g' \
+	      -e 's|@''HAVE_DECL_ENVIRON''@|$(HAVE_DECL_ENVIRON)|g' \
+	      -e 's|@''HAVE_DECL_EXECVPE''@|$(HAVE_DECL_EXECVPE)|g' \
+	      -e 's|@''HAVE_DECL_FCHDIR''@|$(HAVE_DECL_FCHDIR)|g' \
+	      -e 's|@''HAVE_DECL_FDATASYNC''@|$(HAVE_DECL_FDATASYNC)|g' \
+	      -e 's|@''HAVE_DECL_GETDOMAINNAME''@|$(HAVE_DECL_GETDOMAINNAME)|g' \
+	      -e 's|@''HAVE_DECL_GETLOGIN''@|$(HAVE_DECL_GETLOGIN)|g' \
+	      -e 's|@''HAVE_DECL_GETLOGIN_R''@|$(HAVE_DECL_GETLOGIN_R)|g' \
+	      -e 's|@''HAVE_DECL_GETPAGESIZE''@|$(HAVE_DECL_GETPAGESIZE)|g' \
+	      -e 's|@''HAVE_DECL_GETUSERSHELL''@|$(HAVE_DECL_GETUSERSHELL)|g' \
+	      -e 's|@''HAVE_DECL_SETHOSTNAME''@|$(HAVE_DECL_SETHOSTNAME)|g' \
+	      -e 's|@''HAVE_DECL_TRUNCATE''@|$(HAVE_DECL_TRUNCATE)|g' \
+	      -e 's|@''HAVE_DECL_TTYNAME_R''@|$(HAVE_DECL_TTYNAME_R)|g' \
+	      -e 's|@''HAVE_OS_H''@|$(HAVE_OS_H)|g' \
+	      -e 's|@''HAVE_SYS_PARAM_H''@|$(HAVE_SYS_PARAM_H)|g' \
+	      < $@-t2 > $@-t3
+	$(AM_V_at)sed \
+	      -e 's|@''REPLACE_ACCESS''@|$(REPLACE_ACCESS)|g' \
+	      -e 's|@''REPLACE_CHOWN''@|$(REPLACE_CHOWN)|g' \
+	      -e 's|@''REPLACE_CLOSE''@|$(REPLACE_CLOSE)|g' \
+	      -e 's|@''REPLACE_COPY_FILE_RANGE''@|$(REPLACE_COPY_FILE_RANGE)|g' \
+	      -e 's|@''REPLACE_DUP''@|$(REPLACE_DUP)|g' \
+	      -e 's|@''REPLACE_DUP2''@|$(REPLACE_DUP2)|g' \
+	      -e 's|@''REPLACE_DUP3''@|$(REPLACE_DUP3)|g' \
+	      -e 's|@''REPLACE_EXECL''@|$(REPLACE_EXECL)|g' \
+	      -e 's|@''REPLACE_EXECLE''@|$(REPLACE_EXECLE)|g' \
+	      -e 's|@''REPLACE_EXECLP''@|$(REPLACE_EXECLP)|g' \
+	      -e 's|@''REPLACE_EXECV''@|$(REPLACE_EXECV)|g' \
+	      -e 's|@''REPLACE_EXECVE''@|$(REPLACE_EXECVE)|g' \
+	      -e 's|@''REPLACE_EXECVP''@|$(REPLACE_EXECVP)|g' \
+	      -e 's|@''REPLACE_EXECVPE''@|$(REPLACE_EXECVPE)|g' \
+	      -e 's|@''REPLACE_FACCESSAT''@|$(REPLACE_FACCESSAT)|g' \
+	      -e 's|@''REPLACE_FCHDIR''@|$(REPLACE_FCHDIR)|g' \
+	      -e 's|@''REPLACE_FCHOWNAT''@|$(REPLACE_FCHOWNAT)|g' \
+	      -e 's|@''REPLACE_FDATASYNC''@|$(REPLACE_FDATASYNC)|g' \
+	      -e 's|@''REPLACE_FTRUNCATE''@|$(REPLACE_FTRUNCATE)|g' \
+	      -e 's|@''REPLACE_GETCWD''@|$(REPLACE_GETCWD)|g' \
+	      -e 's|@''REPLACE_GETDOMAINNAME''@|$(REPLACE_GETDOMAINNAME)|g' \
+	      -e 's|@''REPLACE_GETDTABLESIZE''@|$(REPLACE_GETDTABLESIZE)|g' \
+	      -e 's|@''REPLACE_GETENTROPY''@|$(REPLACE_GETENTROPY)|g' \
+	      -e 's|@''REPLACE_GETLOGIN_R''@|$(REPLACE_GETLOGIN_R)|g' \
+	      -e 's|@''REPLACE_GETGROUPS''@|$(REPLACE_GETGROUPS)|g' \
+	      -e 's|@''REPLACE_GETPAGESIZE''@|$(REPLACE_GETPAGESIZE)|g' \
+	      -e 's|@''REPLACE_GETPASS''@|$(REPLACE_GETPASS)|g' \
+	      -e 's|@''REPLACE_GETPASS_FOR_GETPASS_GNU''@|$(REPLACE_GETPASS_FOR_GETPASS_GNU)|g' \
+	      -e 's|@''REPLACE_ISATTY''@|$(REPLACE_ISATTY)|g' \
+	      -e 's|@''REPLACE_LCHOWN''@|$(REPLACE_LCHOWN)|g' \
+	      -e 's|@''REPLACE_LINK''@|$(REPLACE_LINK)|g' \
+	      -e 's|@''REPLACE_LINKAT''@|$(REPLACE_LINKAT)|g' \
+	      -e 's|@''REPLACE_LSEEK''@|$(REPLACE_LSEEK)|g' \
+	      -e 's|@''REPLACE_PIPE2''@|$(REPLACE_PIPE2)|g' \
+	      -e 's|@''REPLACE_PREAD''@|$(REPLACE_PREAD)|g' \
+	      -e 's|@''REPLACE_PWRITE''@|$(REPLACE_PWRITE)|g' \
+	      -e 's|@''REPLACE_READ''@|$(REPLACE_READ)|g' \
+	      -e 's|@''REPLACE_READLINK''@|$(REPLACE_READLINK)|g' \
+	      -e 's|@''REPLACE_READLINKAT''@|$(REPLACE_READLINKAT)|g' \
+	      -e 's|@''REPLACE_RMDIR''@|$(REPLACE_RMDIR)|g' \
+	      -e 's|@''REPLACE_SETHOSTNAME''@|$(REPLACE_SETHOSTNAME)|g' \
+	      -e 's|@''REPLACE_SLEEP''@|$(REPLACE_SLEEP)|g' \
+	      -e 's|@''REPLACE_SYMLINK''@|$(REPLACE_SYMLINK)|g' \
+	      -e 's|@''REPLACE_SYMLINKAT''@|$(REPLACE_SYMLINKAT)|g' \
+	      -e 's|@''REPLACE_TRUNCATE''@|$(REPLACE_TRUNCATE)|g' \
+	      -e 's|@''REPLACE_TTYNAME_R''@|$(REPLACE_TTYNAME_R)|g' \
+	      -e 's|@''REPLACE_UNLINK''@|$(REPLACE_UNLINK)|g' \
+	      -e 's|@''REPLACE_UNLINKAT''@|$(REPLACE_UNLINKAT)|g' \
+	      -e 's|@''REPLACE_USLEEP''@|$(REPLACE_USLEEP)|g' \
+	      -e 's|@''REPLACE_WRITE''@|$(REPLACE_WRITE)|g' \
+	      -e 's|@''UNISTD_H_HAVE_SYS_RANDOM_H''@|$(UNISTD_H_HAVE_SYS_RANDOM_H)|g' \
+	      -e 's|@''UNISTD_H_HAVE_WINSOCK2_H''@|$(UNISTD_H_HAVE_WINSOCK2_H)|g' \
+	      -e 's|@''UNISTD_H_HAVE_WINSOCK2_H_AND_USE_SOCKETS''@|$(UNISTD_H_HAVE_WINSOCK2_H_AND_USE_SOCKETS)|g' \
+	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+	      < $@-t3 > $@-t4
+	$(AM_V_at)rm -f $@-t1 $@-t2 $@-t3
+	$(AM_V_at)mv $@-t4 $@
 
 mostlyclean-local: mostlyclean-generic
 	@for dir in '' $(MOSTLYCLEANDIRS); do \

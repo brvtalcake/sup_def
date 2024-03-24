@@ -36,57 +36,6 @@ namespace SupDef
     Engine<P1, P2>::Engine() : EngineBase(), parser_pool(), thread_pool(), targets()
     { }
 
-    EXP_INST_CLASS(Engine,
-        (char, std::filesystem::path),
-        (char, std::string),
-        (char, std::wstring),
-        (char, std::u8string),
-        (char, std::u16string),
-        (char, std::u32string),
-
-        (char8_t, std::filesystem::path),
-        (char8_t, std::string),
-        (char8_t, std::wstring),
-        (char8_t, std::u8string),
-        (char8_t, std::u16string),
-        (char8_t, std::u32string),
-
-        (char16_t, std::filesystem::path),
-        (char16_t, std::string),
-        (char16_t, std::wstring),
-        (char16_t, std::u8string),
-        (char16_t, std::u16string),
-        (char16_t, std::u32string),
-
-        (char32_t, std::filesystem::path),
-        (char32_t, std::string),
-        (char32_t, std::wstring),
-        (char32_t, std::u8string),
-        (char32_t, std::u16string),
-        (char32_t, std::u32string)
-    );
-
-    EXP_INST_CLASS(File,
-        (std::fstream),
-        (std::ifstream),
-        (std::ofstream),
-      
-        (std::wfstream),
-        (std::wifstream),
-        (std::wofstream),
-      
-        (std::basic_fstream<char8_t>),
-        (std::basic_ifstream<char8_t>),
-        (std::basic_ofstream<char8_t>),
-      
-        (std::basic_fstream<char16_t>),
-        (std::basic_ifstream<char16_t>),
-        (std::basic_ofstream<char16_t>),
-      
-        (std::basic_fstream<char32_t>),
-        (std::basic_ifstream<char32_t>),
-        (std::basic_ofstream<char32_t>)
-    );
 }
 
 #else

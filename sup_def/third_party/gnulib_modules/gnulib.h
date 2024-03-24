@@ -32,6 +32,7 @@
 #define GNULIB_H 1
 
 #include "gnulib_stdckdint.h"
+#include "gnulib_memset_explicit.h"
 
 
 #endif

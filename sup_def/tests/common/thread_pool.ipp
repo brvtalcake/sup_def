@@ -48,8 +48,30 @@ BOOST_AUTO_TEST_CASE(test_thread_pool1,
 )
 {
     using ::SupDef::ThreadPool;
+    using namespace std::chrono_literals;
 
-    ThreadPool pool();
+    std::atomic<size_t> counter = 0;
+
+    ThreadPool pool;
+    BOOST_TEST(pool.size() == std::jthread::hardware_concurrency());
+
+    auto task = [&counter]() {
+        std::this_thread::sleep_for(1s);
+        return counter++;
+    };
+    std::vector<std::future<size_t>> futures;
+    std::priority_queue<size_t> results;
+    for (size_t i = 0; i < 10; i++)
+        futures.push_back(pool.enqueue(task));
+    for (size_t i = 0; i < 10; i++)
+        results.push(futures[i].get());
+    for (size_t i = 0; i < 10; i++)
+    {
+        BOOST_TEST(results.top() == i);
+        results.pop();
+    }
+
+    BOOST_TEST(counter == 10);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

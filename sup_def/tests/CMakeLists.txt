@@ -1,3 +1,4 @@
+include("../cmake/asserts.cmake")
 include("../cmake/test_utils.cmake")
 include(FindBoost)
 
@@ -16,13 +17,23 @@ endif()
 ]]
 
 add_subdirectory("./common")
-file(GLOB sdcommon_test_SOURCES_MAIN LIST_DIRECTORIES FALSE "test_common*.cpp")
-add_test_foreach_source(${sdcommon_test_SOURCES_MAIN})
+file(GLOB sd_common_test_source_files LIST_DIRECTORIES FALSE "test_common*.cpp")
+foreach (src ${sd_common_test_source_files})    
+    list(APPEND sd_common_test_sources_list ${src})
+endforeach()
+list(APPEND sd_common_test_linkto_list libsdcommon::test::common sdthirdparty)
+add_test_foreach_source("${sd_common_test_sources_list}" "${sd_common_test_linkto_list}")
 
 if (NOT ${SUPDEF_BUILD_LIB_ONLY})
 
     if (${SUPDEF_BUILD_EXTERNAL} AND IS_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/external)
         add_subdirectory("./external")
+        file(GLOB sd_external_test_source_files LIST_DIRECTORIES FALSE "test_external*.cpp")
+        foreach (src ${sd_external_test_source_files})    
+            list(APPEND sd_external_test_sources_list ${src})
+        endforeach()
+        list(APPEND sd_external_test_linkto_list libsdcommon::test::external sdthirdparty sdexternal)
+        add_test_foreach_source("${sd_external_test_sources_list}" "${sd_external_test_linkto_list}")
     endif()
 
     if (${SUPDEF_BUILD_GCC_PLUGIN} AND IS_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/gcc)

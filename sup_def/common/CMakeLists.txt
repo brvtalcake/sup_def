@@ -2,9 +2,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/../cmake/report_target_properties.cmake)
 
 file(GLOB_RECURSE LIBSDCOMMON_SOURCES LIST_DIRECTORIES FALSE "*.h" ".hpp" "*.c" "*.cpp")
 file(GLOB_RECURSE LIBSDCOMMON_HEADERS LIST_DIRECTORIES FALSE "*.h" ".hpp")
+
 add_library(sdcommon STATIC ${LIBSDCOMMON_SOURCES})
-#[[ target_include_directories(sdcommon PRIVATE ${CMAKE_CURRENT_LIST_DIR}) ]]
 target_link_libraries(sdcommon PUBLIC sdthirdparty)
+#[[ target_include_directories(sdcommon PRIVATE ${CMAKE_CURRENT_LIST_DIR}) ]]
 #target_precompile_headers(sdcommon PRIVATE ${LIBSDCOMMON_HEADERS})
 
 
@@ -23,5 +24,7 @@ target_link_libraries(sdcommon_external PUBLIC sdthirdparty)
 target_compile_definitions(sdcommon_external PUBLIC COMPILING_EXTERNAL=1)
 
 add_library(libsdcommon::base ALIAS sdcommon)
-add_library(libsdcommon::test ALIAS sdcommon)
 add_library(libsdcommon::external ALIAS sdcommon_external)
+
+add_library(libsdcommon::test::common ALIAS sdcommon)
+add_library(libsdcommon::test::external ALIAS sdcommon_external)
