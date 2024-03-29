@@ -32,5 +32,6 @@
 #include <sup_def/tests/external/is.ipp>
 #include <sup_def/tests/external/thread_safe_queue.ipp>
 #include <sup_def/tests/external/thread_pool.ipp>
+#include <sup_def/tests/external/static_allocator.ipp>
 
 #endif

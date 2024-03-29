@@ -1480,7 +1480,7 @@
 #include <boost/contract.hpp>
 
 #ifndef CONTRACT
-    #define CONTRACT(type, ...) ID(PP_INVOKE(PP_CAT(PP_CAT(CONTRACT_, type), _IMPL), MAP_LIST(MAKE_PP_OPTIONAL, __VA_ARGS__)))
+    #define CONTRACT(type, ...) ID(PP_INVOKE(PP_CAT(PP_CAT(CONTRACT_, type), _IMPL), MAP_LIST(MAKE_PP_OPTIONAL, __VA_ARGS__,,,,,,,,,,)))
 #endif
 #ifndef CONTRACT_FN_IMPL
     #define CONTRACT_FN_IMPL(opt_check_name, opt_precond, opt_old, opt_postcond, opt_except, ...) /* __VA_ARGS__ ignored */ \
@@ -2026,11 +2026,7 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
     ATTRIBUTE_ALLOC_SIZE(                   \
         size_index                          \
     )                                       \
-    CHAOS_PP_UNLESS(                        \
-        ISEMPTY(                            \
-            __VA_ARGS__                     \
-        )                                   \
-    )(                                      \
+    __VA_OPT__(                             \
         ATTRIBUTE_ALLOC_ALIGN(              \
             FIRST_ARG(                      \
                 __VA_ARGS__                 \
@@ -2047,11 +2043,7 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
         size_index,                                 \
         count_index                                 \
     )                                               \
-    CHAOS_PP_UNLESS(                                \
-        ISEMPTY(                                    \
-            __VA_ARGS__                             \
-        )                                           \
-    )(                                              \
+    __VA_OPT__(                                     \
         ATTRIBUTE_ALLOC_ALIGN(                      \
             FIRST_ARG(                              \
                 __VA_ARGS__                         \
@@ -2066,11 +2058,7 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
     ATTRIBUTE_ALLOC_SIZE(                           \
         size_index                                  \
     )                                               \
-    CHAOS_PP_UNLESS(                                \
-        ISEMPTY(                                    \
-            __VA_ARGS__                             \
-        )                                           \
-    )(                                              \
+    __VA_OPT__(                                     \
         ATTRIBUTE_ALLOC_ALIGN(                      \
             FIRST_ARG(                              \
                 __VA_ARGS__                         \
@@ -2086,11 +2074,7 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
         size_index,                                     \
         count_index                                     \
     )                                                   \
-    CHAOS_PP_UNLESS(                                    \
-        ISEMPTY(                                        \
-            __VA_ARGS__                                 \
-        )                                               \
-    )(                                                  \
+    __VA_OPT__(                                         \
         ATTRIBUTE_ALLOC_ALIGN(                          \
             FIRST_ARG(                                  \
                 __VA_ARGS__                             \
@@ -2125,7 +2109,7 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 #undef aliasing_type
 #undef declare_aliasing_type
 #if SUPDEF_COMPILER == 1
-    #define ATTRIBUTE_MAY_ALIAS [[__gnu__::__may_alias__]]
+    #define ATTRIBUTE_MAY_ALIAS __attribute__((__may_alias__))//[[__gnu__::__may_alias__]]
 #elif SUPDEF_COMPILER == 2 && defined(__has_attribute)
     #if __has_attribute(may_alias)
         #define ATTRIBUTE_MAY_ALIAS [[clang::may_alias]]
@@ -2136,7 +2120,7 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
     #define ATTRIBUTE_MAY_ALIAS
 #endif
 #define aliasing_type(type) PP_CAT(aliasing_, type)
-#define declare_aliasing_type(type, ...) typedef type ATTRIBUTE_MAY_ALIAS PP_IF(ISEMPTY(__VA_ARGS__))(aliasing_type(type))(__VA_ARGS__)
+#define declare_aliasing_type(type, ...) typedef type PP_IF(ISEMPTY(__VA_ARGS__))(aliasing_type(type))(__VA_ARGS__) ATTRIBUTE_MAY_ALIAS
 
 #undef ATTRIBUTE_EXPECTED_THROW
 #undef should_throw
@@ -2171,6 +2155,21 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
     #define ATTRIBUTE_FLATTEN
 #endif
 #define flatten ATTRIBUTE_FLATTEN
+
+#undef ATTRIBUTE_UNINITIALIZED
+#undef no_init
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_UNINITIALIZED [[__gnu__::__uninitialized__]]
+#elif SUPDEF_COMPILER == 2 && defined(__has_attribute)
+    #if __has_attribute(uninitialized)
+        #define ATTRIBUTE_UNINITIALIZED [[clang::uninitialized]]
+    #else
+        #define ATTRIBUTE_UNINITIALIZED
+    #endif
+#else
+    #define ATTRIBUTE_UNINITIALIZED
+#endif
+#define no_init ATTRIBUTE_UNINITIALIZED
 
 #undef ATTRIBUTE_NORETURN
 #undef no_return

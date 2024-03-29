@@ -111,11 +111,26 @@ namespace SupDef
         malloc_like(1, 2)
         aliasing_type(void)* static_alloc(size_t size, size_t alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
-        calloc_like(1, 2, 3)
-        aliasing_type(void)* static_calloc(size_t count, size_t size, size_t alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+        realloc_like(2)
+        aliasing_type(void)* static_realloc(aliasing_type(void)* ptr, size_t size);
+        realloc_like(2, 3)
+        aliasing_type(void)* static_realloc(aliasing_type(void)* ptr, size_t size, size_t alignment);
 
-        nonnull_params(1)
-        void static_free(aliasing_type(void)* ptr);
+        calloc_like(1, 2, 3)
+        aliasing_type(void)* static_alloc_array(size_t count, size_t size, size_t alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+        
+        reallocarray_like(2, 3)
+        aliasing_type(void)* static_realloc_array(aliasing_type(void)* ptr, size_t count, size_t size);
+        reallocarray_like(2, 3, 4)
+        aliasing_type(void)* static_realloc_array(aliasing_type(void)* ptr, size_t count, size_t size, size_t alignment);
+
+        free_like(1)
+        void static_dealloc(aliasing_type(void)* ptr);
+
+        namespace Test 
+        {
+            void static_dump_hdrs(std::ostream& s = std::cout);
+        }
 
 
         static_assert(IsOneOf<int, int, char, float>);
@@ -2238,55 +2253,134 @@ namespace SupDef
 #ifdef HARD_ASSERT_IMPL
     #undef HARD_ASSERT_IMPL
 #endif
-#define HARD_ASSERT_IMPL(COND) (static_cast<bool>((COND)) ? ((void)0) : ::SupDef::Util::hard_assert_fail((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__))
+#define HARD_ASSERT_IMPL(COND, COND_STR)        \
+    (                                           \
+        static_cast<bool>((COND))   ?           \
+            ((void)0)               :           \
+            ::SupDef::Util::hard_assert_fail(   \
+                (COND),                         \
+                COND_STR,                       \
+                __FILE__,                       \
+                __LINE__,                       \
+                __PRETTY_FUNCTION__             \
+            )                                   \
+    )
 
 #ifdef HARD_ASSERT_IMPL_CONSTEVAL
     #undef HARD_ASSERT_IMPL_CONSTEVAL
 #endif
-#define HARD_ASSERT_IMPL_CONSTEVAL(COND) (static_cast<bool>((COND)) ? ((void)0) : ::SupDef::Util::hard_assert_fail_consteval((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__))
+#define HARD_ASSERT_IMPL_CONSTEVAL(COND, COND_STR)      \
+    (                                                   \
+        static_cast<bool>((COND))   ?                   \
+            ((void)0)               :                   \
+            ::SupDef::Util::hard_assert_fail_consteval( \
+                (COND),                                 \
+                COND_STR,                               \
+                __FILE__,                               \
+                __LINE__,                               \
+                __PRETTY_FUNCTION__                     \
+            )                                           \
+    )
 
 #ifdef HARD_ASSERT_MSG_IMPL
     #undef HARD_ASSERT_MSG_IMPL
 #endif
-#define HARD_ASSERT_MSG_IMPL(COND, MSG) (static_cast<bool>((COND)) ? ((void)0) : ::SupDef::Util::hard_assert_fail((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__, (MSG)))
+#define HARD_ASSERT_MSG_IMPL(COND, COND_STR, MSG)       \
+    (                                                   \
+        static_cast<bool>((COND))   ?                   \
+            ((void)0)               :                   \
+            ::SupDef::Util::hard_assert_fail(           \
+                (COND),                                 \
+                COND_STR,                               \
+                __FILE__,                               \
+                __LINE__,                               \
+                __PRETTY_FUNCTION__,                    \
+                (MSG)                                   \
+            )                                           \
+    )
 
 #ifdef HARD_ASSERT_MSG_IMPL_CONSTEVAL
     #undef HARD_ASSERT_MSG_IMPL_CONSTEVAL
 #endif
-#define HARD_ASSERT_MSG_IMPL_CONSTEVAL(COND, MSG) (static_cast<bool>((COND)) ? ((void)0) : ::SupDef::Util::hard_assert_fail_consteval((COND), PP_STRINGIZE((COND)), __FILE__, __LINE__, __PRETTY_FUNCTION__, (MSG)))
+#define HARD_ASSERT_MSG_IMPL_CONSTEVAL(COND, COND_STR, MSG) \
+    (                                                       \
+        static_cast<bool>((COND))   ?                       \
+            ((void)0)               :                       \
+            ::SupDef::Util::hard_assert_fail_consteval(     \
+                (COND),                                     \
+                COND_STR,                                   \
+                __FILE__,                                   \
+                __LINE__,                                   \
+                __PRETTY_FUNCTION__,                        \
+                (MSG)                                       \
+            )                                               \
+    )
 
 #ifdef hard_assert
     #undef hard_assert
 #endif
-#define hard_assert(COND)                       \
+#define hard_assert(COND, ...)                  \
     do                                          \
     {                                           \
         if consteval                            \
         {                                       \
-            HARD_ASSERT_IMPL_CONSTEVAL((COND)); \
+            PP_IF(ISEMPTY(__VA_ARGS__))         \
+            (                                   \
+                HARD_ASSERT_IMPL_CONSTEVAL(     \
+                    (COND),                     \
+                    (#COND)                     \
+                )                               \
+            )(                                  \
+                HARD_ASSERT_MSG_IMPL_CONSTEVAL( \
+                    (COND),                     \
+                    (#COND),                    \
+                    __VA_ARGS__                 \
+                )                               \
+            );                                  \
         }                                       \
         else                                    \
         {                                       \
-            HARD_ASSERT_IMPL((COND));           \
+            PP_IF(ISEMPTY(__VA_ARGS__))         \
+            (                                   \
+                HARD_ASSERT_IMPL(               \
+                    (COND),                     \
+                    (#COND)                     \
+                )                               \
+            )(                                  \
+                HARD_ASSERT_MSG_IMPL(           \
+                    (COND),                     \
+                    (#COND),                    \
+                    __VA_ARGS__                 \
+                )                               \
+            );                                  \
         }                                       \
     } while (false);                            \
     ASSUME((COND))
 
+
 #ifdef hard_assert_msg
     #undef hard_assert_msg
 #endif
-#define hard_assert_msg(COND, MSG)                          \
-    do                                                      \
-    {                                                       \
-        if consteval                                        \
-        {                                                   \
-            HARD_ASSERT_MSG_IMPL_CONSTEVAL((COND), (MSG));  \
-        }                                                   \
-        else                                                \
-        {                                                   \
-            HARD_ASSERT_MSG_IMPL((COND), (MSG));            \
-        }                                                   \
-    } while (false);                                        \
+#define hard_assert_msg(COND, MSG)          \
+    do                                      \
+    {                                       \
+        if consteval                        \
+        {                                   \
+            HARD_ASSERT_MSG_IMPL_CONSTEVAL( \
+                (COND),                     \
+                (#COND),                    \
+                (MSG)                       \
+            );                              \
+        }                                   \
+        else                                \
+        {                                   \
+            HARD_ASSERT_MSG_IMPL(           \
+                (COND),                     \
+                (#COND),                    \
+                (MSG)                       \
+            );                              \
+        }                                   \
+    } while (false);                        \
     ASSUME((COND))
 
         [[noreturn]]

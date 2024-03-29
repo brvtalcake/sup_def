@@ -38,8 +38,13 @@
 
 #line SUPDEF_TEST_FILE_POS
 
+#ifndef SUPDEF_TEST_THREAD_POOL
+    #define SUPDEF_TEST_THREAD_POOL 0
+#endif
+
 BOOST_AUTO_TEST_SUITE(thread_pool,
     * BoostTest::description("Tests for `SupDef::ThreadPool`")
+    * BoostTest::enable_if<SUPDEF_TEST_THREAD_POOL>()
 )
 
 BOOST_AUTO_TEST_CASE(test_thread_pool1,

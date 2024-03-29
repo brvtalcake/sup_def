@@ -512,7 +512,7 @@ configure: failed program was:
 configure:5976: result: no
 configure:6037: checking for memset_explicit
 configure:6037: gcc -o conftest -g -O2   conftest.c  >&5
-/usr/bin/ld: /tmp/ccQLUDus.o: in function `main':
+/usr/bin/ld: /tmp/ccSVfSQG.o: in function `main':
 /home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/conftest.c:67:(.text.startup+0x7): undefined reference to `memset_explicit'
 collect2: error: ld returned 1 exit status
 configure:6037: $? = 1
@@ -590,7 +590,7 @@ configure: failed program was:
 configure:6037: result: no
 configure:6037: checking for memset_s
 configure:6037: gcc -o conftest -g -O2   conftest.c  >&5
-/usr/bin/ld: /tmp/cceoc4bc.o: in function `main':
+/usr/bin/ld: /tmp/ccYcKnIY.o: in function `main':
 /home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/conftest.c:67:(.text.startup+0x7): undefined reference to `memset_s'
 collect2: error: ld returned 1 exit status
 configure:6037: $? = 1
@@ -690,7 +690,7 @@ conftest.c: In function 'main':
 conftest.c:46:1: warning: implicit declaration of function 'unreachable' [-Wimplicit-function-declaration]
    46 | unreachable ();
       | ^~~~~~~~~~~
-/usr/bin/ld: /tmp/ccCPTxPR.o: in function `main':
+/usr/bin/ld: /tmp/ccV52kGz.o: in function `main':
 /home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/conftest.c:46:(.text.startup+0x7): undefined reference to `unreachable'
 collect2: error: ld returned 1 exit status
 configure:6801: $? = 1
@@ -1033,7 +1033,7 @@ configure:7732: $? = 0
 configure:7732: result: yes
 configure:8225: checking for explicit_memset
 configure:8225: gcc -o conftest -g -O2   conftest.c  >&5
-/usr/bin/ld: /tmp/ccSA76UQ.o: in function `main':
+/usr/bin/ld: /tmp/cc6ZDQWk.o: in function `main':
 /home/axel/Documents/programmation/c/sup_def/sup_def/third_party/gnulib_modules/gnulib_build/conftest.c:75:(.text.startup+0x7): undefined reference to `explicit_memset'
 collect2: error: ld returned 1 exit status
 configure:8225: $? = 1

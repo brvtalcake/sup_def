@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <sup_def/common/config.h>
 #ifdef BOOST_TEST_MODULE
     #error "BOOST_TEST_MODULE shall not be defined before compiling this file"
 #endif
