@@ -84,6 +84,8 @@ STATIC_TODO(
 #include <sup_def/common/util/util.hpp>
 #include <sup_def/common/util/engine.hpp>
 
+#include <sup_def/common/unistreams/unistreams.hpp>
+
 #if COMPILING_EXTERNAL
     #include <sup_def/external/external.hpp>
 #endif
@@ -1069,10 +1071,10 @@ namespace SupDef
             constexpr inline T unwrap_or(T&& value) const noexcept
             {
                 if (this->is_ok())
-                    return std::move(value);
+                    return (value);
                 if (this->is_ok())
                     return std::get<T>(*this);
-                return std::move(value);
+                return (value);
             }
 
             constexpr inline T unwrap_or(T& value) const noexcept
@@ -1128,19 +1130,34 @@ namespace SupDef
             using Base::Base;
             using Base::operator=;
 
+            using ok_type = std::variant_alternative_t<0, typename Base::value_type>;
+            using err_type = typename Base::error_type;
+            using null_type = std::nullptr_t;
+
             inline bool is_null(void) const noexcept
             {
-                return this->has_value() && std::holds_alternative<nullptr_t>(this->value());
+                return this->has_value() && std::holds_alternative<null_type>(this->value());
             }
 
             inline bool is_ok(void) const noexcept
             {
-                return this->has_value() && std::holds_alternative<T>(this->value());
+                return this->has_value() && std::holds_alternative<ok_type>(this->value());
             }
 
             inline bool is_err(void) const noexcept
             {
                 return !this->has_value();
+            }
+
+            T& unwrap(void) const
+            {
+                if (this->is_err())
+                    throw InternalError("Attempt to unwrap an error Result");
+                if (this->is_null())
+                    throw InternalError("Attempt to unwrap a null Result");
+                if (this->is_ok())
+                    return std::get<ok_type>(this->value());
+                UNREACHABLE();
             }
     };
 
@@ -1236,7 +1253,7 @@ namespace SupDef
             }
     };
 
-    // TODO: How to ensure that locale is UTF-8 aware ?
+    // TODO: Fix Windows version
     inline void set_app_locale(void)
     {
         #if defined(_WIN32)
@@ -1246,7 +1263,7 @@ namespace SupDef
                 { std::cerr << "Failed to set locale to current system-locale: error code: " << GetLastError() << std::endl; }
             std::locale::global(name);
         #else
-            std::locale::global(std::locale(""));
+            std::locale::global(uni::detail::user_preferred_unicode_aware_locale());
         #endif
     }
 

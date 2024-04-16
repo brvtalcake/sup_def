@@ -34,6 +34,8 @@
     #define NEED_TPP_INC(...) 0
 #endif
 
+#define UNISTREAMS_STRING_USE_STD_BASIC_STRING 1
+
 #include <gnulib.h>
 #undef unreachable
 #undef assume
@@ -2249,6 +2251,53 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 #endif
 #define no_side_effects(lvl) PP_SWITCH(lvl, (CHAOS_PP_EMPTY()), (0, (CHAOS_PP_EMPTY())), (1, (ATTRIBUTE_CONST)), (2, (ATTRIBUTE_PURE)))
 
+#undef ENUM_CLASS_OPERATORS
+#define ENUM_CLASS_OPERATORS(enum_name)                             \
+    inline enum_name operator|(enum_name lhs, enum_name rhs)        \
+    {                                                               \
+        return static_cast<enum_name>(                              \
+            std::to_underlying(lhs) |                               \
+            std::to_underlying(rhs)                                 \
+        );                                                          \
+    }                                                               \
+    inline enum_name operator&(enum_name lhs, enum_name rhs)        \
+    {                                                               \
+        return static_cast<enum_name>(                              \
+            std::to_underlying(lhs) &                               \
+            std::to_underlying(rhs)                                 \
+        );                                                          \
+    }                                                               \
+    inline enum_name operator^(enum_name lhs, enum_name rhs)        \
+    {                                                               \
+        return static_cast<enum_name>(                              \
+            std::to_underlying(lhs) ^                               \
+            std::to_underlying(rhs)                                 \
+        );                                                          \
+    }                                                               \
+    inline enum_name operator~(enum_name rhs)                       \
+    {                                                               \
+        return static_cast<enum_name>(                              \
+            ~std::to_underlying(rhs)                                \
+        );                                                          \
+    }                                                               \
+    inline enum_name& operator|=(enum_name& lhs, enum_name rhs)     \
+    {                                                               \
+        lhs = lhs | rhs;                                            \
+        return lhs;                                                 \
+    }                                                               \
+    inline enum_name& operator&=(enum_name& lhs, enum_name rhs)     \
+    {                                                               \
+        lhs = lhs & rhs;                                            \
+        return lhs;                                                 \
+    }                                                               \
+    inline enum_name& operator^=(enum_name& lhs, enum_name rhs)     \
+    {                                                               \
+        lhs = lhs ^ rhs;                                            \
+        return lhs;                                                 \
+    }
+
+    
+
 #if 0
 #include <boost/parameter.hpp>
 
@@ -2392,6 +2441,8 @@ static_assert(
     ==
     STATIC_MEMPOOL_SIZE
 ); // Just to make sure the value is a correct compile-time constant
+
+/* #include <iconv.h> */
 
 STATIC_TODO(
     "Add tests for the following macros: all PP_FLOAT* macros, all macros relying on them (COMPTIME_SCALE for example), probably_if and friends, etc..."

@@ -65,6 +65,13 @@ namespace uni
         static constexpr bool is_utf8 = false;
         static constexpr bool is_utf16 = false;
         static constexpr bool is_utf32 = false;
+        typedef CharT base_char_type;
+
+        using typename std::char_traits<CharT>::char_type;
+        using typename std::char_traits<CharT>::int_type;
+        using typename std::char_traits<CharT>::off_type;
+        using typename std::char_traits<CharT>::pos_type;
+        using typename std::char_traits<CharT>::state_type;
     };
 
     template <>
@@ -73,12 +80,38 @@ namespace uni
         static constexpr bool is_utf8 = true;
         static constexpr bool is_utf16 = false;
         static constexpr bool is_utf32 = false;
+        typedef char8_t base_char_type;
 
         typedef utf8_char char_type;
         typedef uint_least16_t int_type;
         typedef std::char_traits<char8_t>::off_type off_type;
         typedef std::char_traits<char8_t>::pos_type pos_type;
         typedef std::char_traits<char8_t>::state_type state_type;
+
+        static constexpr bool is_null(char_type c) noexcept
+        {
+            return eq(c, char_type());
+        }
+        static constexpr bool is_null(int_type c) noexcept
+        {
+            return eq_int_type(c, int_type());
+        }
+        static constexpr std::unique_ptr<base_char_type[]> to_base_char(const char_type* s, size_t n)
+        {
+            std::unique_ptr<base_char_type[]> result(new base_char_type[n + 1]);
+            static_assert(std::same_as<base_char_type, char_type>);
+            copy(result.get(), s, n); // Since utf8_char is a char8_t
+            result[n] = base_char_type();
+            return (result);
+        }
+        static constexpr std::unique_ptr<char_type[]> from_base_char(const base_char_type* s, size_t n)
+        {
+            std::unique_ptr<char_type[]> result(new char_type[n + 1]);
+            static_assert(std::same_as<base_char_type, char_type>);
+            copy(result.get(), s, n); // Since utf8_char is a char8_t
+            result[n] = char_type();
+            return (result);
+        }
 
         static constexpr bool eq(char_type c1, char_type c2) noexcept
         {
@@ -102,8 +135,9 @@ namespace uni
                 return 0;
             }
             else
+            {
                 return std::memcmp(s1, s2, n * sizeof(char_type));
-            UNREACHABLE();
+            }
         }
         static constexpr size_t length(const char_type* s) noexcept
         {
@@ -127,7 +161,6 @@ namespace uni
             {
                 return static_cast<const char_type*>(std::memchr(s, a, n * sizeof(char_type)));
             }
-            UNREACHABLE();
         }
         static constexpr char_type* move(char_type* s1, const char_type* s2, size_t n) noexcept
         {
@@ -136,10 +169,13 @@ namespace uni
             unlikely_if (s1 == s2)
                 return s1;
             if consteval
+            {
                 return ::uni::detail::char_traits_move(s1, s2, n);
+            }
             else
+            {
                 return static_cast<char_type*>(std::memmove(s1, s2, n * sizeof(char_type)));
-            UNREACHABLE();
+            }
         }
         static constexpr char_type* copy(char_type* s1, const char_type* s2, size_t n) noexcept
         {
@@ -154,8 +190,9 @@ namespace uni
                 return s1;
             }
             else
+            {
                 return static_cast<char_type*>(std::memcpy(s1, s2, n * sizeof(char_type)));
-            UNREACHABLE();
+            }
         }
         static constexpr void assign(char_type& c1, const char_type& c2) noexcept(noexcept(std::construct_at(&c1, c2)))
         {
@@ -171,6 +208,7 @@ namespace uni
             }
             else
             {
+                TODO("Test this");
                 std::for_each_n(
                     std::execution::par_unseq,
                     s,
@@ -179,7 +217,6 @@ namespace uni
                 );
                 return s;
             }
-            UNREACHABLE();
         }
         static constexpr int_type not_eof(int_type c) noexcept
         {
@@ -187,7 +224,7 @@ namespace uni
         }
         static constexpr char_type to_char_type(int_type c) noexcept
         {
-            if (c > std::numeric_limits<char_type>::max())
+            if (c > static_cast<int_type>(std::numeric_limits<base_char_type>::max()))
                 return char_type();
             return static_cast<char_type>(c);
         }
@@ -211,6 +248,7 @@ namespace uni
         static constexpr bool is_utf8 = false;
         static constexpr bool is_utf16 = true;
         static constexpr bool is_utf32 = false;
+        typedef char16_t base_char_type;
 
         typedef utf16_char char_type;
         struct int_type
@@ -218,11 +256,26 @@ namespace uni
             uint_least32_t value;
             endianness endian;
 
-            int_type() noexcept
-                : value(0), endian(endianness::undefined) { }
-            int_type(uint_least32_t value) noexcept
-                : value(value), endian(endianness::undefined) { }
+#if 0
+            constexpr int_type() noexcept
+                : value(0), endian(endianness::undefined)
+            { }
+#else
+            constexpr int_type() = default;
+#endif
+            constexpr int_type(uint_least32_t value) noexcept
+                : value(value), endian(endianness::undefined)
+            { }
+            constexpr int_type(uint_least32_t value, endianness endian) noexcept
+                : value(value), endian(endian)
+            { }
         };
+        static_assert(
+            std::is_trivial<int_type>::value &&
+            std::is_standard_layout<int_type>::value &&
+            int_type{}.endian == endianness::undefined &&
+            int_type{}.value == 0
+        );
         typedef std::char_traits<char16_t>::off_type off_type;
         typedef std::char_traits<char16_t>::pos_type pos_type;
         typedef std::char_traits<char16_t>::state_type state_type;
@@ -243,6 +296,22 @@ namespace uni
         {
             return s->endian;
         }
+        static constexpr void set_endianness(char_type& c, endianness end)
+        {
+            unlikely_if (end == endianness::undefined || c.endian == endianness::undefined)
+                throw InternalError("Invalid endianness");
+            if (c.endian != end)
+                c.value = std::byteswap(c.value);
+            c.endian = end;
+        }
+        static constexpr void set_endianness(int_type& c, endianness end)
+        {
+            unlikely_if (end == endianness::undefined || c.endian == endianness::undefined)
+                throw InternalError("Invalid endianness");
+            if (c.endian != end)
+                c.value = to_int_type(std::byteswap(to_char_type(c).value)).value;
+            c.endian = end;
+        }
         static constexpr bool is_null(char_type c) noexcept
         {
             return eq(c, char_type{0, endianness::undefined}) || eq(c, char_type{0, get_endianness(c)});
@@ -250,6 +319,34 @@ namespace uni
         static constexpr bool is_null(int_type c) noexcept
         {
             return eq_int_type(c, int_type{0, endianness::undefined}) || eq_int_type(c, int_type{0, get_endianness(c)});
+        }
+        static constexpr std::unique_ptr<base_char_type[]> to_base_char(const char_type* s, size_t n)
+        {
+            std::unique_ptr<base_char_type[]> result(new base_char_type[n + 1]);
+            std::transform(
+                s,
+                s + n,
+                result.get(),
+                [](const char_type& c) {
+                    return c.value;
+                }
+            );
+            result[n] = base_char_type();
+            return (result);
+        }
+        static constexpr std::unique_ptr<char_type[]> from_base_char(const base_char_type* s, size_t n, const endianness end)
+        {
+            std::unique_ptr<char_type[]> result(new char_type[n + 1]);
+            std::transform(
+                s,
+                s + n,
+                result.get(),
+                [end](const base_char_type& c) {
+                    return char_type(c, end);
+                }
+            );
+            result[n] = char_type();
+            return (result);
         }
 
         static constexpr bool eq(char_type c1, char_type c2) noexcept
@@ -274,8 +371,9 @@ namespace uni
                 return 0;
             }
             else
+            {
                 return std::memcmp(s1, s2, n * sizeof(char_type));
-            UNREACHABLE();
+            }
         }
         static constexpr size_t length(const char_type* s) noexcept
         {
@@ -306,10 +404,13 @@ namespace uni
             unlikely_if (s1 == s2)
                 return s1;
             if consteval
+            {
                 return ::uni::detail::char_traits_move(s1, s2, n);
+            }
             else
+            {
                 return static_cast<char_type*>(std::memmove(s1, s2, n * sizeof(char_type)));
-            UNREACHABLE();
+            }
         }
         static constexpr char_type* copy(char_type* s1, const char_type* s2, size_t n) noexcept
         {
@@ -324,8 +425,9 @@ namespace uni
                 return s1;
             }
             else
+            {
                 return static_cast<char_type*>(std::memcpy(s1, s2, n * sizeof(char_type)));
-            UNREACHABLE();
+            }
         }
         static constexpr void assign(char_type& c1, const char_type& c2) noexcept(noexcept(std::construct_at(&c1, c2)))
         {
@@ -341,6 +443,7 @@ namespace uni
             }
             else
             {
+                TODO("Test this");
                 std::for_each_n(
                     std::execution::par_unseq,
                     s,
@@ -349,7 +452,6 @@ namespace uni
                 );
                 return s;
             }
-            UNREACHABLE();
         }
         static constexpr int_type not_eof(int_type c) noexcept
         {
@@ -357,7 +459,7 @@ namespace uni
         }
         static constexpr char_type to_char_type(int_type c) noexcept
         {
-            if (c.value > std::numeric_limits<char_type>::max())
+            if (c.value > static_cast<decltype(int_type::value)>(std::numeric_limits<base_char_type>::max()))
                 return char_type(0, c.endian);
             return char_type(c.value, c.endian);
         }
@@ -371,7 +473,10 @@ namespace uni
         }
         static constexpr int_type eof() noexcept
         {
-            return int_type{ -1, endianness::undefined };
+            return int_type{
+                static_cast<decltype(int_type::value)>(-1),
+                endianness::undefined
+            };
         }
     };
 
@@ -381,6 +486,7 @@ namespace uni
         static constexpr bool is_utf8 = false;
         static constexpr bool is_utf16 = false;
         static constexpr bool is_utf32 = true;
+        typedef char32_t base_char_type;
 
         typedef utf32_char char_type;
         struct int_type
@@ -388,11 +494,26 @@ namespace uni
             uint_least64_t value;
             endianness endian;
 
-            int_type() noexcept
-                : value(0), endian(endianness::undefined) { }
-            int_type(uint_least64_t value) noexcept
-                : value(value), endian(endianness::undefined) { }
+#if 0
+            constexpr int_type() noexcept
+                : value(0), endian(endianness::undefined)
+            { }
+#else
+            constexpr int_type() = default;
+#endif
+            constexpr int_type(uint_least64_t value) noexcept
+                : value(value), endian(endianness::undefined)
+            { }
+            constexpr int_type(uint_least64_t value, endianness endian) noexcept
+                : value(value), endian(endian)
+            { }
         };
+        static_assert(
+            std::is_trivial<int_type>::value &&
+            std::is_standard_layout<int_type>::value &&
+            int_type{}.endian == endianness::undefined &&
+            int_type{}.value == 0
+        );
         typedef std::char_traits<char32_t>::off_type off_type;
         typedef std::char_traits<char32_t>::pos_type pos_type;
         typedef std::char_traits<char32_t>::state_type state_type;
@@ -413,6 +534,22 @@ namespace uni
         {
             return s->endian;
         }
+        static constexpr void set_endianness(char_type& c, endianness end)
+        {
+            unlikely_if (end == endianness::undefined || c.endian == endianness::undefined)
+                throw InternalError("Invalid endianness");
+            if (c.endian != end)
+                c.value = std::byteswap(c.value);
+            c.endian = end;
+        }
+        static constexpr void set_endianness(int_type& c, endianness end)
+        {
+            unlikely_if (end == endianness::undefined || c.endian == endianness::undefined)
+                throw InternalError("Invalid endianness");
+            if (c.endian != end)
+                c.value = to_int_type(std::byteswap(to_char_type(c).value)).value;
+            c.endian = end;
+        }
         static constexpr bool is_null(char_type c) noexcept
         {
             return eq(c, char_type{0, endianness::undefined}) || eq(c, char_type{0, get_endianness(c)});
@@ -420,6 +557,34 @@ namespace uni
         static constexpr bool is_null(int_type c) noexcept
         {
             return eq_int_type(c, int_type{0, endianness::undefined}) || eq_int_type(c, int_type{0, get_endianness(c)});
+        }
+        static constexpr std::unique_ptr<base_char_type[]> to_base_char(const char_type* s, size_t n)
+        {
+            std::unique_ptr<base_char_type[]> result(new base_char_type[n + 1]);
+            std::transform(
+                s,
+                s + n,
+                result.get(),
+                [](const char_type& c) {
+                    return c.value;
+                }
+            );
+            result[n] = base_char_type();
+            return (result);
+        }
+        static constexpr std::unique_ptr<char_type[]> from_base_char(const base_char_type* s, size_t n, const endianness end)
+        {
+            std::unique_ptr<char_type[]> result(new char_type[n + 1]);
+            std::transform(
+                s,
+                s + n,
+                result.get(),
+                [end](const base_char_type& c) {
+                    return char_type(c, end);
+                }
+            );
+            result[n] = char_type();
+            return (result);
         }
 
         static constexpr bool eq(char_type c1, char_type c2) noexcept
@@ -444,8 +609,9 @@ namespace uni
                 return 0;
             }
             else
+            {
                 return std::memcmp(s1, s2, n * sizeof(char_type));
-            UNREACHABLE();
+            }
         }
         static constexpr size_t length(const char_type* s) noexcept
         {
@@ -476,10 +642,13 @@ namespace uni
             unlikely_if (s1 == s2)
                 return s1;
             if consteval
+            {
                 return ::uni::detail::char_traits_move(s1, s2, n);
+            }
             else
+            {
                 return static_cast<char_type*>(std::memmove(s1, s2, n * sizeof(char_type)));
-            UNREACHABLE();
+            }
         }
         static constexpr char_type* copy(char_type* s1, const char_type* s2, size_t n) noexcept
         {
@@ -494,8 +663,9 @@ namespace uni
                 return s1;
             }
             else
+            {
                 return static_cast<char_type*>(std::memcpy(s1, s2, n * sizeof(char_type)));
-            UNREACHABLE();
+            }
         }
         static constexpr void assign(char_type& c1, const char_type& c2) noexcept(noexcept(std::construct_at(&c1, c2)))
         {
@@ -511,6 +681,7 @@ namespace uni
             }
             else
             {
+                TODO("Test this");
                 std::for_each_n(
                     std::execution::par_unseq,
                     s,
@@ -519,7 +690,6 @@ namespace uni
                 );
                 return s;
             }
-            UNREACHABLE();
         }
         static constexpr int_type not_eof(int_type c) noexcept
         {
@@ -527,7 +697,7 @@ namespace uni
         }
         static constexpr char_type to_char_type(int_type c) noexcept
         {
-            if (c.value > std::numeric_limits<char_type>::max())
+            if (c.value > static_cast<decltype(int_type::value)>(std::numeric_limits<base_char_type>::max()))
                 return char_type(0, c.endian);
             return char_type(c.value, c.endian);
         }
@@ -541,7 +711,10 @@ namespace uni
         }
         static constexpr int_type eof() noexcept
         {
-            return int_type{ -1, endianness::undefined };
+            return int_type{
+                static_cast<decltype(int_type::value)>(-1),
+                endianness::undefined
+            };
         }
     };
 }

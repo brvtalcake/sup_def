@@ -35,6 +35,12 @@
 #include <concepts>
 #include <compare>
 #include <utility>
+
+#if SUPDEF_ON_UNIX
+    #include <sys/types.h>
+    #include <sys/syscall.h>
+    #include <unistd.h>
+#endif
 #if SUPDEF_COMPILER == 3
     #include <intrin.h>
 #endif
@@ -81,6 +87,9 @@ namespace SupDef
 
 namespace SupDef
 {
+    template <typename T, typename U>
+    concept different_from = !std::same_as<T, U>;
+
     namespace Util
     {
         warn_unused_result()
@@ -1600,7 +1609,7 @@ namespace SupDef
  * @brief Usage: `CAN_CONSTRUCT_FROM((type1, type2, type3), (type4, type5, type6))`
  * 
  */
-#define CAN_CONSTRUCT_FROM(T1, T2) (::SupDef::Util::CanConstructFromImpl<TypeContainer<ID T1>, TypeContainer<ID T2>>::value)
+#define CAN_CONSTRUCT_FROM(T1, T2) (::SupDef::Util::CanConstructFromImpl<::SupDef::Util::TypeContainer<ID T1>, ::SupDef::Util::TypeContainer<ID T2>>::value)
 
         static_assert(CAN_CONSTRUCT_FROM((int, char, float), (int, char, float)));
         static_assert(CAN_CONSTRUCT_FROM((int, char, float), (float, int, char)));
@@ -1641,47 +1650,64 @@ namespace SupDef
         static_assert(!IsValidCodeCvt<wchar_t, char32_t>);
         static_assert(!IsValidCodeCvt<char32_t, wchar_t>);
 
-        // Base template
 #if 0
+#if 0
+        // Base template
         template <typename C1, typename C2>
             requires (CharacterType<C1> || std::same_as<C1, std::filesystem::path>) && CharacterType<C2>
         inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */);
-#else
+#elif 0
+        // Base template
         template <typename C1, typename C2>
             requires CharacterType<C1> && CharacterType<C2>
         inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */) = delete;
+#else
+        // Base template
+        template <typename T1, typename T2>
+        struct convert;
 #endif
 
                 /* Internal */ /* External */
-        template <typename C1, typename C2>
-            requires IsValidCodeCvt<C1, C2> && (!(std::same_as<C1, C2> && (std::same_as<char, C1> || std::same_as<char, C2>))) /* No `<char, char>` */ &&
-                     (CharacterType<C1> && CharacterType<C2>) // double check, even if garanteed by `IsValidCodeCvt`, in case I fucked up
-        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        template <typename C1, different_from<C1> C2>
+            requires IsValidCodeCvt<C1, C2> && ( CharacterType<C1> && CharacterType<C2> )
+        struct convert<C1, C2>
         {
-            using facet_type = typename std::codecvt<C1, C2, std::mbstate_t>;
-            const facet_type& f = std::use_facet<std::codecvt<C1, C2, std::mbstate_t>>(std::locale());
-            std::mbstate_t mb = std::mbstate_t();
-            std::codecvt_base::result res;
-            std::size_t factor = 4;
-            /* Internal */
-            std::basic_string<C1> ret(str.size() * factor, static_cast<C1>('\0'));
-            C1* internal_next = nullptr;
-            const C2* external_next = nullptr;
-            do
+            constexpr convert(const std::basic_string<C2>& str /* External */)
+                : s(std::addressof(str))
+            { }
+            constexpr inline std::basic_string<C1> operator()() const
             {
-                mb = std::mbstate_t();
-                ret.clear();
-                internal_next = nullptr;
-                external_next = nullptr;
-                res = f.in(
-                    mb, &str[0], &str[str.size()], external_next, &ret[0], &ret[ret.size()], internal_next
-                );
-                factor++;
-            } while (res == std::codecvt_base::partial);
-            if (res == std::codecvt_base::error)
-                throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "convert(const std::basic_string<C2>&): std::codecvt_base::error");
-            ret.resize(internal_next - &ret[0]);
-            return ret;
+                using facet_type = typename std::codecvt<C1, C2, std::mbstate_t>;
+                const facet_type& f = std::use_facet<std::codecvt<C1, C2, std::mbstate_t>>(std::locale());
+                std::mbstate_t mb = std::mbstate_t();
+                std::codecvt_base::result res;
+                std::size_t factor = 4;
+                /* Internal */
+                std::basic_string<C1> ret((*(this->s)).size() * factor, static_cast<C1>('\0'));
+                C1* internal_next = nullptr;
+                const C2* external_next = nullptr;
+                do
+                {
+                    mb = std::mbstate_t();
+                    ret.clear();
+                    internal_next = nullptr;
+                    external_next = nullptr;
+                    res = f.in(
+                        mb, &(*(this->s))[0], &(*(this->s))[(*(this->s)).size()], external_next, &ret[0], &ret[ret.size()], internal_next
+                    );
+                    factor++;
+                } while (res == std::codecvt_base::partial);
+                if (res == std::codecvt_base::error)
+                    throw Exception<char, std::filesystem::path>(ExcType::INTERNAL_ERROR, "convert(const std::basic_string<C2>&): std::codecvt_base::error");
+                ret.resize(internal_next - &ret[0]);
+                return ret;
+            }
+            const std::basic_string<C2>* const s;
+        };
+
+        inline std::basic_string<C1> convert<C1, C2>(const std::basic_string<C2>& str /* External */)
+        {
+            
         }
 
         // Assuming UTF-8 locale and that exec encoding for `char` is UTF-8
@@ -1717,45 +1743,47 @@ namespace SupDef
             return convert<char8_t>(convert<char>(str));
         }
 
-        template <typename C1, typename C2>
-            requires CAN_CONSTRUCT_FROM((C2), (char16_t, char32_t)) && std::same_as<char, C1> && (CharacterType<C1> && CharacterType<C2>)
-        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        template <std::same_as<char> C1, typename C2>
+            requires CAN_CONSTRUCT_FROM((C2), (char16_t, char32_t)) && ( CharacterType<C1> && CharacterType<C2> )
+        inline std::basic_string<C1> convert<C1, C2>(const std::basic_string<C2>& str /* External */)
         {
             return convert<C1>(convert<char8_t>(str));
         }
 
-        template <typename C1, typename C2>
-            requires CAN_CONSTRUCT_FROM((C1), (char16_t, char32_t)) && std::same_as<char, C2> && (CharacterType<C1> && CharacterType<C2>)
-        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        template <typename C1, std::same_as<char> C2>
+            requires CAN_CONSTRUCT_FROM((C1), (char16_t, char32_t)) && ( CharacterType<C1> && CharacterType<C2> )
+        inline std::basic_string<C1> convert<C1, C2>(const std::basic_string<C2>& str /* External */)
         {
             return convert<C1>(convert<char8_t>(str));
         }
 
-        template <typename C1, typename C2>
-            requires CAN_CONSTRUCT_FROM((C2), (char16_t, char32_t)) && std::same_as<wchar_t, C1> && (CharacterType<C1> && CharacterType<C2>)
-        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        template <std::same_as<wchar_t> C1, typename C2>
+            requires CAN_CONSTRUCT_FROM((C2), (char16_t, char32_t)) && ( CharacterType<C1> && CharacterType<C2> )
+        inline std::basic_string<C1> convert<C1, C2>(const std::basic_string<C2>& str /* External */)
         {
             return convert<C1>(convert<char>(convert<char8_t>(str)));
         }
 
-        template <typename C1, typename C2>
-            requires CAN_CONSTRUCT_FROM((C1), (char16_t, char32_t)) && std::same_as<wchar_t, C2> && (CharacterType<C1> && CharacterType<C2>)
-        inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        template <typename C1, std::same_as<wchar_t> C2>
+            requires CAN_CONSTRUCT_FROM((C1), (char16_t, char32_t)) && ( CharacterType<C1> && CharacterType<C2> )
+        inline std::basic_string<C1> convert<C1, C2>(const std::basic_string<C2>& str /* External */)
         {
             return convert<C1>(convert<char8_t>(convert<char>(str)));
         }
 
         template <typename C1, typename C2>
             requires (CharacterType<C1> && CharacterType<C2>) && std::same_as<C1, C2>
-        constexpr inline std::basic_string<C1> convert(const std::basic_string<C2>& str /* External */)
+        constexpr inline std::basic_string<C1> convert<C1, C2>(const std::basic_string<C2>& str /* External */)
         {
             return std::basic_string<C1>(str);
         }
         
+#if 0
         // Base template
         template <typename C1>
             requires CharacterType<C1> || std::same_as<C1, std::filesystem::path>
         inline auto convert(const std::filesystem::path& path) = delete;
+#endif
         
         template <CharacterType C1>
         inline std::basic_string<C1> convert(const std::filesystem::path& path)
@@ -1763,15 +1791,16 @@ namespace SupDef
             return convert<C1>(path.string());
         }
 
-        template <std::same_as<std::filesystem::path> C1>
-        inline C1 convert(const std::filesystem::path& path)
+        template <>
+        inline std::filesystem::path convert<std::filesystem::path>(const std::filesystem::path& path)
         {
             return path;
         }
 
+#if 0
         // Base template
-        template <typename C1, typename C2>
-            requires std::same_as<C1, std::filesystem::path> && CharacterType<C2>
+#endif
+        template <std::same_as<std::filesystem::path> C1, CharacterType C2>
         inline std::filesystem::path convert(const std::basic_string<C2>& str /* External */)
         {
             return std::filesystem::path(convert<char>(str));
@@ -1827,6 +1856,10 @@ namespace SupDef
         {
             return convert_num<C1>(std::basic_string<C2>(1, c));
         }
+#else
+    #include "convert_old_impl.ipp"
+#endif
+
 
 #ifdef CONVERT
     #undef CONVERT
@@ -4098,6 +4131,10 @@ namespace SupDef
                 ::SupDef::Util::call_destructors();
             }
         };
+    
+        warn_unused_result()
+        bool is_under_debugger();
+        void breakpoint();
     }
 }
 

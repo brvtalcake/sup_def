@@ -32,5 +32,8 @@
 #include <sup_def/tests/common/is.ipp>
 #include <sup_def/tests/common/thread_safe_queue.ipp>
 #include <sup_def/tests/common/thread_pool.ipp>
+#include <sup_def/tests/common/unistreams_std_basic_string.ipp>
+#include <sup_def/tests/common/unistreams_string.ipp>
+#include <sup_def/tests/common/convert_macro.ipp>
 
 #endif

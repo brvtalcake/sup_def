@@ -39,7 +39,7 @@ namespace Util
         #undef SPECIALIZATION_OF
     #endif
     // TODO: Maybe `std::remove_cvref_t<T>` instead of `T`?
-    #define SPECIALIZATION_OF(T, Template) SupDef::Util::SpecializationOf<T, Template>::value
+    #define SPECIALIZATION_OF(T, Template) ::SupDef::Util::SpecializationOf<T, Template>::value
     #define SpecializationOf_DEFINED 1
 #endif
 }

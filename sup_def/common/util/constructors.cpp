@@ -13,12 +13,13 @@ namespace SupDef
 
         void call_constructors()
         {
-            if (constructors_called.exchange(true))
+            if (constructors_called.load() == true)
                 return;
             for (auto& constructor : constructors)
             {
                 constructor();
             }
+            constructors_called.store(true);
         }
     }
 };

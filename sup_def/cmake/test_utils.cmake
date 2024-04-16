@@ -16,6 +16,7 @@ function(add_test_foreach_source sources_list linkto_list)
             target_link_libraries(${test_name} ${linkto})
             set(message_linked_to "${message_linked_to}, ${linkto}")
         endforeach()
+        target_compile_options(${test_name} PRIVATE "-ggdb3")
         string(SUBSTRING ${message_linked_to} 2 -1 message_linked_to)
         #[[ target_link_libraries(${test_name} sdthirdparty sdcommon) ]]
         #[[ add_test(NAME ${test_name} COMMAND ${test_name}) ]]

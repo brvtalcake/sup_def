@@ -32,9 +32,9 @@ namespace SupDef
 {
     namespace Util
     {
-        symbol_unused
-        symbol_keep
-        static InitDeinit _init_deinit;
+        //symbol_unused
+        //symbol_keep
+        //static InitDeinit _init_deinit;
 
         warn_unused_result()
         std::string demangle(std::string s)
@@ -523,6 +523,57 @@ namespace SupDef
                     }
                 }
             }
+        }
+
+        void breakpoint()
+        {
+            if (is_under_debugger())
+                asm("int3");
+        }
+
+        static bool has_ending(std::string const &fullString, std::string const &ending)
+        {
+            if (fullString.length() >= ending.length())
+                return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+            else
+                return false;
+        }
+
+        warn_unused_result()
+        bool is_under_debugger()
+        {
+            thread_local static bool result = false;
+            thread_local static bool already_executed = false;
+            if (already_executed)
+                return result;
+
+            /*
+            * /proc/self/stat has PID of parent process as fourth parameter.
+            */
+            std::string stat;
+            std::ifstream file("/proc/self/stat");
+
+            for(int i = 0; i < 4; ++i)
+                file >> stat;
+
+            std::string parent_path = std::string("/proc/") + stat + "/exe";
+            char path[PATH_MAX + 1];
+            ::memset(path, 0, PATH_MAX + 1);
+            ::readlink(parent_path.c_str(), path, PATH_MAX);
+
+            std::vector<std::string> debuggers = {"gdb", "lldb-server"};
+
+            for (auto& p: debuggers)
+            {
+                if (has_ending(std::string(path), p))
+                {
+                    result = true;
+                    break;
+                }
+            }
+
+            already_executed = true;
+            return result;
         }
     }
 }

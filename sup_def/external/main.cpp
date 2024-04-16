@@ -63,11 +63,12 @@ namespace SDE = ::SupDef::External;
 #endif
 
 template <typename T>//test
-auto identity(T&& t) -> decltype(t) 
+auto identity(T&& t) -> decltype(auto)
 { return std::forward<T>(t); };
 
 using SDU::demangle;
 
+#if 0
 int main/**/(int argc, char/**/const *argv[/*])*/])
 {
     SDE::init(argc, argv);
@@ -95,12 +96,21 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
         {
             if (inc_or_err.is_null())
                 continue;
+#if 0
             auto unwrap_lambda = [](SD::Error<char, std::filesystem::path> err) -> SD::Parser<char>::pragma_loc_type
             {
                 err.report();
                 return { "", 0, 0 };
             };
             auto inc = inc_or_err.unwrap_or_else<decltype(unwrap_lambda)>(std::move(unwrap_lambda));
+#else
+            else if (inc_or_err.is_err())
+            {
+                inc_or_err.error().report();
+                continue;
+            }
+            auto& inc = inc_or_err.unwrap();
+#endif
             if (!std::get<0>(inc).empty())
                 std::cout << "Found import: " << std::get<0>(inc) << " starting at line " << std::get<1>(inc) << " and ending at line " << std::get<2>(inc) << "\n";
         }
@@ -113,11 +123,21 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
         {
             if (supdef_or_err.is_null())
                 continue;
+#if 0
             auto unwrap_lambda = [](SD::Error<char, std::filesystem::path> err) -> SD::Parser<char>::pragma_loc_type
             {
                 err.report();
                 return { "", 0, 0 };
             };
+            auto supdef = supdef_or_err.unwrap_or_else<decltype(unwrap_lambda)>(std::move(unwrap_lambda));
+#else
+            else if (supdef_or_err.is_err())
+            {
+                supdef_or_err.error().report();
+                continue;
+            }
+            auto& supdef = supdef_or_err.unwrap();
+#endif
             auto get_first_line = [](const std::string& str) -> std::string
             {
                 std::istringstream iss(str);
@@ -125,7 +145,6 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
                 std::getline(iss, line);
                 return line;
             };
-            auto supdef = supdef_or_err.unwrap_or_else<decltype(unwrap_lambda)>(std::move(unwrap_lambda));
             if (!std::get<0>(supdef).empty())
                 std::cout << "Found super define: " << "\n" << get_first_line(std::get<0>(supdef)) << "\n" << " starting at line " << std::get<1>(supdef) << " and ending at line " << std::get<2>(supdef) << "\n";
         }
@@ -303,5 +322,207 @@ int main/**/(int argc, char/**/const *argv[/*])*/])
     std::cout.flush();
     return SDU::main_ret();
 }
+#else
+int main(int argc, char const *argv[])
+{
+    SDE::init(argc, argv);
+
+    using namespace uni::literals;
+    
+    char_string char_str = "😀"uni;
+    wchar_string wchar_str = L"😀"uni;
+    utf8_string utf8_str = u8"😀"uni;
+    utf16_string utf16be_str = u"😀"uni;
+    utf16_string utf16le_str = u"😀"uni;
+    utf16le_str.set_endianness(uni::endianness::little);
+    utf32_string utf32be_str = U"😀"uni;
+    utf32_string utf32le_str = U"😀"uni;
+    utf32le_str.set_endianness(uni::endianness::little);
+
+    try
+    {
+        std::cerr << "Converting from char_string to char_string\n";
+        char_string char_to_char = char_str.convert_to<char_string>();
+        std::cerr << "Converting from char_string to wchar_string\n";
+        wchar_string char_to_wchar = char_str.convert_to<wchar_string>();
+        std::cerr << "Converting from char_string to utf8_string\n";
+        utf8_string char_to_utf8 = char_str.convert_to<utf8_string>();
+        std::cerr << "Converting from char_string to utf16_string (big endian)\n";
+        utf16_string char_to_utf16be = char_str.convert_to<utf16_string>(uni::endianness::big);
+        std::cerr << "Converting from char_string to utf16_string (little endian)\n";
+        utf16_string char_to_utf16le = char_str.convert_to<utf16_string>(uni::endianness::little);
+        std::cerr << "Converting from char_string to utf32_string (big endian)\n";
+        utf32_string char_to_utf32be = char_str.convert_to<utf32_string>(uni::endianness::big);
+        std::cerr << "Converting from char_string to utf32_string (little endian)\n";
+        utf32_string char_to_utf32le = char_str.convert_to<utf32_string>(uni::endianness::little);
+
+        std::cerr << "Converting from wchar_string to char_string\n";
+        char_string wchar_to_char = wchar_str.convert_to<char_string>();
+        std::cerr << "Converting from wchar_string to wchar_string\n";
+        wchar_string wchar_to_wchar = wchar_str.convert_to<wchar_string>();
+        std::cerr << "Converting from wchar_string to utf8_string\n";        
+        utf8_string wchar_to_utf8 = wchar_str.convert_to<utf8_string>();
+        std::cerr << "Converting from wchar_string to utf16_string (big endian)\n";
+        utf16_string wchar_to_utf16be = wchar_str.convert_to<utf16_string>(uni::endianness::big);
+        std::cerr << "Converting from wchar_string to utf16_string (little endian)\n";
+        utf16_string wchar_to_utf16le = wchar_str.convert_to<utf16_string>(uni::endianness::little);
+        std::cerr << "Converting from wchar_string to utf32_string (big endian)\n";
+        utf32_string wchar_to_utf32be = wchar_str.convert_to<utf32_string>(uni::endianness::big);
+        std::cerr << "Converting from wchar_string to utf32_string (little endian)\n";
+        utf32_string wchar_to_utf32le = wchar_str.convert_to<utf32_string>(uni::endianness::little);
+
+        std::cerr << "Converting from utf8_string to char_string\n";
+        char_string utf8_to_char = utf8_str.convert_to<char_string>();
+        std::cerr << "Converting from utf8_string to wchar_string\n";
+        wchar_string utf8_to_wchar = utf8_str.convert_to<wchar_string>();
+        std::cerr << "Converting from utf8_string to utf8_string\n";
+        utf8_string utf8_to_utf8 = utf8_str.convert_to<utf8_string>();
+        std::cerr << "Converting from utf8_string to utf16_string (big endian)\n";
+        utf16_string utf8_to_utf16be = utf8_str.convert_to<utf16_string>(uni::endianness::big);
+        std::cerr << "Converting from utf8_string to utf16_string (little endian)\n";
+        utf16_string utf8_to_utf16le = utf8_str.convert_to<utf16_string>(uni::endianness::little);
+        std::cerr << "Converting from utf8_string to utf32_string (big endian)\n";
+        utf32_string utf8_to_utf32be = utf8_str.convert_to<utf32_string>(uni::endianness::big);
+        std::cerr << "Converting from utf8_string to utf32_string (little endian)\n";
+        utf32_string utf8_to_utf32le = utf8_str.convert_to<utf32_string>(uni::endianness::little);
+
+        std::cerr << "Converting from utf16_string (big endian) to char_string\n";
+        char_string utf16be_to_char = utf16be_str.convert_to<char_string>();
+        std::cerr << "Converting from utf16_string (big endian) to wchar_string\n";
+        wchar_string utf16be_to_wchar = utf16be_str.convert_to<wchar_string>();
+        std::cerr << "Converting from utf16_string (big endian) to utf8_string\n";
+        utf8_string utf16be_to_utf8 = utf16be_str.convert_to<utf8_string>();
+        std::cerr << "Converting from utf16_string (big endian) to utf16_string (big endian)\n";
+        utf16_string utf16be_to_utf16be = utf16be_str.convert_to<utf16_string>(uni::endianness::big);
+        std::cerr << "Converting from utf16_string (big endian) to utf16_string (little endian)\n";
+        utf16_string utf16be_to_utf16le = utf16be_str.convert_to<utf16_string>(uni::endianness::little);
+        std::cerr << "Converting from utf16_string (big endian) to utf32_string (big endian)\n";
+        utf32_string utf16be_to_utf32be = utf16be_str.convert_to<utf32_string>(uni::endianness::big);
+        std::cerr << "Converting from utf16_string (big endian) to utf32_string (little endian)\n";
+        utf32_string utf16be_to_utf32le = utf16be_str.convert_to<utf32_string>(uni::endianness::little);
+        std::cerr << "Converting from utf16_string (little endian) to char_string\n";
+        char_string utf16le_to_char = utf16le_str.convert_to<char_string>();
+
+        std::cerr << "Converting from utf16_string (little endian) to wchar_string\n";
+        wchar_string utf16le_to_wchar = utf16le_str.convert_to<wchar_string>();
+        std::cerr << "Converting from utf16_string (little endian) to utf8_string\n";
+        utf8_string utf16le_to_utf8 = utf16le_str.convert_to<utf8_string>();
+        std::cerr << "Converting from utf16_string (little endian) to utf16_string (big endian)\n";
+        utf16_string utf16le_to_utf16be = utf16le_str.convert_to<utf16_string>(uni::endianness::big);
+        std::cerr << "Converting from utf16_string (little endian) to utf16_string (little endian)\n";
+        utf16_string utf16le_to_utf16le = utf16le_str.convert_to<utf16_string>(uni::endianness::little);
+        std::cerr << "Converting from utf16_string (little endian) to utf32_string (big endian)\n";
+        utf32_string utf16le_to_utf32be = utf16le_str.convert_to<utf32_string>(uni::endianness::big);
+        std::cerr << "Converting from utf16_string (little endian) to utf32_string (little endian)\n";
+        utf32_string utf16le_to_utf32le = utf16le_str.convert_to<utf32_string>(uni::endianness::little);
+
+        std::cerr << "Converting from utf32_string (big endian) to char_string\n";
+        char_string utf32be_to_char = utf32be_str.convert_to<char_string>();
+        std::cerr << "Converting from utf32_string (big endian) to wchar_string\n";
+        wchar_string utf32be_to_wchar = utf32be_str.convert_to<wchar_string>();
+        std::cerr << "Converting from utf32_string (big endian) to utf8_string\n";
+        utf8_string utf32be_to_utf8 = utf32be_str.convert_to<utf8_string>();
+        std::cerr << "Converting from utf32_string (big endian) to utf16_string (big endian)\n";
+        utf16_string utf32be_to_utf16be = utf32be_str.convert_to<utf16_string>(uni::endianness::big);
+        std::cerr << "Converting from utf32_string (big endian) to utf16_string (little endian)\n";
+        utf16_string utf32be_to_utf16le = utf32be_str.convert_to<utf16_string>(uni::endianness::little);
+        std::cerr << "Converting from utf32_string (big endian) to utf32_string (big endian)\n";
+        utf32_string utf32be_to_utf32be = utf32be_str.convert_to<utf32_string>(uni::endianness::big);
+        std::cerr << "Converting from utf32_string (big endian) to utf32_string (little endian)\n";
+        utf32_string utf32be_to_utf32le = utf32be_str.convert_to<utf32_string>(uni::endianness::little);
+
+        std::cerr << "Converting from utf32_string (little endian) to char_string\n";
+        char_string utf32le_to_char = utf32le_str.convert_to<char_string>();
+        std::cerr << "Converting from utf32_string (little endian) to wchar_string\n";
+        wchar_string utf32le_to_wchar = utf32le_str.convert_to<wchar_string>();
+        std::cerr << "Converting from utf32_string (little endian) to utf8_string\n";
+        utf8_string utf32le_to_utf8 = utf32le_str.convert_to<utf8_string>();
+        std::cerr << "Converting from utf32_string (little endian) to utf16_string (big endian)\n";
+        utf16_string utf32le_to_utf16be = utf32le_str.convert_to<utf16_string>(uni::endianness::big);
+        std::cerr << "Converting from utf32_string (little endian) to utf16_string (little endian)\n";
+        utf16_string utf32le_to_utf16le = utf32le_str.convert_to<utf16_string>(uni::endianness::little);
+        std::cerr << "Converting from utf32_string (little endian) to utf32_string (big endian)\n";
+        utf32_string utf32le_to_utf32be = utf32le_str.convert_to<utf32_string>(uni::endianness::big);
+        std::cerr << "Converting from utf32_string (little endian) to utf32_string (little endian)\n";
+        utf32_string utf32le_to_utf32le = utf32le_str.convert_to<utf32_string>(uni::endianness::little);
+        
+#undef BOOST_TEST
+#define BOOST_TEST(x) if (!(x)) { std::cerr << "Test failed: " << #x << std::endl; std::terminate(); }
+
+        BOOST_TEST(( char_to_char == char_str ));
+        BOOST_TEST(( wchar_to_char == char_str ));
+        BOOST_TEST(( utf8_to_char == char_str ));
+        BOOST_TEST(( utf16be_to_char == char_str ));
+        BOOST_TEST(( utf16le_to_char == char_str ));
+        BOOST_TEST(( utf32be_to_char == char_str ));
+        BOOST_TEST(( utf32le_to_char == char_str ));
+
+        BOOST_TEST(( char_to_wchar == wchar_str ));
+        BOOST_TEST(( wchar_to_wchar == wchar_str ));
+        BOOST_TEST(( utf8_to_wchar == wchar_str ));
+        BOOST_TEST(( utf16be_to_wchar == wchar_str ));
+        BOOST_TEST(( utf16le_to_wchar == wchar_str ));
+        BOOST_TEST(( utf32be_to_wchar == wchar_str ));
+        BOOST_TEST(( utf32le_to_wchar == wchar_str ));
+
+        BOOST_TEST(( char_to_utf8 == utf8_str ));
+        BOOST_TEST(( wchar_to_utf8 == utf8_str ));
+        BOOST_TEST(( utf8_to_utf8 == utf8_str ));
+        BOOST_TEST(( utf16be_to_utf8 == utf8_str ));
+        BOOST_TEST(( utf16le_to_utf8 == utf8_str ));
+        BOOST_TEST(( utf32be_to_utf8 == utf8_str ));
+        BOOST_TEST(( utf32le_to_utf8 == utf8_str ));
+
+        BOOST_TEST(( char_to_utf16be == utf16be_str ));
+        BOOST_TEST(( wchar_to_utf16be == utf16be_str ));
+        BOOST_TEST(( utf8_to_utf16be == utf16be_str ));
+        BOOST_TEST(( utf16be_to_utf16be == utf16be_str ));
+        BOOST_TEST(( utf16le_to_utf16be == utf16be_str ));
+        BOOST_TEST(( utf32be_to_utf16be == utf16be_str ));
+        BOOST_TEST(( utf32le_to_utf16be == utf16be_str ));
+
+        BOOST_TEST(( char_to_utf16le == utf16le_str ));
+        BOOST_TEST(( wchar_to_utf16le == utf16le_str ));
+        BOOST_TEST(( utf8_to_utf16le == utf16le_str ));
+        BOOST_TEST(( utf16be_to_utf16le == utf16le_str ));
+        BOOST_TEST(( utf16le_to_utf16le == utf16le_str ));
+        BOOST_TEST(( utf32be_to_utf16le == utf16le_str ));
+        BOOST_TEST(( utf32le_to_utf16le == utf16le_str ));
+
+        BOOST_TEST(( char_to_utf32be == utf32be_str ));
+        BOOST_TEST(( wchar_to_utf32be == utf32be_str ));
+        BOOST_TEST(( utf8_to_utf32be == utf32be_str ));
+        BOOST_TEST(( utf16be_to_utf32be == utf32be_str ));
+        BOOST_TEST(( utf16le_to_utf32be == utf32be_str ));
+        BOOST_TEST(( utf32be_to_utf32be == utf32be_str ));
+        BOOST_TEST(( utf32le_to_utf32be == utf32be_str ));
+
+        BOOST_TEST(( char_to_utf32le == utf32le_str ));
+        BOOST_TEST(( wchar_to_utf32le == utf32le_str ));
+        BOOST_TEST(( utf8_to_utf32le == utf32le_str ));
+        BOOST_TEST(( utf16be_to_utf32le == utf32le_str ));
+        BOOST_TEST(( utf16le_to_utf32le == utf32le_str ));
+        BOOST_TEST(( utf32be_to_utf32le == utf32le_str ));
+        BOOST_TEST(( utf32le_to_utf32le == utf32le_str ));
+    }
+    catch (const ::SupDef::InternalError& e)
+    {
+        e.report();
+        std::terminate();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Caught exception: " << e.what() << std::endl;
+        std::terminate();
+    }
+    catch (...)
+    {
+        std::cerr << "Caught unknown exception" << std::endl;
+        std::terminate();
+    }
+
+    return SDU::main_ret();
+}
+#endif
 /*
 */

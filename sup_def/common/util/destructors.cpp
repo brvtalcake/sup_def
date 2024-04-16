@@ -12,12 +12,13 @@ namespace SupDef
 
         void call_destructors()
         {
-            if (destructors_called.exchange(true))
+            if (destructors_called.load() == true)
                 return;
             for (auto& destructor : destructors)
             {
                 destructor();
             }
+            destructors_called.store(true);
         }
     }
 };
