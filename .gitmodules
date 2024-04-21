@@ -4,3 +4,6 @@
 [submodule "sup_def/third_party/chaos-pp"]
 	path = sup_def/third_party/chaos-pp
 	url = https://github.com/rofl0r/chaos-pp.git
+[submodule "sup_def/third_party/patterns"]
+	path = sup_def/third_party/patterns
+	url = https://github.com/mpark/patterns.git

@@ -90,6 +90,9 @@
 #include <chaos/preprocessor/seq/enumerate.h>
 #include <chaos/preprocessor/tuple/core.h>
 
+#undef MAKE_TUPLE
+#define MAKE_TUPLE(...) (__VA_ARGS__)
+
 #undef PP_CONSTRUCT_FLOAT
 #undef PP_CONSTRUCT_FLOAT_IMPL
 #define PP_CONSTRUCT_FLOAT(integral, decimal, abs_exponent, suffix, negative_exp)   \
@@ -1975,6 +1978,45 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
     #endif
 #endif
 #define warn_unused_result(...) ATTRIBUTE_NODISCARD(__VA_ARGS__)
+
+#undef ATTRIBUTE_WARNING
+#undef warn_usage_suggest_alternative
+#ifdef SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_WARNING(msg) [[__gnu__::__warning__(msg)]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_WARNING(msg) [[clang::warning(msg)]]
+#else
+    #define ATTRIBUTE_WARNING(msg) STATIC_TODO("Attribute warning not implemented for this compiler")
+#endif
+#define warn_usage_suggest_alternative(msg, ...)    \
+    PP_IF(ISEMPTY(__VA_ARGS__))(                    \
+        ATTRIBUTE_WARNING(                          \
+            "Usage of this function is "            \
+            "discouraged: use \"" msg "\" instead"  \
+        )                                           \
+    )(                                              \
+        ATTRIBUTE_WARNING(                          \
+            "Usage of this function is "            \
+            "discouraged: use one of [ "            \
+            PP_STRINGIZE(                           \
+                MAP_LIST(                           \
+                    ID, msg, __VA_ARGS__            \
+                )                                   \
+            )                                       \
+            " ] instead"                            \
+        )                                           \
+    )
+
+#undef ATTRIBUTE_INIT_PRIORITY
+#undef static_init_priority
+#if SUPDEF_COMPILER == 1
+    #define ATTRIBUTE_INIT_PRIORITY(priority) [[__gnu__::__init_priority__(priority)]]
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define ATTRIBUTE_INIT_PRIORITY(priority) [[clang::init_priority(priority)]]
+#else
+    #define ATTRIBUTE_INIT_PRIORITY(priority) STATIC_TODO("Attribute init priority not implemented for this compiler")
+#endif
+#define static_init_priority(priority) ATTRIBUTE_INIT_PRIORITY(priority)
 
 #undef ATTRIBUTE_RETURNS_NONNULL
 #undef returns_nonnull

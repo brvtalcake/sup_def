@@ -33,6 +33,7 @@
 #include <unistd.h>
 
 #include <boost/callable_traits.hpp>
+#include <mpark/patterns.hpp>
 
 #include <sup_def/common/unistreams/types.hpp>
 
@@ -477,15 +478,69 @@ namespace uni
 
     namespace detail
     {
+        class filebuf_wrapper : public std::filebuf
+        {
+            using base_type = std::filebuf;
+            public:
+                using char_type = base_type::char_type;
+                using traits_type = base_type::traits_type;
+                using int_type = base_type::int_type;
+                using pos_type = base_type::pos_type;
+                using off_type = base_type::off_type;
+
+                using base_type::base_type;
+                using base_type::operator=;
+
+                ~filebuf_wrapper() = default;                
+
+                using base_type::eback;
+                using base_type::gptr;
+                using base_type::egptr;
+                using base_type::pbase;
+                using base_type::pptr;
+                using base_type::epptr;
+#if 0
+                using base_type::setg;
+                using base_type::setp;
+#endif
+        };
+
+        class wfilebuf_wrapper : public std::wfilebuf
+        {
+            using base_type = std::wfilebuf;
+            public:
+                using char_type = base_type::char_type;
+                using traits_type = base_type::traits_type;
+                using int_type = base_type::int_type;
+                using pos_type = base_type::pos_type;
+                using off_type = base_type::off_type;
+
+                using base_type::base_type;
+                using base_type::operator=;
+
+                ~wfilebuf_wrapper() = default;
+
+                using base_type::eback;
+                using base_type::gptr;
+                using base_type::egptr;
+                using base_type::pbase;
+                using base_type::pptr;
+                using base_type::epptr;
+#if 0
+                using base_type::setg;
+                using base_type::setp;
+#endif
+        };
+
         template <typename CharT>
-        static consteval encoding_mode get_file_encoding()
+        static consteval encoding_mode get_file_encoding([[maybe_unused]] endianness end = endianness::big)
         {
             if constexpr (std::same_as<CharT, utf8_char>)
                 return encoding_mode::uni_utf8;
             else if constexpr (std::same_as<CharT, utf16_char>)
-                return encoding_mode::uni_utf16be;
+                return encoding_mode::uni_utf16 | (end == endianness::big ? encoding_mode::big_endian : encoding_mode::little_endian);
             else if constexpr (std::same_as<CharT, utf32_char>)
-                return encoding_mode::uni_utf32be;
+                return encoding_mode::uni_utf32 | (end == endianness::big ? encoding_mode::big_endian : encoding_mode::little_endian);
             else if constexpr (std::same_as<CharT, char>)
                 return encoding_mode::char_utf8;
             else if constexpr (std::same_as<CharT, wchar_t>)
@@ -493,12 +548,9 @@ namespace uni
             else
                 return encoding_mode::guess;
         }
-    }
 
-    template <::uni::supported_uni_char CharT>
-    class input_file
-    {
-        private:
+        struct file_base
+        {
             // Is high surrogate ?
             static constexpr bool is_high_surrogate(uint16_t c)
             { return c >= 0xD800 && c <= 0xDBFF; }
@@ -666,86 +718,137 @@ namespace uni
                     return nullptr;
                 return reinterpret_cast<const char*>(pbytes - 4);
             }
+        };
+    }
 
-            void detect_bom()
-            {
-                unlikely_if (!this->is_open())
-                    return;
-                if (this->tried_detecting_bom)
-                    return;
-                this->tried_detecting_bom = true;
-                this->has_bom = false;
-                this->file.pubseekoff(0, std::ios_base::beg);
-                char bom[4] = { 0 };
-                this->file.sgetn(bom, 4);
-                if (this->file_encoding & (encoding_mode::uni_utf8 | encoding_mode::char_utf8))
-                {
-                    if (
-                        bom[0] == '\xEF' &&
-                        bom[1] == '\xBB' &&
-                        bom[2] == '\xBF'
-                    )
-                        this->has_bom = true;
-                }
-                else if (this->file_encoding & encoding_mode::uni_utf16)
-                {
-                    if (
-                        bom[0] == '\xFE' &&
-                        bom[1] == '\xFF' &&
-                        (this->file_encoding & encoding_mode::big_endian)
-                    )
-                        this->has_bom = true;
-                    else if (
-                        bom[0] == '\xFF' &&
-                        bom[1] == '\xFE' &&
-                        (this->file_encoding & encoding_mode::little_endian)
-                    )
-                        this->has_bom = true;
-                }
-                else if (this->file_encoding & encoding_mode::uni_utf32)
-                {
-                    if (
-                        bom[0] == '\x00' &&
-                        bom[1] == '\x00' &&
-                        bom[2] == '\xFE' &&
-                        bom[3] == '\xFF' &&
-                        (this->file_encoding & encoding_mode::big_endian)
-                    )
-                        this->has_bom = true;
-                    else if (
-                        bom[0] == '\xFF' &&
-                        bom[1] == '\xFE' &&
-                        bom[2] == '\x00' &&
-                        bom[3] == '\x00' &&
-                        (this->file_encoding & encoding_mode::little_endian)
-                    )
-                        this->has_bom = true;
-                }
-                this->file.pubseekoff(0, std::ios_base::beg);
-            }
+
+    template <::uni::supported_uni_char CharT>
+    class input_file : virtual protected detail::file_base
+    {
+        friend class detail::filebuf_wrapper;
+        friend class detail::wfilebuf_wrapper;
+
+        protected:
+            constexpr const char* find_next(const char* s, const char* const last)
+                requires (!std::same_as<CharT, wchar_t>);
+
+            constexpr const char* find_prev(const char* s, const char* const first)
+                requires (!std::same_as<CharT, wchar_t>);
+
+            constexpr std::pair<CharT, std::optional<CharT>> create_char(const char* s, size_t byte_count)
+                requires std::same_as<CharT, utf16_char>;
+
+            constexpr CharT create_char(const char* s, size_t byte_count = 4)
+                requires std::same_as<CharT, utf32_char>;
+
+            virtual void make_ready_for_io();
+
+        private:
+            void detect_bom();
+
+            void skip_bom();
+
+            void seek_next();
+
+            void seek_prev();
+
+            template <size_t N>
+            using size_constant = std::integral_constant<size_t, N>;
+
         public:
             using char_type = CharT;
-            using traits_type = ::uni::char_traits<CharT>;
+            using traits_type = ::uni::char_traits<char_type>;
             using int_type = typename traits_type::int_type;
             using pos_type = typename traits_type::pos_type;
             using off_type = typename traits_type::off_type;
 
             using filebuf_type = std::conditional_t<
-                std::same_as<CharT, wchar_t>,
-                std::wfilebuf,
-                std::filebuf
+                std::same_as<char_type, wchar_t>,
+                detail::wfilebuf_wrapper,
+                detail::filebuf_wrapper
             >;
+            using raw_char_type = typename filebuf_type::char_type;
+        
+        protected:
+            static constexpr size_t one_char_max_bytes = std::conditional_t<
+                std::same_as<char_type, wchar_t>,
+                size_constant<0>, // (Should never be used for wchar_t)
+                size_constant<4>
+            >::value;
 
+        private:
+            typename filebuf_type::pos_type get_raw_pos()
+            {
+                auto ret = this->file.pubseekoff(0, std::ios_base::cur, std::ios_base::in);
+                if (ret == typename filebuf_type::pos_type(typename filebuf_type::off_type(-1)))
+                    throw InternalError("input_file::get_raw_pos(): Error getting file position");
+                return ret;
+            }
+
+            std::pair<pos_type, typename filebuf_type::pos_type> get_max_pos() requires (!std::same_as<char_type, wchar_t>)
+            {
+                // Since it's not an output file, we can just cache max_pos
+                if (max_pos_set)
+                    return max_pos;
+                this->make_ready_for_io();
+                const auto initial = this->get_raw_pos();
+                pos_type prev = this->current_pos;
+                try
+                {
+                    while (true)
+                    {
+                        this->seek_next();
+                        prev = this->current_pos;
+                    }
+                }
+                catch (const InternalError&)
+                {
+                    if (prev + 1 != this->current_pos)
+                    {
+                        this->file.pubseekpos(initial, std::ios_base::in);
+                        throw;
+                    }
+                    const pos_type ret = this->current_pos;
+                    this->file.pubseekpos(initial, std::ios_base::in);
+                    std::pair<pos_type, typename filebuf_type::pos_type> ret_pair = {
+                        ret,
+                        this->file.pubseekoff(0, std::ios_base::end, std::ios_base::in)
+                    };
+                    this->max_pos = ret_pair;
+                    max_pos_set = true;
+                    return ret_pair;
+                }
+                catch (...)
+                {
+                    this->file.pubseekpos(initial, std::ios_base::in);
+                    throw;
+                }
+                UNREACHABLE();
+            }
+
+        public:
+
+            // Recommended to use the other constructors
+            warn_usage_suggest_alternative(
+                "input_file(const std::filesystem::path&, endianness)",
+                "input_file(const std::filesystem::path&, std::ios_base::openmode, endianness)"
+            )
             input_file()
                 : file()
                 , file_encoding(encoding_mode(0))
                 , loc(detail::user_preferred_unicode_aware_locale())
                 , current_pos(0)
+                , max_pos(
+                    pos_type(off_type(-1)),
+                    typename filebuf_type::pos_type(typename filebuf_type::off_type(-1))
+                )
                 , has_bom(false)
                 , tried_detecting_bom(false)
+                , max_pos_set(false)
             {
                 this->file.pubimbue(this->loc);
             }
+#if 0
             input_file(const std::filesystem::path& path)
                 : input_file()
             {
@@ -760,31 +863,75 @@ namespace uni
                     this->set_endianness(end);
                 this->detect_bom();
             }
+#else
+            input_file(const std::filesystem::path& path, [[maybe_unused]] endianness end = endianness::big)
+                : input_file()
+            {
+                if (!this->open(path))
+                    throw InternalError("input_file(const std::filesystem::path&, endianness): Failed to open file");
+                this->file_encoding = detail::get_file_encoding<char_type>(end);
+                if constexpr (detail::has_endianness<char_type, traits_type>)
+                    this->set_endianness(end);
+                this->detect_bom();
+            }
+            input_file(
+                const std::filesystem::path& path,
+                std::ios_base::openmode mode,
+                [[maybe_unused]] endianness end = endianness::big
+            )
+                : input_file()
+            {
+                if (!this->open(path, mode))
+                    throw InternalError("input_file(const std::filesystem::path&, std::ios_base::openmode, endianness): Failed to open file");
+                this->file_encoding = detail::get_file_encoding<char_type>(end);
+                if constexpr (detail::has_endianness<char_type, traits_type>)
+                    this->set_endianness(end);
+                this->detect_bom();
+            }
+#endif
             
             input_file(const input_file&) = delete;
             input_file(input_file&& other)
-                : file(std::move(other.file))
-                , file_encoding(other.file_encoding)
-                , loc(other.loc)
-                , current_pos(other.current_pos)
-                , has_bom(other.has_bom)
-                , tried_detecting_bom(other.tried_detecting_bom)
-            { }
+            {
+                if (this->is_open())
+                    this->close();
+                this->file = std::move(other.file);
+                this->file_encoding = other.file_encoding;
+                this->loc = other.loc;
+                this->current_pos = other.current_pos;
+                this->max_pos = std::move(other.max_pos);
+                this->has_bom = other.has_bom;
+                this->tried_detecting_bom = other.tried_detecting_bom;
+                this->max_pos_set = other.max_pos_set;
+            }
 
             input_file& operator=(const input_file&) = delete;
             input_file& operator=(input_file&& other)
             {
+                if (this->is_open())
+                    this->close();
                 this->file = std::move(other.file);
-                this->file_encoding = std::exchange(other.file_encoding, encoding_mode(0));
+                this->file_encoding = other.file_encoding;
                 this->loc = other.loc;
-                this->current_pos = std::exchange(other.current_pos, 0);
-                this->has_bom = std::exchange(other.has_bom, false);
-                this->tried_detecting_bom = std::exchange(other.tried_detecting_bom, false);
+                this->current_pos = other.current_pos;
+                this->max_pos = std::move(other.max_pos);
+                this->has_bom = other.has_bom;
+                this->tried_detecting_bom = other.tried_detecting_bom;
+                this->max_pos_set = other.max_pos_set;
                 return *this;
             }
 
+            ~input_file()
+            { if (this->is_open()) this->close(); }
+
             bool open(const std::filesystem::path& path, std::ios_base::openmode mode = std::ios_base::in)
-            { return this->file.open(path, mode | std::ios_base::in) != nullptr; }
+            {
+                if (this->is_open())
+                    return false;
+                if (this->file.open(path, (mode | std::ios_base::in) & ~std::ios_base::out) == nullptr)
+                    return false;
+                return this->is_open();
+            }
             bool close()
             { return this->file.close() != nullptr; }
             bool is_open() const
@@ -796,24 +943,35 @@ namespace uni
             { return this->file; }
 
             // Read functions
-            std::streamsize read_raw(char* s, std::streamsize n);
-            bool read_raw(char& s, std::streamsize n);
-
+            symbol_hot
             std::streamsize read(char_type* s, std::streamsize n);
-            bool read(char_type& s, std::streamsize n);
+            bool read(char_type& s)
+            {
+                std::streamsize ret = this->read(std::addressof(s), 1);
+                return ret == 1;
+            }
 
             // Position functions
-            std::filebuf::pos_type tellg_raw();
-            bool seekg_raw(std::filebuf::off_type off, std::ios_base::seekdir dir);
+            pos_type tellg()
+            {
+                return this->current_pos;
+            }
+            void seekoffg(off_type off, std::ios_base::seekdir dir);
+            void seekposg(pos_type pos)
+            {
+                if (pos > this->current_pos)
+                    this->seekoffg(pos - this->current_pos, std::ios_base::cur);
+                else if (pos < this->current_pos)
+                    this->seekoffg(pos, std::ios_base::beg);
+            }
 
-            pos_type tellg();
-            bool seekg(off_type off, std::ios_base::seekdir dir);
 
             // Other functions
-            bool good() const;
-            bool eof() const;
-            bool fail() const;
-            bool bad() const;
+            bool eof()
+            {
+                this->get_max_pos();
+                return this->file.pubseekoff(0, std::ios_base::cur, std::ios_base::in) == this->max_pos.second;
+            }
 
             std::locale imbue(const std::locale& l)
             {
@@ -840,33 +998,22 @@ namespace uni
                 UNREACHABLE();
             }
 
-            bool set_endianness(endianness end)
-                requires detail::has_endianness<char_type, traits_type>
-            {
-                if (this->file_encoding & (encoding_mode::uni_utf16 | encoding_mode::uni_utf32))
-                {
-                    // Remove previous endianness
-                    this->file_encoding &= ~(encoding_mode::big_endian | encoding_mode::little_endian);
-
-                    // Add endianness to encoding
-                    if (end == endianness::big)
-                        this->file_encoding |= encoding_mode::big_endian;
-                    else if (end == endianness::little)
-                        this->file_encoding |= encoding_mode::little_endian;
-                    else
-                        return false;
-                    return true;
-                }
-                UNREACHABLE();
-            }
+            warn_usage_suggest_alternative(
+                "input_file(const std::filesystem::path&, endianness)",
+                "input_file(const std::filesystem::path&, std::ios_base::openmode, endianness)"
+            )
+            constexpr bool set_endianness(endianness end)
+                requires detail::has_endianness<char_type, traits_type>;
             
         private:
             filebuf_type file;
             encoding_mode file_encoding;
             std::locale loc;
             pos_type current_pos; // Number of characters before the current position
+            std::pair<pos_type, typename filebuf_type::pos_type> max_pos;
             bool has_bom;
             bool tried_detecting_bom;
+            bool max_pos_set;
     };
 
     using file_wrapper = std::variant<
@@ -949,21 +1096,18 @@ namespace uni
                     {
                         if (mode & open_mode::write)
                         {
-                            file<utf16_char> f(path);
-                            f.set_endianness(endianness::big);
+                            file<utf16_char> f(path, endianness::big);
                             return file_wrapper(std::move(f));
                         }
                         else
                         {
-                            input_file<utf16_char> f(path);
-                            f.set_endianness(endianness::big);
+                            input_file<utf16_char> f(path, endianness::big);
                             return file_wrapper(std::move(f));
                         }
                     }
                     else if (mode & open_mode::write)
                     {
-                        output_file<utf16_char> f(path);
-                        f.set_endianness(endianness::big);
+                        output_file<utf16_char> f(path, endianness::big);
                         return file_wrapper(std::move(f));
                     }
                     else
@@ -974,21 +1118,18 @@ namespace uni
                     {
                         if (mode & open_mode::write)
                         {
-                            file<utf16_char> f(path);
-                            f.set_endianness(endianness::little);
+                            file<utf16_char> f(path, endianness::little);
                             return file_wrapper(std::move(f));
                         }
                         else
                         {
-                            input_file<utf16_char> f(path);
-                            f.set_endianness(endianness::little);
+                            input_file<utf16_char> f(path, endianness::little);
                             return file_wrapper(std::move(f));
                         }
                     }
                     else if (mode & open_mode::write)
                     {
-                        output_file<utf16_char> f(path);
-                        f.set_endianness(endianness::little);
+                        output_file<utf16_char> f(path, endianness::little);
                         return file_wrapper(std::move(f));
                     }
                     else
@@ -999,21 +1140,18 @@ namespace uni
                     {
                         if (mode & open_mode::write)
                         {
-                            file<utf32_char> f(path);
-                            f.set_endianness(endianness::big);
+                            file<utf32_char> f(path, endianness::big);
                             return file_wrapper(std::move(f));
                         }
                         else
                         {
-                            input_file<utf32_char> f(path);
-                            f.set_endianness(endianness::big);
+                            input_file<utf32_char> f(path, endianness::big);
                             return file_wrapper(std::move(f));
                         }
                     }
                     else if (mode & open_mode::write)
                     {
-                        output_file<utf32_char> f(path);
-                        f.set_endianness(endianness::big);
+                        output_file<utf32_char> f(path, endianness::big);
                         return file_wrapper(std::move(f));
                     }
                     else
@@ -1024,21 +1162,18 @@ namespace uni
                     {
                         if (mode & open_mode::write)
                         {
-                            file<utf32_char> f(path);
-                            f.set_endianness(endianness::little);
+                            file<utf32_char> f(path, endianness::little);
                             return file_wrapper(std::move(f));
                         }
                         else
                         {
-                            input_file<utf32_char> f(path);
-                            f.set_endianness(endianness::little);
+                            input_file<utf32_char> f(path, endianness::little);
                             return file_wrapper(std::move(f));
                         }
                     }
                     else if (mode & open_mode::write)
                     {
-                        output_file<utf32_char> f(path);
-                        f.set_endianness(endianness::little);
+                        output_file<utf32_char> f(path, endianness::little);
                         return file_wrapper(std::move(f));
                     }
                     else
@@ -1128,6 +1263,11 @@ namespace uni
               fn_wchar(fw),
               extra_args(std::forward<Args>(args)...)
         { }
+        overload_visitor(const overload_visitor&) = default;
+        overload_visitor(overload_visitor&&) = default;
+
+        overload_visitor& operator=(const overload_visitor&) = default;
+        overload_visitor& operator=(overload_visitor&&) = default;
 
         template <typename FileT>
         constexpr decltype(auto) operator()(FileT&& file) const
@@ -1237,6 +1377,7 @@ namespace uni
 
 #include <sup_def/common/unistreams/impl/char_traits.ipp>
 #include <sup_def/common/unistreams/impl/string.ipp>
+#include <sup_def/common/unistreams/impl/file.ipp>
 
 #undef INCLUDED_FROM_UNISTREAMS_SOURCE
 

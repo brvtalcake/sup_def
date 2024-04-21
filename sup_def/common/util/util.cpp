@@ -32,9 +32,10 @@ namespace SupDef
 {
     namespace Util
     {
-        //symbol_unused
-        //symbol_keep
-        //static InitDeinit _init_deinit;
+        symbol_unused
+        symbol_keep
+        static_init_priority(65534)
+        static InitDeinit _init_deinit;
 
         warn_unused_result()
         std::string demangle(std::string s)

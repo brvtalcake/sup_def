@@ -2003,21 +2003,19 @@ namespace SupDef
                 // Execute and release
                 void execute_and_release() noexcept((std::is_nothrow_invocable_v<F> && ...))
                 {
-                    std::apply([](auto&&... args) { ((args()), ...); }, this->deferals_fns);
                     this->release();
+                    std::apply([](auto&&... args) { ((args()), ...); }, this->deferals_fns);
                 }
             public:
                 DeferImpl() = default;
-                template <typename... Fn>
-                    requires (sizeof...(Fn) == sizeof...(F)) &&
-                             (std::constructible_from<DeferImplBase<T, F>, Fn> && ...)
-                DeferImpl(Fn&&... fn) noexcept((std::is_nothrow_constructible_v<DeferImplBase<T, F>, Fn> && ...))
-                    : deferals(std::forward<Fn>(fn)...)
-                    , deferals_fns(std::forward<Fn>(fn)...)
+                
+                DeferImpl(F&&... fn) noexcept((std::is_nothrow_constructible_v<DeferImplBase<T, F>, F> && ...))
+                    : deferals(std::forward<F>(fn)...)
+                    , deferals_fns(std::forward<F>(fn)...)
                 { }
                 
                 DeferImpl(const DeferImpl&) = delete;
-                DeferImpl(DeferImpl&&) = default;
+                DeferImpl(DeferImpl&&) = delete;
 
                 DeferImpl& operator=(const DeferImpl&) = delete;
                 DeferImpl& operator=(DeferImpl&&) = delete;
@@ -2040,6 +2038,10 @@ namespace SupDef
                     this->execute_and_release();
                 }
         };
+
+#undef SUPDEF_USE_DEFER
+#define SUPDEF_USE_DEFER 1
+
 #else
     #error "Defer not implemented yet"
 #endif
@@ -2047,7 +2049,7 @@ namespace SupDef
 #ifdef DEFER
     #undef DEFER
 #endif
-#define DEFER(...)                                                      \
+#define DEFER(defer_name, ...)                                          \
     PP_IF(                                                              \
         BOOST_PP_AND(                                                   \
             BOOST_PP_GREATER(VA_COUNT(__VA_ARGS__), 1),                 \
@@ -2055,14 +2057,20 @@ namespace SupDef
         )                                                               \
     )                                                                   \
     (                                                                   \
+        symbol_unused symbol_keep                                       \
         ::SupDef::Util::DeferImpl<                                      \
-            ::SupDef::Util::DeferType::FIRST_ARG(__VA_ARGS__)           \
-        > BOOST_PP_LPAREN() DROP_FIRST(__VA_ARGS__) BOOST_PP_RPAREN()   \
+            ::SupDef::Util::DeferType::FIRST_ARG(__VA_ARGS__),          \
+            MAP_LIST(decltype, DROP_FIRST(__VA_ARGS__))                 \
+        > defer_name                                                    \
+            BOOST_PP_LPAREN() DROP_FIRST(__VA_ARGS__) BOOST_PP_RPAREN() \
     )                                                                   \
     (                                                                   \
+        symbol_unused symbol_keep                                       \
         ::SupDef::Util::DeferImpl<                                      \
-            ::SupDef::Util::DeferType::SCOPE_EXIT                       \
-        > BOOST_PP_LPAREN() __VA_ARGS__ BOOST_PP_RPAREN()               \
+            ::SupDef::Util::DeferType::SCOPE_EXIT,                      \
+            MAP_LIST(decltype, __VA_ARGS__)                             \
+        > defer_name                                                    \
+            BOOST_PP_LPAREN() __VA_ARGS__ BOOST_PP_RPAREN()             \
     )
 
 #ifdef PP_DETECTOR_SCOPE_EXIT_SCOPE_TYPE_ARG
@@ -4118,6 +4126,35 @@ namespace SupDef
 {
     namespace Util
     {
+        template <typename T>
+        struct pointer : public std::type_identity<T*>
+        { };
+        template <typename T>
+        using pointer_t = typename pointer<T>::type;
+
+        template <typename T, size_t... N>
+            requires (sizeof...(N) <= 1)
+        struct array : public std::type_identity<T[std::get<0>(std::tuple(N..., 0))]>
+        { };
+        template <typename T>
+        struct array<T> : public std::type_identity<T[]>
+        { };
+        template <typename T, size_t... N>
+            requires (sizeof...(N) <= 1)
+        using array_t = typename array<T, N...>::type;
+
+        static_assert(std::same_as<pointer_t<int>, int*>);
+        static_assert(std::same_as<pointer_t<int const>, const int*>);
+        static_assert(std::same_as<const pointer_t<int>, int* const>);
+        static_assert(std::same_as<const pointer_t<int const>, const int* const>);
+        static_assert(std::same_as<pointer_t<double(int, int)>, double(*)(int, int)>);
+
+        static_assert(std::same_as<array_t<int>, int[]>);
+        static_assert(std::same_as<array_t<int, 0>, int[0]>);
+        static_assert(std::same_as<array_t<int const>, const int[]>);
+        static_assert(std::same_as<array_t<pointer_t<int>, 5>, int* [5]>);
+        static_assert(std::same_as<pointer_t<array_t<int, 5>>, int(*)[5]>);
+
         void call_constructors();
         void call_destructors();
         struct InitDeinit

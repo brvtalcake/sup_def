@@ -5,10 +5,16 @@ namespace SupDef
 {
     namespace Util
     {
+        symbol_unused
+        symbol_keep
+        static_init_priority(101)
         static const std::function<void()> constructors[] = {
             []() { SupDef::configure_boost_contract(); },
             []() { } /* At least one */
         };
+        symbol_unused
+        symbol_keep
+        static_init_priority(101)
         static std::atomic<bool> constructors_called = false;
 
         void call_constructors()

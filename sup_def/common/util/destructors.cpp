@@ -5,9 +5,15 @@ namespace SupDef
 {
     namespace Util
     {
+        symbol_unused
+        symbol_keep
+        static_init_priority(101)
         static const std::function<void()> destructors[] = {
             []() { }
         };
+        symbol_unused
+        symbol_keep
+        static_init_priority(101)
         static std::atomic<bool> destructors_called = false;
 
         void call_destructors()
