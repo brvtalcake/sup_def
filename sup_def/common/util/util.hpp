@@ -2093,6 +2093,24 @@ namespace SupDef
 #endif
 #define IS_ARG_DEFER_SCOPE_TYPE(ARG) PP_DETECT(ARG, SCOPE_TYPE_ARG)
 
+        /* template <typename T, size_t N, size_t... Ns>
+        class BitfieldBase : private BitfieldBase<T, Ns...>
+        {
+            public:
+
+            private:
+                T value : N;
+        };
+
+        template <typename T, size_t N, size_t... Ns>
+        class Bitfield : private BitfieldBase<T, N, Ns...>
+        {
+            constexpr auto get(size_t n) const
+            {
+
+            }
+        }; */
+
         template <typename T, size_t N>
             requires CharacterType<T>
         consteval size_t cstr_len(const T (&literal)[N])
@@ -4143,6 +4161,24 @@ namespace SupDef
             requires (sizeof...(N) <= 1)
         using array_t = typename array<T, N...>::type;
 
+        template <typename T>
+        struct lref : public std::type_identity<T&>
+        { };
+        template <typename T>
+        using lref_t = typename lref<T>::type;
+
+        template <typename T>
+        struct rref : public std::type_identity<T&&>
+        { };
+        template <typename T>
+        using rref_t = typename rref<T>::type;
+
+        template <typename RetT, typename... Args>
+        struct function : public std::type_identity<RetT(Args...)>
+        { };
+        template <typename RetT, typename... Args>
+        using function_t = typename function<RetT, Args...>::type;
+
         static_assert(std::same_as<pointer_t<int>, int*>);
         static_assert(std::same_as<pointer_t<int const>, const int*>);
         static_assert(std::same_as<const pointer_t<int>, int* const>);
@@ -4172,6 +4208,17 @@ namespace SupDef
         warn_unused_result()
         bool is_under_debugger();
         void breakpoint();
+
+        bool is_rtsig_usable() noexcept;
+        bool is_rtsig_usable(int sig) noexcept;
+
+        std::pair<bool, int> register_rtsig_use(std::string id) noexcept;
+        warn_usage_suggest_alternative("register_rtsig_use(std::string)")
+        bool register_rtsig_use(std::string id, int sig) noexcept;
+
+        void unregister_rtsig_use(std::string id) noexcept;
+        warn_usage_suggest_alternative("unregister_rtsig_use(std::string)")
+        void unregister_rtsig_use(int sig) noexcept;
     }
 }
 

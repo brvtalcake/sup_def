@@ -293,6 +293,7 @@ namespace uni
 
 #define INCLUDED_FROM_UNISTREAMS_SOURCE 1
 
+#include <sup_def/common/unistreams/impl/char_traits.ipp>
 #include <sup_def/common/unistreams/impl/string_conversions.ipp>
 
 #undef INCLUDED_FROM_UNISTREAMS_SOURCE

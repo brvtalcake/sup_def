@@ -1981,7 +1981,7 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 
 #undef ATTRIBUTE_WARNING
 #undef warn_usage_suggest_alternative
-#ifdef SUPDEF_COMPILER == 1
+#if SUPDEF_COMPILER == 1
     #define ATTRIBUTE_WARNING(msg) [[__gnu__::__warning__(msg)]]
 #elif SUPDEF_COMPILER == 2 // Clang
     #define ATTRIBUTE_WARNING(msg) [[clang::warning(msg)]]
@@ -2489,3 +2489,82 @@ static_assert(
 STATIC_TODO(
     "Add tests for the following macros: all PP_FLOAT* macros, all macros relying on them (COMPTIME_SCALE for example), probably_if and friends, etc..."
 );
+
+#ifdef __cplusplus
+
+#include <decimal/decimal>
+
+namespace stdfs = std::filesystem;
+namespace stdexec = std::execution;
+namespace stdpmr = std::pmr;
+namespace stddec = std::decimal;
+namespace stdx = std::experimental;
+
+namespace stdabi = abi;         // Not standard at all but let's pretend it is
+namespace stdgnu = __gnu_cxx;   // Not standard at all but let's pretend it is
+namespace stdpbds = __gnu_pbds; // Not standard at all but let's pretend it is
+
+namespace stdtr1 = std::tr1;
+namespace stdtr2 = std::tr2;
+
+#endif
+
+#undef UNIQUE_ID
+#define UNIQUE_ID(name) PP_CAT(name, __LINE__)
+
+#undef TRY_SYSCALL_WHILE_EINTR
+#undef TRY_SYSCALL_WHILE_EINTR_WITH_THIS
+
+#ifdef __cplusplus
+    #define TRY_SYSCALL_WHILE_EINTR(func, tupled_args)      \
+        [&]() -> decltype(auto)                             \
+        {                                                   \
+            decltype(                                       \
+                func(EXPAND_ONE_TUPLE(tupled_args))         \
+            ) UNIQUE_ID(retval);                            \
+            do                                              \
+            {                                               \
+                UNIQUE_ID(retval) = std::invoke(            \
+                    &(func),                                \
+                    EXPAND_ONE_TUPLE(tupled_args)           \
+                );                                          \
+            } while (                                       \
+                UNIQUE_ID(retval) == -1 && errno == EINTR   \
+            );                                              \
+            return UNIQUE_ID(retval);                       \
+        }()
+    #define TRY_SYSCALL_WHILE_EINTR_WITH_THIS(func, tupled_args)    \
+        [&, this]() -> decltype(auto)                               \
+        {                                                           \
+            decltype(                                               \
+                func(EXPAND_ONE_TUPLE(tupled_args))                 \
+            ) UNIQUE_ID(retval);                                    \
+            do                                                      \
+            {                                                       \
+                UNIQUE_ID(retval) = std::invoke(                    \
+                    &(func),                                        \
+                    EXPAND_ONE_TUPLE(tupled_args)                   \
+                );                                                  \
+            } while (                                               \
+                UNIQUE_ID(retval) == -1 && errno == EINTR           \
+            );                                                      \
+            return UNIQUE_ID(retval);                               \
+        }()
+#else
+    #define TRY_SYSCALL_WHILE_EINTR(func, tupled_args)      \
+        __extension__ ({                                    \
+            __typeof__(func(EXPAND_ONE_TUPLE(tupled_args))) \
+                UNIQUE_ID(retval);                          \
+            do                                              \
+            {                                               \
+                UNIQUE_ID(retval) = func(                   \
+                    EXPAND_ONE_TUPLE(tupled_args)           \
+                );                                          \
+            } while (                                       \
+                UNIQUE_ID(retval) == -1 && errno == EINTR   \
+            );                                              \
+            UNIQUE_ID(retval);                              \
+        })
+    #define TRY_SYSCALL_WHILE_EINTR_WITH_THIS(func, tupled_args)    \
+        TRY_SYSCALL_WHILE_EINTR(func, tupled_args)
+#endif

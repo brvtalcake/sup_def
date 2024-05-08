@@ -31,6 +31,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+STATIC_TODO("Implement threadkiller::kill(std::thread::id)");
+
 namespace threadkiller
 {
     namespace detail

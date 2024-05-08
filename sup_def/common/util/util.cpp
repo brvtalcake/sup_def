@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <sup_def/common/unistreams/unistreams.hpp>
 #include <sup_def/common/util/util.hpp>
 #include <cstdlib>
 #include <memory>
@@ -576,5 +577,151 @@ namespace SupDef
             already_executed = true;
             return result;
         }
+
+        static std::atomic<bool> rtsig_tracking_initialized = false;
+        static std::map<int, bool> rtsig_available;
+        static std::unordered_map<std::string, int> rtsig_use;
+        static std::mutex rtsig_mtx;
+
+        static void init_rtsig_tracking() noexcept
+        {
+            if (rtsig_tracking_initialized.load(std::memory_order::acquire))
+                return;
+            rtsig_mtx.lock();
+            for (int i = SIGRTMIN; i < SIGRTMAX; ++i)
+                rtsig_available[i] = true;
+            rtsig_mtx.unlock();
+            rtsig_tracking_initialized.store(true, std::memory_order::release);
+        }
+
+        bool is_rtsig_usable() noexcept
+        {
+            init_rtsig_tracking();
+            std::lock_guard<std::mutex> lock(rtsig_mtx);
+            return std::any_of(rtsig_available.cbegin(), rtsig_available.cend(), [](const auto& pair)
+            {
+                return pair.second;
+            });
+        }
+        bool is_rtsig_usable(int sig) noexcept
+        {
+            init_rtsig_tracking();
+            std::lock_guard<std::mutex> lock(rtsig_mtx);
+            return rtsig_available[sig];
+        }
+
+        std::pair<bool, int> register_rtsig_use(std::string id) noexcept
+        {
+            init_rtsig_tracking();
+            std::lock_guard<std::mutex> lock(rtsig_mtx);
+            for (int i = SIGRTMAX - 1; i >= SIGRTMIN; --i)
+            {
+                if (rtsig_available[i])
+                {
+                    rtsig_use[id] = i;
+                    rtsig_available[i] = false;
+                    return {true, i};
+                }
+            }
+            return {false, -1};
+        }
+        warn_usage_suggest_alternative("register_rtsig_use(std::string)")
+        bool register_rtsig_use(std::string id, int sig) noexcept
+        {
+            init_rtsig_tracking();
+            std::lock_guard<std::mutex> lock(rtsig_mtx);
+            if (rtsig_available[sig])
+            {
+                rtsig_use[id] = sig;
+                rtsig_available[sig] = false;
+                return true;
+            }
+            return false;
+        }
+
+        void unregister_rtsig_use(std::string id)
+        {
+            init_rtsig_tracking();
+            std::lock_guard<std::mutex> lock(rtsig_mtx);
+            unlikely_if (!rtsig_use.contains(id))
+                return;
+            rtsig_available[rtsig_use[id]] = true;
+            rtsig_use.erase(id);
+        }
+        warn_usage_suggest_alternative("unregister_rtsig_use(std::string)")
+        void unregister_rtsig_use(int sig)
+        {
+            init_rtsig_tracking();
+            std::lock_guard<std::mutex> lock(rtsig_mtx);
+            for (const auto& pair : rtsig_use)
+            {
+                if (pair.second == sig)
+                {
+                    rtsig_available[sig] = true;
+                    rtsig_use.erase(pair.first);
+                }
+            }
+        }
+        /* SIGRTMIN < SIGRTMAX */
     }
+}
+
+template <typename Fn, Fn fn>
+    requires std::invocable<Fn, int, siginfo_t*, void*>
+static void sighandler_adapter(int sig, siginfo_t* info, void* ucontext)
+{
+    std::invoke(fn, sig, info, ucontext);
+}
+
+std::shared_mutex uni::detail::tracked_fds::mtx;
+std::set<uni::detail::file_descriptor_t> uni::detail::tracked_fds::tracked;
+std::atomic<int> uni::detail::tracked_fds::signal_used{-1};
+
+void uni::detail::tracked_fds::add_tracked(uni::detail::file_descriptor_t fd, ...) noexcept
+{
+    std::unique_lock<std::shared_mutex> lock(uni::detail::tracked_fds::mtx);
+    va_list args;
+    va_start(args, fd);
+    for (file_descriptor_t arg = fd; arg != -1; arg = va_arg(args, file_descriptor_t))
+        uni::detail::tracked_fds::tracked.insert(arg);
+    va_end(args);
+}
+void uni::detail::tracked_fds::rm_tracked(uni::detail::file_descriptor_t fd, ...) noexcept
+{
+    std::unique_lock<std::shared_mutex> lock(uni::detail::tracked_fds::mtx);
+    va_list args;
+    va_start(args, fd);
+    for (file_descriptor_t arg = fd; arg != -1; arg = va_arg(args, file_descriptor_t))
+        uni::detail::tracked_fds::tracked.erase(arg);
+    va_end(args);
+}
+bool uni::detail::tracked_fds::is_tracked(uni::detail::file_descriptor_t fd) noexcept
+{
+    std::shared_lock<std::shared_mutex> lock(uni::detail::tracked_fds::mtx);
+    return uni::detail::tracked_fds::tracked.contains(fd);
+}
+
+void uni::detail::tracked_fds::install_sig_handler() noexcept
+{
+    static_assert(::uni::detail::tracked_fds::signal_id == std::string("uni::detail::tracked_fds"));
+
+    if (uni::detail::tracked_fds::signal_used.load(std::memory_order::acquire) != -1)
+        return;
+    std::pair<bool, int> newsig = ::SupDef::Util::register_rtsig_use(::uni::detail::tracked_fds::signal_id);
+    unlikely_if (!newsig.first)
+        std::terminate();
+    uni::detail::tracked_fds::signal_used.store(newsig.second, std::memory_order::release);
+
+    auto sighandler_lambda = [](int sig, siginfo_t* info, void* ucontext)
+    {
+        if (sig != uni::detail::tracked_fds::signal_used.load(std::memory_order::acquire))
+            return;
+        if (!uni::detail::tracked_fds::is_tracked(info->si_fd))
+            return;
+        
+    };
+
+    struct sigaction sa;
+    sa.sa_flags = SA_SIGINFO;
+
 }
