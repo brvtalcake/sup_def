@@ -48,3 +48,6 @@ SUPDEF_RETURN(returned_str + " returned from a runnable");
 
 #warning test3()
 // (Expand to `#warning "constant string returned from a runnable"`)
+
+#pragma supdef embed "./data/to_embed.bin"
+// Eventually add possibility to pass options (as with standard C "#embed"
