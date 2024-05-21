@@ -7,3 +7,6 @@
 [submodule "sup_def/third_party/patterns"]
 	path = sup_def/third_party/patterns
 	url = https://github.com/mpark/patterns.git
+[submodule "sup_def/third_party/simdutf"]
+	path = sup_def/third_party/simdutf
+	url = https://github.com/simdutf/simdutf.git

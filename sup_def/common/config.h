@@ -34,6 +34,20 @@
     #define NEED_TPP_INC(...) 0
 #endif
 
+#define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
+#define __STDCPP_WANT_IEC_60559_TYPES_EXT__ 1
+#define __STDCPP_WANT_IEC_60559_FUNCS_EXT__ 1
+#define __STDCPP_WANT_IEC_60559_DFP_EXT__ 1
+#define __STDCPP_WANT_IEC_60559_BFP_EXT__ 1
+
+#define __STDC_WANT_LIB_EXT2__ 1
+#define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
+#define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
+#define __STDC_WANT_IEC_60559_DFP_EXT__ 1
+
+#include <cmath>
+#include <cfloat>
+
 #define UNISTREAMS_STRING_USE_STD_BASIC_STRING 1
 
 #include <gnulib.h>
@@ -73,6 +87,7 @@
 #include <chaos/preprocessor/control/unless.h>
 #include <chaos/preprocessor/control/variadic_if.h>
 #include <chaos/preprocessor/control/while.h>
+#include <chaos/preprocessor/debug/assert.h>
 #include <chaos/preprocessor/debug/failure.h>
 #include <chaos/preprocessor/detection/is_numeric.h>
 #include <chaos/preprocessor/extended/variadic_cat.h>
@@ -85,6 +100,7 @@
 #include <chaos/preprocessor/logical/not.h>
 #include <chaos/preprocessor/logical/or.h>
 #include <chaos/preprocessor/recursion/expr.h>
+#include <chaos/preprocessor/repetition/enum_from_to.h>
 #include <chaos/preprocessor/seq/core.h>
 #include <chaos/preprocessor/seq/drop.h>
 #include <chaos/preprocessor/seq/enumerate.h>
@@ -1329,7 +1345,8 @@
 #endif
 #define POP_MACRO(MACNAME) POP_MACRO_IMPL(#MACNAME)
 
-#if defined(__cplusplus) && !defined(restrict)
+#undef restrict
+#if defined(__cplusplus) /* && !defined(restrict) */
     #if SUPDEF_COMPILER == 1 // GCC
         #define restrict __restrict__
     #elif SUPDEF_COMPILER == 2 // Clang
@@ -1905,16 +1922,20 @@ static_assert(FLOAT_EQ(float,  0.5, 0.5, 0.0001));
 #endif
 #define symbol_hot ATTRIBUTE_HOT
 
+#undef ATTRIBUTE_RETAIN
 #undef ATTRIBUTE_USED
 #undef symbol_keep
 #if SUPDEF_COMPILER == 1
     #define ATTRIBUTE_USED [[__gnu__::__used__]]
+    #define ATTRIBUTE_RETAIN [[__gnu__::__retain__]]
 #elif SUPDEF_COMPILER == 2 // Clang
     #define ATTRIBUTE_USED [[clang::used]]
+    #define ATTRIBUTE_RETAIN [[clang::retain]]
 #else
     #define ATTRIBUTE_USED
+    #define ATTRIBUTE_RETAIN
 #endif
-#define symbol_keep ATTRIBUTE_USED
+#define symbol_keep ATTRIBUTE_USED ATTRIBUTE_RETAIN
 
 #undef ATTRIBUTE_UNUSED
 #undef symbol_unused
@@ -2490,11 +2511,214 @@ STATIC_TODO(
     "Add tests for the following macros: all PP_FLOAT* macros, all macros relying on them (COMPTIME_SCALE for example), probably_if and friends, etc..."
 );
 
+#include <immintrin.h>
+
+#undef ASM_LINE
+/**
+ * @brief Write a GCC extended inline assembly line, for both AT&T and Intel syntax
+ * @example ASM_LINE((movb %0, %1), (mov %1, %0))
+ */
+#define ASM_LINE(att_tupled_syntax, intel_tupled_syntax)   \
+    PP_STRINGIZE(                                                   \
+        {                                                           \
+            EXPAND_ONE_TUPLE(att_tupled_syntax)     |               \
+            EXPAND_ONE_TUPLE(intel_tupled_syntax)                   \
+        } \n                                                        \
+    )                                                               \
+/**/
+#undef ASM_REG
+/**
+ * @brief Write a GCC extended inline assembly register, for either AT&T and Intel syntax
+ * @example ASM_REG(rax, 0) // for AT&T syntax
+ * @example ASM_REG(rax, 1) // for Intel syntax
+ */
+#define ASM_REG(register, intel_p)  \
+    PP_IF(intel_p)                  \
+    (                               \
+        register                    \
+    )                               \
+    (                               \
+        %%register                  \
+    )                               \
+/**/
+#undef ASM_NUM
+/**
+ * @brief Write a GCC extended inline assembly number, for either AT&T and Intel syntax
+ * @example ASM_NUM(0, 0) // for AT&T syntax
+ * @example ASM_NUM(0, 1) // for Intel syntax
+ */
+#define ASM_NUM(number, intel_p)    \
+    PP_IF(intel_p)                  \
+    (                               \
+        number                      \
+    )                               \
+    (                               \
+        CHAOS_PP_PUSH($, number)    \
+    )                               \
+/**/
+
+#undef CASE_RANGE_GEN_CASES
+#undef CASE_RANGE_MAKE_CASE
+#if !defined(__INTELLISENSE__) /* || 1 */
+    #define CASE_RANGE_GEN_CASES(start, end)    \
+        CHAOS_PP_ASSERT(                        \
+            CHAOS_PP_AND                        \
+            (                                   \
+                CHAOS_PP_IS_NUMERIC(start)      \
+            )(                                  \
+                CHAOS_PP_IS_NUMERIC(end)        \
+            )                                   \
+        )                                       \
+        CHAOS_PP_EXPR(                          \
+            CHAOS_PP_ENUM_FROM_TO(              \
+                start,                          \
+                end,                            \
+                CHAOS_PP_LAMBDA(                \
+                    CHAOS_PP_ARG(1)             \
+                )                               \
+            )                                   \
+        )                                       \
+    /**/
+#else
+    #define CASE_RANGE_GEN_CASES(start, end) start, (end - 1)
+#endif
+#define CASE_RANGE_MAKE_CASE(...) case __VA_ARGS__: case_fallthrough;
+
+#undef CASE_RANGE
+#if SUPDEF_COMPILER == 1 /* && 0 */
+    // To use `CASE_RANGE`, `start` and `end` must be in [0, `CHAOS_PP_LIMIT_MAG`]
+    #define CASE_RANGE(start, end) case start ... end
+#else
+    // To use `CASE_RANGE`, `start` and `end` must be in [0, `CHAOS_PP_LIMIT_MAG`]
+    #define CASE_RANGE(start, end)                  \
+        CHAOS_PP_ASSERT(                            \
+            CHAOS_PP_AND(                           \
+                CHAOS_PP_IS_NUMERIC(start)          \
+            )(                                      \
+                CHAOS_PP_IS_NUMERIC(end)            \
+            )                                       \
+        )                                           \
+        CHAOS_PP_WHEN(                              \
+            CHAOS_PP_GREATER(end, start)            \
+        )(                                          \
+            MAP(                                    \
+                CASE_RANGE_MAKE_CASE,               \
+                CASE_RANGE_GEN_CASES(start, end)    \
+            )                                       \
+        )                                           \
+        case end                                    \
+    /**/
+#endif
+
+#undef compiler_diagnostic_push
+#undef compiler_diagnostic_pop
+
+#undef compiler_diagnostic_ignore
+#undef compiler_diagnostic_error
+#undef compiler_diagnostic_warning
+
+#undef compiler_option_push
+#undef compiler_option_pop
+#undef compiler_option_reset
+
+#undef compiler_option_set_target
+#undef compiler_option_set_optimization
+
+#undef disable_strict_aliasing
+#undef enable_strict_aliasing
+#undef reset_strict_aliasing
+
+#if SUPDEF_COMPILER == 1
+    #define compiler_diagnostic_push() _Pragma("GCC diagnostic push")
+    #define compiler_diagnostic_pop() _Pragma("GCC diagnostic pop")
+    
+    #define compiler_diagnostic_ignore(diag) _Pragma(PP_STRINGIZE(GCC diagnostic ignored diag))
+    #define compiler_diagnostic_error(diag) _Pragma(PP_STRINGIZE(GCC diagnostic error diag))
+    #define compiler_diagnostic_warning(diag) _Pragma(PP_STRINGIZE(GCC diagnostic warning diag))
+
+    #define compiler_option_push() _Pragma("GCC push_options")
+    #define compiler_option_pop() _Pragma("GCC pop_options")
+    #define compiler_option_reset() _Pragma("GCC reset_options")
+
+    #define compiler_option_set_target(tgt) _Pragma(PP_STRINGIZE(GCC target (tgt)))
+    #define compiler_option_set_optimization(opt) _Pragma(PP_STRINGIZE(GCC optimize (opt)))
+    
+    #define disable_strict_aliasing()                               \
+        compiler_diagnostic_push();                                 \
+        compiler_option_push();                                     \
+        compiler_diagnostic_ignore("-Wstrict-aliasing");            \
+        compiler_option_set_optimization("-fno-strict-aliasing")    \
+    /**/
+    #define enable_strict_aliasing(warnorerr)                       \
+        compiler_diagnostic_push();                                 \
+        compiler_option_push();                                     \
+        compiler_diagnostic_##warnorerr("-Wstrict-aliasing");       \
+        compiler_option_set_optimization("-fstrict-aliasing")       \
+    /**/
+    #define reset_strict_aliasing()                                 \
+        compiler_diagnostic_pop();                                  \
+        compiler_option_pop()                                       \
+    /**/
+#elif SUPDEF_COMPILER == 2 // Clang
+    #define compiler_diagnostic_push() _Pragma("clang diagnostic push")
+    #define compiler_diagnostic_pop() _Pragma("clang diagnostic pop")
+    
+    #define compiler_diagnostic_ignore(diag) _Pragma(PP_STRINGIZE(clang diagnostic ignored diag))
+    #define compiler_diagnostic_error(diag) _Pragma(PP_STRINGIZE(clang diagnostic error diag))
+    #define compiler_diagnostic_warning(diag) _Pragma(PP_STRINGIZE(clang diagnostic warning diag))
+
+    #define compiler_option_push() _Pragma("clang push_options")
+    #define compiler_option_pop() _Pragma("clang pop_options")
+    #define compiler_option_reset() _Pragma("clang reset_options")
+
+    #define compiler_option_set_target(tgt) _Pragma(PP_STRINGIZE(clang target (tgt)))
+    #define compiler_option_set_optimization(opt) _Pragma(PP_STRINGIZE(clang optimize (opt)))
+    
+    #define disable_strict_aliasing()                               \
+        compiler_diagnostic_push();                                 \
+        compiler_option_push();                                     \
+        compiler_diagnostic_ignore("-Wstrict-aliasing");            \
+        compiler_option_set_optimization("-fno-strict-aliasing")    \
+    /**/
+    #define enable_strict_aliasing(warnorerr)                       \
+        compiler_diagnostic_push();                                 \
+        compiler_option_push();                                     \
+        compiler_diagnostic_##warnorerr("-Wstrict-aliasing");       \
+        compiler_option_set_optimization("-fstrict-aliasing")       \
+    /**/
+    #define reset_strict_aliasing()                                 \
+        compiler_diagnostic_pop();                                  \
+        compiler_option_pop()                                       \
+    /**/
+#else
+    #define compiler_diagnostic_push() STATIC_TODO("compiler_diagnostic_push not implemented for this compiler")
+    #define compiler_diagnostic_pop() STATIC_TODO("compiler_diagnostic_pop not implemented for this compiler")
+    
+    #define compiler_diagnostic_ignore(diag) STATIC_TODO("compiler_diagnostic_ignore not implemented for this compiler")
+    #define compiler_diagnostic_error(diag) STATIC_TODO("compiler_diagnostic_error not implemented for this compiler")
+    #define compiler_diagnostic_warning(diag) STATIC_TODO("compiler_diagnostic_warning not implemented for this compiler")
+
+    #define compiler_option_push() STATIC_TODO("compiler_option_push not implemented for this compiler")
+    #define compiler_option_pop() STATIC_TODO("compiler_option_pop not implemented for this compiler")
+    #define compiler_option_reset() STATIC_TODO("compiler_option_reset not implemented for this compiler")
+
+    #define compiler_option_set_target(tgt) STATIC_TODO("compiler_option_set_target not implemented for this compiler")
+    #define compiler_option_set_optimization(opt) STATIC_TODO("compiler_option_set_optimization not implemented for this compiler")
+    
+    #define disable_strict_aliasing() STATIC_TODO("disable_strict_aliasing not implemented for this compiler")
+    #define enable_strict_aliasing(warnorerr) STATIC_TODO("enable_strict_aliasing not implemented for this compiler")
+    #define reset_strict_aliasing() STATIC_TODO("reset_strict_aliasing not implemented for this compiler")
+#endif
+
 #ifdef __cplusplus
 
 #include <decimal/decimal>
+#include <experimental/scope>
+/* #include <tr1/regex> */
 
 namespace stdfs = std::filesystem;
+namespace stdrg = std::ranges;
+namespace stdviews = std::ranges::views;
 namespace stdexec = std::execution;
 namespace stdpmr = std::pmr;
 namespace stddec = std::decimal;
@@ -2504,8 +2728,8 @@ namespace stdabi = abi;         // Not standard at all but let's pretend it is
 namespace stdgnu = __gnu_cxx;   // Not standard at all but let's pretend it is
 namespace stdpbds = __gnu_pbds; // Not standard at all but let's pretend it is
 
-namespace stdtr1 = std::tr1;
-namespace stdtr2 = std::tr2;
+/* namespace stdtr1 = std::tr1; */
+/* namespace stdtr2 = std::tr2; */
 
 #endif
 
@@ -2520,7 +2744,7 @@ namespace stdtr2 = std::tr2;
         [&]() -> decltype(auto)                             \
         {                                                   \
             decltype(                                       \
-                func(EXPAND_ONE_TUPLE(tupled_args))         \
+                (func)(EXPAND_ONE_TUPLE(tupled_args))       \
             ) UNIQUE_ID(retval);                            \
             do                                              \
             {                                               \
@@ -2537,7 +2761,7 @@ namespace stdtr2 = std::tr2;
         [&, this]() -> decltype(auto)                               \
         {                                                           \
             decltype(                                               \
-                func(EXPAND_ONE_TUPLE(tupled_args))                 \
+                (func)(EXPAND_ONE_TUPLE(tupled_args))               \
             ) UNIQUE_ID(retval);                                    \
             do                                                      \
             {                                                       \
@@ -2551,20 +2775,44 @@ namespace stdtr2 = std::tr2;
             return UNIQUE_ID(retval);                               \
         }()
 #else
-    #define TRY_SYSCALL_WHILE_EINTR(func, tupled_args)      \
-        __extension__ ({                                    \
-            __typeof__(func(EXPAND_ONE_TUPLE(tupled_args))) \
-                UNIQUE_ID(retval);                          \
-            do                                              \
-            {                                               \
-                UNIQUE_ID(retval) = func(                   \
-                    EXPAND_ONE_TUPLE(tupled_args)           \
-                );                                          \
-            } while (                                       \
-                UNIQUE_ID(retval) == -1 && errno == EINTR   \
-            );                                              \
-            UNIQUE_ID(retval);                              \
-        })
-    #define TRY_SYSCALL_WHILE_EINTR_WITH_THIS(func, tupled_args)    \
-        TRY_SYSCALL_WHILE_EINTR(func, tupled_args)
+    #ifdef TEMP_FAILURE_RETRY
+        #define TRY_SYSCALL_WHILE_EINTR(func, tupled_args)      \
+            TEMP_FAILURE_RETRY(                                 \
+                func(EXPAND_ONE_TUPLE(tupled_args))             \
+            )
+        #define TRY_SYSCALL_WHILE_EINTR_WITH_THIS(func, tupled_args)    \
+            TRY_SYSCALL_WHILE_EINTR(func, tupled_args)
+    #else
+        #define TRY_SYSCALL_WHILE_EINTR(func, tupled_args)      \
+            __extension__ ({                                    \
+                __typeof__(func(EXPAND_ONE_TUPLE(tupled_args))) \
+                    UNIQUE_ID(retval);                          \
+                do                                              \
+                {                                               \
+                    UNIQUE_ID(retval) = func(                   \
+                        EXPAND_ONE_TUPLE(tupled_args)           \
+                    );                                          \
+                } while (                                       \
+                    UNIQUE_ID(retval) == -1 && errno == EINTR   \
+                );                                              \
+                UNIQUE_ID(retval);                              \
+            })
+        #define TRY_SYSCALL_WHILE_EINTR_WITH_THIS(func, tupled_args)    \
+            TRY_SYSCALL_WHILE_EINTR(func, tupled_args)
+    #endif
 #endif
+
+/* disable_strict_aliasing();
+reset_strict_aliasing();
+
+enable_strict_aliasing(warning);
+reset_strict_aliasing();
+
+enable_strict_aliasing(error);
+reset_strict_aliasing(); */
+
+/* CASE_RANGE(0, 0):
+
+CASE_RANGE(0, 1):
+
+CASE_RANGE(0, 2): */

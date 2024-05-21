@@ -131,6 +131,10 @@ struct TimedTask<std::chrono::duration<Rep, Period>, FuncType, Args...>
 
 #if !DEFINED(Exception)
 
+STATIC_TODO(
+    "Maybe use boost::leaf for exception handling ?"
+);
+
 class InternalException;
 class ContractViolation;
 

@@ -1394,7 +1394,7 @@ namespace SupDef
     class Coro
     {
         private:
-            // To handle the case where using the iterator with corountine which co_return a value
+            // To handle the case where using the iterator with coroutine which co_return a value
             // so we can use the last co_returned value
             bool iter_end = false;
         public:
@@ -2238,6 +2238,10 @@ POP_MACRO(DECLARE_FRIENDS3)
     };
 
     // TO BE TESTED
+    STATIC_TODO(
+        "Test the ThreadPool class and potentially modify it to use more TSS / TLS to avoid too much mutex locking "
+        "(look at Boost.Thread for ideas)"
+    );
     class ThreadPool
     : private ThreadPoolBase<ThreadPool, ThreadPoolAliases>
     {

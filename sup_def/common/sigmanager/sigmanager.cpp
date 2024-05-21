@@ -1,0 +1,812 @@
+/* 
+ * MIT License
+ * 
+ * Copyright (c) 2023-2024 Axel PASCON
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include <sup_def/common/sigmanager/sigmanager.hpp>
+#include <chaos/preprocessor/repetition/enum_from_to.h>
+#include <chaos/preprocessor/arithmetic/add.h>
+#include <chaos/preprocessor/arithmetic/sub.h>
+#include <chaos/preprocessor/comparison/max.h>
+#include <chaos/preprocessor/comparison/min.h>
+#include <csignal>
+
+#undef MAX_SIGUSR
+#define MAX_SIGUSR CHAOS_PP_MAX(SIGUSR1, SIGUSR2)
+
+#undef MIN_SIGUSR
+#define MIN_SIGUSR CHAOS_PP_MIN(SIGUSR1, SIGUSR2)
+
+#undef SIGUSR1_SIGUSR2_ARE_FOLLOWING
+#define SIGUSR1_SIGUSR2_ARE_FOLLOWING   \
+    CHAOS_PP_EQUAL(                     \
+        CHAOS_PP_SUB(                   \
+            MAX_SIGUSR,                 \
+            MIN_SIGUSR                  \
+        ),                              \
+        1                               \
+    )
+
+#undef IN_BEWTEEN_SIGUSR1_SIGUSR2_COUNT
+#define IN_BEWTEEN_SIGUSR1_SIGUSR2_COUNT    \
+    CHAOS_PP_DEC(                           \
+        CHAOS_PP_SUB(                       \
+            MAX_SIGUSR,                     \
+            MIN_SIGUSR                      \
+        )                                   \
+    )
+
+/* #if __SIGRTMIN <= 0 || __SIGRTMAX <= 0
+    // For now, throw an error
+    #error "Missing __SIGRTMIN or __SIGRTMAX"
+#endif */
+
+// From GLIBC source code:
+//  sysdeps/unix/sysv/linux/internal-signals.h
+#if __SIGRTMIN > 0 && __SIGRTMAX > 0
+    #undef RESERVED_FOR_PTHREADS
+    #define RESERVED_FOR_PTHREADS 2
+
+    #ifndef SIGCANCEL
+        #define SIGCANCEL __SIGRTMIN
+    #endif
+
+    #ifndef SIGTIMER
+        #define SIGTIMER SIGCANCEL
+    #endif
+
+    #ifndef SIGSETXID
+        #define SIGSETXID (__SIGRTMIN + 1)
+    #endif
+#endif
+
+namespace sigmgr
+{
+    static std::atomic<::sigmgr::tid_t> signaled_thread_tid;
+    static std::atomic<pthread_t> signaled_thread_pthread;
+
+    no_return
+    static void signaled_thread_func() noexcept
+    {
+        tid_t tid = TRY_SYSCALL_WHILE_EINTR(::gettid, ());
+        signaled_thread_tid.store(tid, std::memory_order::release);
+
+        signaled_thread_pthread.store(::pthread_self(), std::memory_order::release);
+
+        while (true)
+        {
+            ::pause();
+        }
+    }
+
+    static std::thread signaled_thread;
+
+    static std::atomic<bool> rtsig_tracking_initialized = false;
+    static std::map<int, bool> rtsig_available;
+    static std::unordered_multimap<std::string, int> rtsig_use;
+    static std::mutex rtsig_mtx;
+
+    static std::atomic<bool> sigusr_tracking_initialized = false;
+    static std::array<bool, 2> sigusr_available;
+    static std::unordered_multimap<std::string, int> sigusr_use;
+    static std::mutex sigusr_mtx;
+
+    namespace
+    {
+#undef SIGMGR_DEFINE_SIGNAL_TEST
+#define SIGMGR_DEFINE_SIGNAL_TEST(tested, sig)  \
+    if (tested == sig)                          \
+        return false;
+
+        static constexpr bool can_be_handled(const int sig) noexcept
+        {
+#ifdef SIGKILL
+            SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGKILL)
+#endif
+
+#ifdef SIGSTOP
+            SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGSTOP)
+#endif
+            return true;
+        }
+
+        static constexpr bool shall_be_handled(const int sig) noexcept
+        {
+            if (!can_be_handled(sig))
+                return false;
+            
+            if consteval
+            {
+#ifdef SIGSEGV
+                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGSEGV)
+#endif
+
+#ifdef SIGFPE
+                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGFPE)
+#endif
+
+#ifdef SIGILL
+                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGILL)
+#endif
+
+#ifdef SIGBUS
+                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGBUS)
+#endif
+
+#ifdef SIGABRT
+                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGABRT)
+#endif
+
+#if __SIGRTMIN > 0 && __SIGRTMAX > 0
+                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGCANCEL)
+                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGTIMER)
+                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGSETXID)
+#endif
+                return true;
+            }
+            else
+            {
+                /*             if (!std::is_constant_evaluated() && sig >= SIGRTMIN && sig <= SIGRTMAX)
+                return true; */
+
+            }
+        }
+
+    }
+#undef SIGMGR_DEFINE_SIGNAL_ENTRY
+#define SIGMGR_DEFINE_SIGNAL_ENTRY(sig, ...)    \
+    CHAOS_PP_COMMA_IF(                          \
+        PP_IF(                                  \
+            ISEMPTY(__VA_ARGS__)                \
+        )                                       \
+        (1)                                     \
+        (FIRST_ARG(__VA_ARGS__))                \
+    ) { (sig), (std::bool_constant<shall_be_handled(sig)>::value) }
+
+    static std::multimap<int, bool> handleable_signals{
+#ifdef SIGABRT
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGABRT, 0)
+#endif
+
+#ifdef SIGALRM
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGALRM)
+#endif
+
+#ifdef SIGBUS
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGBUS)
+#endif
+
+#ifdef SIGCHLD
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGCHLD)
+#endif
+
+#ifdef SIGCLD
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGCLD)
+#endif
+
+#ifdef SIGCONT
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGCONT)
+#endif
+
+#ifdef SIGEMT
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGEMT)
+#endif
+
+#ifdef SIGFPE
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGFPE)
+#endif
+
+#ifdef SIGHUP
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGHUP)
+#endif
+
+#ifdef SIGILL
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGILL)
+#endif
+
+#ifdef SIGINFO
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGINFO)
+#endif
+
+#ifdef SIGINT
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGINT)
+#endif
+
+#ifdef SIGIO
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGIO)
+#endif
+
+#ifdef SIGIOT
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGIOT)
+#endif
+
+#ifdef SIGKILL
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGKILL)
+#endif
+
+#ifdef SIGLOST
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGLOST)
+#endif
+
+#ifdef SIGPIPE
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGPIPE)
+#endif
+
+#ifdef SIGPOLL
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGPOLL)
+#endif
+
+#ifdef SIGPROF
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGPROF)
+#endif
+
+#ifdef SIGPWR
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGPWR)
+#endif
+
+#ifdef SIGQUIT
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGQUIT)
+#endif
+
+#ifdef SIGSEGV
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGSEGV)
+#endif
+
+#ifdef SIGSTKFLT
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGSTKFLT)
+#endif
+
+#ifdef SIGSTOP
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGSTOP)
+#endif
+
+#ifdef SIGTSTP
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGTSTP)
+#endif
+
+#ifdef SIGSYS
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGSYS)
+#endif
+
+#ifdef SIGTERM
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGTERM)
+#endif
+
+#ifdef SIGTRAP
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGTRAP)
+#endif
+
+#ifdef SIGTTIN
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGTTIN)
+#endif
+
+#ifdef SIGTTOU
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGTTOU)
+#endif
+
+#ifdef SIGUNUSED
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGUNUSED)
+#endif
+
+#ifdef SIGURG
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGURG)
+#endif
+
+#ifdef SIGUSR1
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGUSR1)
+#endif
+
+#ifdef SIGUSR2
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGUSR2)
+#endif
+
+#ifdef SIGVTALRM
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGVTALRM)
+#endif
+
+#ifdef SIGXCPU
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGXCPU)
+#endif
+
+#ifdef SIGXFSZ
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGXFSZ)
+#endif
+
+#ifdef SIGWINCH
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGWINCH)
+#endif
+
+#if __SIGRTMIN > 0 && __SIGRTMAX > 0
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGCANCEL)
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGTIMER)
+        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGSETXID)
+
+        , CHAOS_PP_EXPR(
+            CHAOS_PP_ENUM_FROM_TO(
+                CHAOS_PP_ADD(__SIGRTMIN, RESERVED_FOR_PTHREADS),
+                CHAOS_PP_ADD(__SIGRTMAX, 1),
+                CHAOS_PP_LAMBDA(CHAOS_PP_LAMBDA(SIGMGR_DEFINE_SIGNAL_ENTRY)(CHAOS_PP_ARG(1), 0))
+            )
+        )
+#endif
+    };
+#undef SIGMGR_DEFINE_SIGNAL_ENTRY
+
+    namespace detail
+    {
+        static void assert_preconditions() noexcept
+        {
+            /* hard_assert(handleable_signals.size() == NSIG, "Missing signal entry in handleable_signals"); */
+#if __SIGRTMIN > 0 && __SIGRTMAX > 0
+            hard_assert(SIGRTMIN == __SIGRTMIN + RESERVED_FOR_PTHREADS);
+            hard_assert(SIGRTMAX == __SIGRTMAX);
+#endif
+        }
+
+        static void assert_preconditions2() noexcept
+        {
+#ifdef _NSIG
+            hard_assert(handleable_signals.size() >= _NSIG, "Missing signal entry in handleable_signals");
+#endif
+        }
+
+        static void init() noexcept
+        {
+            assert_preconditions();
+
+#if __SIGRTMIN <= 0 || __SIGRTMAX <= 0
+            const int curr_max = stdrg::max_element(handleable_signals.cbegin(), handleable_signals.cend(), [](const std::pair<int, bool>& lhs, const std::pair<int, bool>& rhs)
+            {
+                return lhs.first < rhs.first;
+            })->first;
+
+            if (curr_max != 31)
+                std::terminate();
+
+            switch (SIGRTMIN - curr_max)
+            {
+                case 4: // 3 rt signals are reserved for pthreads
+                    handleable_signals.insert({SIGRTMIN - 3, false});
+                    case_fallthrough;
+                case 3: // 2 rt signals are reserved for pthreads
+                    handleable_signals.insert({SIGRTMIN - 2, false});
+                    case_fallthrough;
+                case 2: // 1 rt signal is reserved for pthreads (unlikely, but possible)
+                    handleable_signals.insert({SIGRTMIN - 1, false});
+                    case_fallthrough;
+                case 1: // SIGRTMIN through SIGRTMAX are usable
+                    break;
+                default: // Either bad programming from me, or very (very very very very) strange system
+                    std::terminate();
+            }
+
+            const auto rtsig_range = stdviews::iota(SIGRTMIN, SIGRTMAX + 1);
+            for (const int& s : rtsig_range)
+            {
+                handleable_signals.insert({s, true});
+            }
+#endif
+            assert_preconditions2();
+        }
+    }
+
+    namespace
+    {
+        enum class sig_type : uint_fast64_t
+        {
+            rtsig = uint_fast64_t{1} << 0,
+            sigusr = uint_fast64_t{1} << 1,
+            classicsig = uint_fast64_t{1} << 2
+        };
+        ENUM_CLASS_OPERATORS(sig_type);
+
+        static inline size_t map_sigusr(const int sig) noexcept
+        {
+            sig == SIGUSR1 ? 0 : (sig == SIGUSR2 ? 1 : -1);
+        }
+
+        static inline int map_index(size_t index) noexcept
+        {
+            index == 0 ? SIGUSR1 : (index == 1 ? SIGUSR2 : -1);
+        }
+
+        static void erase_duplicates(std::unordered_multimap<std::string, int>& map, const std::string& id, const int sig) noexcept
+        {
+            const auto range = map.equal_range(id);
+            for (const auto& it = range.first; it != range.second; ++it)
+            {
+                if (it->second == sig)
+                {
+                    map.erase(it);
+                    return;
+                }
+            }
+        }
+
+        static constexpr bool verify_sig(const int sig, const sig_type type) noexcept
+        {
+            unlikely_if (sig < 0)
+                return false;
+
+            static const std::multimap<sig_type, std::pair<int, int>> sig_ranges = {
+                {sig_type::rtsig, {SIGRTMIN, SIGRTMAX}},
+
+#if SIGUSR1_SIGUSR2_ARE_FOLLOWING
+                {sig_type::sigusr, {MIN_SIGUSR, MAX_SIGUSR}},
+
+                {sig_type::classicsig, {0, MIN_SIGUSR - 1}},
+                {sig_type::classicsig, {MAX_SIGUSR + 1, 31}}
+#else
+                {sig_type::sigusr, {MIN_SIGUSR, MIN_SIGUSR}},
+                {sig_type::sigusr, {MAX_SIGUSR, MAX_SIGUSR}},
+
+                {sig_type::classicsig, {0, MIN_SIGUSR - 1}},
+                {sig_type::classicsig, {MIN_SIGUSR + 1, MAX_SIGUSR - 1}},
+                {sig_type::classicsig, {MAX_SIGUSR + 1, 31}}
+#endif
+            };
+
+            std::vector<std::pair<int, int>> ranges(sig_ranges.size());
+            std::copy_if(sig_ranges.cbegin(), sig_ranges.cend(), std::back_inserter(ranges), [&](const auto& pair)
+            {
+                return bool(pair.first & type);
+            });
+
+            for (const auto& range : ranges)
+            {
+                if (sig >= range.first && sig <= range.second)
+                    return true;
+            }
+            return false;
+        }
+
+        static void redirect_signals_to_signaled_thread() noexcept
+        {
+            int res;
+            sigset_t signal_set;
+            if ((res = TRY_SYSCALL_WHILE_EINTR(::sigemptyset, (&signal_set))) != 0)
+                std::terminate();
+            std::for_each(handleable_signals.cbegin(), handleable_signals.cend(), [&](const std::pair<int, bool>& pair) noexcept
+            {
+                if (pair.second)
+                {
+                    if ((res = TRY_SYSCALL_WHILE_EINTR(::sigaddset, (&signal_set, pair.first))) != 0)
+                        std::terminate();
+                }
+            });
+        
+            /* sigaddset(&signal_set, SIGINT);
+            sigprocmask(SIG_BLOCK, &signal_set, NULL); */
+        }
+    }
+
+
+    static void init_rtsig_tracking() noexcept
+    {
+        if (rtsig_tracking_initialized.load(std::memory_order::acquire))
+            return;
+        rtsig_mtx.lock();
+        for (int i = SIGRTMIN; i < SIGRTMAX; ++i)
+            rtsig_available[i] = true;
+        rtsig_mtx.unlock();
+        rtsig_tracking_initialized.store(true, std::memory_order::release);
+    }
+
+    static void init_sigusr_tracking() noexcept
+    {
+        if (sigusr_tracking_initialized.load(std::memory_order::acquire))
+            return;
+        sigusr_mtx.lock();
+        sigusr_available[0] = true;
+        sigusr_available[1] = true;
+        sigusr_mtx.unlock();
+        sigusr_tracking_initialized.store(true, std::memory_order::release);
+    }
+
+    bool is_rtsig_usable() noexcept
+    {
+        init_rtsig_tracking();
+        std::lock_guard<std::mutex> lock(rtsig_mtx);
+        return std::any_of(rtsig_available.cbegin(), rtsig_available.cend(), [](const auto& pair)
+        {
+            return pair.second;
+        });
+    }
+    bool is_rtsig_usable(const int sig) noexcept
+    {
+        init_rtsig_tracking();
+        if (!verify_sig(sig, sig_type::rtsig))
+            return false;
+        std::lock_guard<std::mutex> lock(rtsig_mtx);
+        return rtsig_available[sig];
+    }
+
+    bool is_sigusr_usable() noexcept
+    {
+        init_sigusr_tracking();
+        std::lock_guard<std::mutex> lock(sigusr_mtx);
+        return std::any_of(sigusr_available.cbegin(), sigusr_available.cend(), [](const bool& available)
+        {
+            return available;
+        });
+    }
+    bool is_sigusr_usable(const int sig) noexcept
+    {
+        init_sigusr_tracking();
+        if (!verify_sig(sig, sig_type::sigusr))
+            return false;
+        std::lock_guard<std::mutex> lock(sigusr_mtx);
+        return sigusr_available[map_sigusr(sig)];
+    }
+
+    std::pair<bool, int> register_rtsig_use(const std::string& id) noexcept
+    {
+        init_rtsig_tracking();
+        std::lock_guard<std::mutex> lock(rtsig_mtx);
+        for (int i = SIGRTMAX - 1; i >= SIGRTMIN; --i)
+        {
+            if (rtsig_available[i])
+            {
+                rtsig_use.insert({id, i});
+                rtsig_available[i] = false;
+
+                erase_duplicates(rtsig_use, id, i);
+
+                return {true, i};
+            }
+        }
+        return {false, -1};
+    }
+    warn_usage_suggest_alternative("register_rtsig_use(const std::string&)")
+    bool register_rtsig_use(const std::string& id, const int sig) noexcept
+    {
+        init_rtsig_tracking();
+
+        unlikely_if (!verify_sig(sig, sig_type::rtsig))
+            return false;
+
+        std::lock_guard<std::mutex> lock(rtsig_mtx);
+        if (rtsig_available[sig])
+        {
+            rtsig_use.insert({id, sig});
+            rtsig_available[sig] = false;
+
+            erase_duplicates(rtsig_use, id, sig);
+
+            return true;
+        }
+        return false;
+    }
+
+    void unregister_rtsig_use(const std::string& id) noexcept
+    {
+        init_rtsig_tracking();
+
+        std::lock_guard<std::mutex> lock(rtsig_mtx);
+        unlikely_if (!rtsig_use.contains(id))
+            return;
+        const std::pair<
+            decltype(rtsig_use)::iterator,
+            decltype(rtsig_use)::iterator
+        > range = rtsig_use.equal_range(id);
+        const size_t distance = std::distance(range.first, range.second);
+        std::for_each(range.first, range.second, [&](const decltype(rtsig_use)::iterator& it)
+        {
+            hard_assert(it->first == id);
+            rtsig_available[it->second] = true;
+        });
+        const size_t erased_count = rtsig_use.erase(id);
+        hard_assert(erased_count == distance);
+    }
+    void unregister_rtsig_use(const std::string& id, const int sig) noexcept
+    {
+        init_rtsig_tracking();
+
+        unlikely_if (!verify_sig(sig, sig_type::rtsig))
+            return;
+
+        std::lock_guard<std::mutex> lock(rtsig_mtx);
+        unlikely_if (!rtsig_use.contains(id))
+            return;
+        rtsig_available[sig] = true;
+        std::erase_if(rtsig_use, [&](const decltype(rtsig_use)::value_type& pair)
+        {
+            return (pair.first == id) && (pair.second == sig);
+        });
+    }
+    warn_usage_suggest_alternative(
+        "unregister_rtsig_use(const std::string&, int)",
+        "unregister_rtsig_use(const std::string&)"
+    )
+    void unregister_rtsig_use(const int sig) noexcept
+    {
+        init_rtsig_tracking();
+
+        unlikely_if (!verify_sig(sig, sig_type::rtsig))
+            return;
+
+        std::lock_guard<std::mutex> lock(rtsig_mtx);
+        std::erase_if(rtsig_use, [&](const decltype(rtsig_use)::value_type& pair)
+        {
+            return pair.second == sig;
+        });
+        rtsig_available[sig] = true;
+    }
+
+    std::pair<bool, int> register_sigusr_use(const std::string& id) noexcept
+    {
+        init_sigusr_tracking();
+
+        std::lock_guard<std::mutex> lock(sigusr_mtx);
+        for (size_t i = 0; i < sigusr_available.size(); ++i)
+        {
+            if (sigusr_available[i])
+            {
+                sigusr_use.insert({id, map_index(i)});
+                sigusr_available[i] = false;
+
+                erase_duplicates(sigusr_use, id, map_index(i));
+
+                return {true, map_index(i)};
+            }
+        }
+        return {false, -1};
+    }
+    warn_usage_suggest_alternative("register_sigusr_use(const std::string&)")
+    bool register_sigusr_use(const std::string& id, const int sig) noexcept
+    {
+        init_sigusr_tracking();
+
+        unlikely_if (!verify_sig(sig, sig_type::sigusr))
+            return false;
+
+        std::lock_guard<std::mutex> lock(sigusr_mtx);
+        if (sigusr_available[map_sigusr(sig)])
+        {
+            sigusr_use.insert({id, sig});
+            sigusr_available[map_sigusr(sig)] = false;
+            return true;
+        }
+        return false;
+    }
+
+    void unregister_sigusr_use(const std::string& id) noexcept
+    {
+        init_sigusr_tracking();
+
+        std::lock_guard<std::mutex> lock(sigusr_mtx);
+        unlikely_if (!sigusr_use.contains(id))
+            return;
+        const std::pair<
+            decltype(sigusr_use)::iterator,
+            decltype(sigusr_use)::iterator
+        > range = sigusr_use.equal_range(id);
+        const size_t distance = std::distance(range.first, range.second);
+        std::for_each(range.first, range.second, [&](const decltype(sigusr_use)::iterator& it)
+        {
+            hard_assert(it->first == id);
+            sigusr_available[map_sigusr(it->second)] = true;
+        });
+        const size_t erased_count = sigusr_use.erase(id);
+        hard_assert(erased_count == distance);
+    }
+    void unregister_sigusr_use(const std::string& id, const int sig) noexcept
+    {
+        init_sigusr_tracking();
+
+        unlikely_if (!verify_sig(sig, sig_type::sigusr))
+            return;
+
+        std::lock_guard<std::mutex> lock(sigusr_mtx);
+        unlikely_if (!sigusr_use.contains(id))
+            return;
+        sigusr_available[map_sigusr(sig)] = true;
+        std::erase_if(sigusr_use, [&](const decltype(sigusr_use)::value_type& pair)
+        {
+            return (pair.first == id) && (pair.second == sig);
+        });
+    }
+    warn_usage_suggest_alternative(
+        "unregister_sigusr_use(const std::string&, const int)",
+        "unregister_sigusr_use(const std::string&)"
+    )
+    void unregister_sigusr_use(const int sig) noexcept
+    {
+        init_sigusr_tracking();
+
+        unlikely_if (!verify_sig(sig, sig_type::sigusr))
+            return;
+
+        std::lock_guard<std::mutex> lock(sigusr_mtx);
+        std::erase_if(sigusr_use, [&](const decltype(sigusr_use)::value_type& pair)
+        {
+            return pair.second == sig;
+        });
+        sigusr_available[map_sigusr(sig)] = true;
+    }
+
+    tid_t get_signaled_thread_tid() noexcept
+    {
+        return signaled_thread_tid.load(std::memory_order::acquire);
+    }
+
+    // Needs to be called from main thread
+    warn_usage_suggest_alternative("sigmgr::init()")
+    void start_signaled_thread() noexcept
+    {
+        pid_t pid = TRY_SYSCALL_WHILE_EINTR(::getpid, ());
+        tid_t tid = TRY_SYSCALL_WHILE_EINTR(::gettid, ());
+        if (pid != tid)
+            std::terminate();
+
+        redirect_signals_to_signaled_thread();
+
+        if (!signaled_thread.joinable())
+            signaled_thread = std::thread(signaled_thread_func);
+    }
+
+    void stop_signaled_thread() noexcept
+    {
+        if (signaled_thread.joinable())
+        {
+            auto future = std::async(std::launch::async, [&]()
+            {
+                signaled_thread.join();
+            });
+            int res = ::pthread_cancel(signaled_thread_pthread.load(std::memory_order::acquire));
+            if (res != 0)
+                std::terminate();
+            future.get();
+        }
+    }
+
+    std::set<int> uses(const std::string& id) noexcept
+    {
+        std::set<int> ret;
+
+        std::unique_lock<std::mutex> lock_rtsig(rtsig_mtx);
+        for (const auto& pair : rtsig_use)
+        {
+            if (pair.first == id)
+                ret.insert(pair.second);
+        }
+        lock_rtsig.unlock();
+
+        std::unique_lock<std::mutex> lock_sigusr(sigusr_mtx);
+        for (const auto& pair : sigusr_use)
+        {
+            if (pair.first == id)
+                ret.insert(pair.second);
+        }
+
+        return ret;
+    }
+
+    void init() noexcept
+    {
+        detail::init();
+
+        start_signaled_thread();
+        init_rtsig_tracking();
+        init_sigusr_tracking();
+    }
+}

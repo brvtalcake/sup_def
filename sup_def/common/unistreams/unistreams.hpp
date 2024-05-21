@@ -32,6 +32,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/inotify.h>
+#include <sys/fanotify.h>
 #include <sys/ioctl.h>
 #include <sys/signalfd.h>
 #include <sys/epoll.h>
@@ -422,6 +423,7 @@ namespace uni
                 static std::shared_mutex mtx;
                 static std::set<file_descriptor_t> tracked;
                 static std::atomic<int> signal_used;
+                /* struct fanotify_event_metadata* event; */
         };
 
         class file_descriptor_wrapper : protected tracked_fds
@@ -431,57 +433,20 @@ namespace uni
             using base_type = tracked_fds;
 
             public:
-                file_descriptor_wrapper()
-                    : base_type()
-                    , path()
-                    , fd(-1)
-                    , wd(-1)
-                    , flags(default_open_flags)
-                { }
+                file_descriptor_wrapper() noexcept;
 
                 file_descriptor_wrapper(
                     const std::filesystem::path& p,
-                    int open_flags = default_open_flags,
-                    bool ensure_wont_change = true
-                )
-                try
-                    : base_type()
-                    , path(p)
-                    , fd(-1)
-                    , wd(-1)
-                    , flags(open_flags)
-                {
-                    using namespace std::string_literals;
-                    this->fd = TRY_SYSCALL_WHILE_EINTR(::open, (p.c_str(), open_flags));
-                    if (this->fd < 0)
-                        throw InternalError(
-                            "file_descriptor_wrapper::file_descriptor_wrapper(const std::filesystem::path&, int, bool): "s
-                            + "Failed to open file: "s
-                            + std::string(::strerror(errno))
-                        );
-
-                    if (ensure_wont_change)
-                    {
-                        this->wd = TRY_SYSCALL_WHILE_EINTR(::inotify_init1, (IN_NONBLOCK));
-                        if (this->wd <= 0)
-                            throw InternalError(
-                                "file_descriptor_wrapper::file_descriptor_wrapper(const std::filesystem::path&, int, bool): "s
-                                + "Failed to initialize inotify: "s
-                                + std::string(::strerror(errno))
-                            );
-                    }
-                }
-                catch (...)
-                {
-                    if (this->fd != -1)
-                        TRY_SYSCALL_WHILE_EINTR(::close, (this->fd));
-                    throw;
-                }
+                    int open_flags = default_open_flags
+                );
+                file_descriptor_wrapper(
+                    std::filesystem::path&& p,
+                    int open_flags = default_open_flags
+                );
 
             private:
                 std::filesystem::path path;
                 file_descriptor_t fd;
-                file_descriptor_t wd;
                 int flags;
         };
         class mmaped_file
@@ -675,173 +640,7 @@ namespace uni
                 encoding_mode file_encoding;
                 std::locale loc;
 
-                // Is high surrogate ?
-                static constexpr bool is_high_surrogate(uint16_t c)
-                { return c >= 0xD800 && c <= 0xDBFF; }
-
-                // Is low surrogate ?
-                static constexpr bool is_low_surrogate(uint16_t c)
-                { return c >= 0xDC00 && c <= 0xDFFF; }
-
-                // Find next utf-8 encoded character
-                static constexpr const char* find_next_u8(const char* s, const char* const last)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const plast = reinterpret_cast<const uint8_t* const>(last);
-                    do
-                    {
-                        if (pbytes >= plast)
-                            return nullptr;
-                        ++pbytes;
-                    } while ((*pbytes & 0xC0) == 0x80);
-                    return reinterpret_cast<const char*>(pbytes);
-                }
-
-                // Find previous utf-8 encoded character
-                static constexpr const char* find_prev_u8(const char* s, const char* const first)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const pfirst = reinterpret_cast<const uint8_t* const>(first);
-                    do
-                    {
-                        if (pbytes <= pfirst)
-                            return nullptr;
-                        --pbytes;
-                    } while ((*pbytes & 0xC0) == 0x80);
-                    return reinterpret_cast<const char*>(pbytes);
-                }
-
-                // Find next utf-16be encoded character (considering surrogate pairs)
-                static constexpr const char* find_next_u16be(const char* s, const char* const last)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const plast = reinterpret_cast<const uint8_t* const>(last);
-                    uint16_t hi;
-                    uint16_t lo;
-                    if (pbytes + 2 > plast)
-                        return nullptr;
-                    hi = (uint16_t(*pbytes) << 8) | uint16_t(*(pbytes + 1));
-                    if (is_high_surrogate(hi))
-                    {
-                        if (pbytes + 4 > plast)
-                            return nullptr;
-                        lo = (uint16_t(*(pbytes + 2)) << 8) | uint16_t(*(pbytes + 3));
-                        if (is_low_surrogate(lo))
-                            return reinterpret_cast<const char*>(pbytes + 4);
-                        else
-                            return nullptr;
-                    }
-                    return reinterpret_cast<const char*>(pbytes + 2);
-                }
-
-                // Find previous utf-16be encoded character (considering surrogate pairs)
-                static constexpr const char* find_prev_u16be(const char* s, const char* const first)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const pfirst = reinterpret_cast<const uint8_t* const>(first);
-                    uint16_t hi;
-                    uint16_t lo;
-                    if (pbytes - 2 < pfirst)
-                        return nullptr;
-                    lo = (uint16_t(*(pbytes - 2)) << 8) | uint16_t(*(pbytes - 1));
-                    if (is_low_surrogate(lo))
-                    {
-                        if (pbytes - 4 < pfirst)
-                            return nullptr;
-                        hi = (uint16_t(*(pbytes - 4)) << 8) | uint16_t(*(pbytes - 3));
-                        if (is_high_surrogate(hi))
-                            return reinterpret_cast<const char*>(pbytes - 4);
-                        else
-                            return nullptr;
-                    }
-                    return reinterpret_cast<const char*>(pbytes - 2);
-                }
-
-                // Find next utf-16le encoded character (considering surrogate pairs)
-                static constexpr const char* find_next_u16le(const char* s, const char* const last)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const plast = reinterpret_cast<const uint8_t* const>(last);
-                    uint16_t hi;
-                    uint16_t lo;
-                    if (pbytes + 2 > plast)
-                        return nullptr;
-                    hi = (uint16_t(*(pbytes + 1)) << 8) | uint16_t(*pbytes);
-                    if (is_high_surrogate(hi))
-                    {
-                        if (pbytes + 4 > plast)
-                            return nullptr;
-                        lo = (uint16_t(*(pbytes + 3)) << 8) | uint16_t(*(pbytes + 2));
-                        if (is_low_surrogate(lo))
-                            return reinterpret_cast<const char*>(pbytes + 4);
-                        else
-                            return nullptr;
-                    }
-                    return reinterpret_cast<const char*>(pbytes + 2);
-                }
-
-                // Find previous utf-16le encoded character (considering surrogate pairs)
-                static constexpr const char* find_prev_u16le(const char* s, const char* const first)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const pfirst = reinterpret_cast<const uint8_t* const>(first);
-                    uint16_t hi;
-                    uint16_t lo;
-                    if (pbytes - 2 < pfirst)
-                        return nullptr;
-                    lo = (uint16_t(*(pbytes - 1)) << 8) | uint16_t(*(pbytes - 2));
-                    if (is_low_surrogate(lo))
-                    {
-                        if (pbytes - 4 < pfirst)
-                            return nullptr;
-                        hi = (uint16_t(*(pbytes - 3)) << 8) | uint16_t(*(pbytes - 4));
-                        if (is_high_surrogate(hi))
-                            return reinterpret_cast<const char*>(pbytes - 4);
-                        else
-                            return nullptr;
-                    }
-                    return reinterpret_cast<const char*>(pbytes - 2);
-                }
-
-                // Find next utf-32be encoded character
-                static constexpr const char* find_next_u32be(const char* s, const char* const last)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const plast = reinterpret_cast<const uint8_t* const>(last);
-                    if (pbytes + 4 > plast)
-                        return nullptr;
-                    return reinterpret_cast<const char*>(pbytes + 4);
-                }
-
-                // Find previous utf-32be encoded character
-                static constexpr const char* find_prev_u32be(const char* s, const char* const first)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const pfirst = reinterpret_cast<const uint8_t* const>(first);
-                    if (pbytes - 4 < pfirst)
-                        return nullptr;
-                    return reinterpret_cast<const char*>(pbytes - 4);
-                }
-
-                // Find next utf-32le encoded character
-                static constexpr const char* find_next_u32le(const char* s, const char* const last)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const plast = reinterpret_cast<const uint8_t* const>(last);
-                    if (pbytes + 4 > plast)
-                        return nullptr;
-                    return reinterpret_cast<const char*>(pbytes + 4);
-                }
-
-                // Find previous utf-32le encoded character
-                static constexpr const char* find_prev_u32le(const char* s, const char* const first)
-                {
-                    const uint8_t* pbytes = reinterpret_cast<const uint8_t*>(s);
-                    const uint8_t* const pfirst = reinterpret_cast<const uint8_t* const>(first);
-                    if (pbytes - 4 < pfirst)
-                        return nullptr;
-                    return reinterpret_cast<const char*>(pbytes - 4);
-                }
+                
 
                 constexpr const char* find_next(const char* s, const char* const last)
                     requires (!std::same_as<CharT, wchar_t>);
@@ -1274,6 +1073,12 @@ namespace uni
 
 namespace uni
 {
+    /* template <typename CharT>
+        requires supported_uni_char<CharT>
+    bool isspace(CharT c)
+    {
+        return std::isspace(c, detail::str_conv_base::getloc());
+    } */
     namespace literals
     {
         static constexpr inline char operator ""uni(const char c)

@@ -19,13 +19,13 @@ namespace SupDef
 
         void call_constructors()
         {
-            if (constructors_called.load() == true)
+            if (constructors_called.load(std::memory_order::acquire) == true)
                 return;
             for (auto& constructor : constructors)
             {
                 constructor();
             }
-            constructors_called.store(true);
+            constructors_called.store(true, std::memory_order::release);
         }
     }
 };

@@ -1979,6 +1979,10 @@ namespace SupDef
             SCOPE_SUCCESS = 2
         };
 
+        STATIC_TODO(
+            "Prefer using Boost.ScopeExit instead of std::experimental::scope_*"
+        );
+
 #if SUPDEF_HAS_SCOPE_EXIT
         template <DeferType T, typename F>
         using DeferImplBase = std::conditional_t<
@@ -3268,6 +3272,31 @@ namespace SupDef
         static_assert(std::same_as<CopyStdQualifiers<const int, volatile float>, const volatile float>);
         static_assert(std::same_as<CopyStdQualifiers<const int, volatile float, true>, const float>);
 
+        template <typename Tp, bool IsConst = false, bool IsVolatile = false>
+        struct MakeCvIfImpl
+        {
+            private:
+                template <typename T>
+                using treat_const = std::conditional_t<
+                    IsConst,
+                    std::add_const_t<T>,
+                    T
+                >;
+
+                template <typename T>
+                using treat_volatile = std::conditional_t<
+                    IsVolatile,
+                    std::add_volatile_t<T>,
+                    T
+                >;
+
+            public:
+                using type = treat_volatile<treat_const<Tp>>;
+        };
+
+        template <typename Tp, bool IsConst = false, bool IsVolatile = false>
+        using MakeCvIf = typename MakeCvIfImpl<Tp, IsConst, IsVolatile>::type;
+
         template <typename Tp>
         struct MakeRestrictImpl
         {
@@ -3420,6 +3449,12 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 return !ckd_sub(&temp_res, 0, val);
             }
         };
+
+        STATIC_TODO(
+            "Maybe use Boost.NumericConversion ? "
+            "Maybe use Boost.Saturating ? "
+            "Maybe use Boost.SafeNumerics ?"
+        );
 
         template <typename Int>
             requires std::integral<Int>
@@ -4191,13 +4226,22 @@ namespace SupDef
         static_assert(std::same_as<array_t<pointer_t<int>, 5>, int* [5]>);
         static_assert(std::same_as<pointer_t<array_t<int, 5>>, int(*)[5]>);
 
+        // TODO: Implement my own as per the standard `ITER_CONCEPT`
+        template <typename IterT>
+        using iterator_concept_t = std::__detail::__iter_concept<IterT>;
+
         void call_constructors();
         void call_destructors();
+
+        void add_destructor(const std::function<void()>& destructor) noexcept;
+        void set_cleanup_handlers() noexcept;
+
         struct InitDeinit
         {
             InitDeinit()
             {
                 ::SupDef::Util::call_constructors();
+                ::SupDef::Util::set_cleanup_handlers();
             }
             ~InitDeinit()
             {
@@ -4208,17 +4252,6 @@ namespace SupDef
         warn_unused_result()
         bool is_under_debugger();
         void breakpoint();
-
-        bool is_rtsig_usable() noexcept;
-        bool is_rtsig_usable(int sig) noexcept;
-
-        std::pair<bool, int> register_rtsig_use(std::string id) noexcept;
-        warn_usage_suggest_alternative("register_rtsig_use(std::string)")
-        bool register_rtsig_use(std::string id, int sig) noexcept;
-
-        void unregister_rtsig_use(std::string id) noexcept;
-        warn_usage_suggest_alternative("unregister_rtsig_use(std::string)")
-        void unregister_rtsig_use(int sig) noexcept;
     }
 }
 

@@ -39,6 +39,49 @@ namespace uni
     }
 #endif
 
+    detail::file_descriptor_wrapper::file_descriptor_wrapper() noexcept
+        : base_type()
+        , path()
+        , fd(-1)
+        , flags(default_open_flags)
+    { }
+
+    detail::file_descriptor_wrapper::file_descriptor_wrapper(const std::filesystem::path& p, int open_flags = default_open_flags)
+        : base_type()
+        , path(p)
+        , fd(-1)
+        , flags(open_flags)
+    {
+        using namespace std::string_literals;
+
+        this->fd = TRY_SYSCALL_WHILE_EINTR(::open, (p.c_str(), open_flags));
+        if (this->fd < 0)
+            throw InternalError(
+                "file_descriptor_wrapper::file_descriptor_wrapper(const std::filesystem::path&, int, bool): "s
+                + "Failed to open file: "s
+                + std::string(::strerror(errno))
+            );
+        errno = 0;
+    }
+
+    detail::file_descriptor_wrapper::file_descriptor_wrapper(std::filesystem::path&& p, int open_flags = default_open_flags)
+        : base_type()
+        , path(std::move(p))
+        , fd(-1)
+        , flags(open_flags)
+    {
+        using namespace std::string_literals;
+
+        this->fd = TRY_SYSCALL_WHILE_EINTR(::open, (this->path.c_str(), open_flags));
+        if (this->fd < 0)
+            throw InternalError(
+                "file_descriptor_wrapper::file_descriptor_wrapper(const std::filesystem::path&, int, bool): "s
+                + "Failed to open file: "s
+                + std::string(::strerror(errno))
+            );
+        errno = 0;
+    }
+
     char* detail::mmaped_file::to_chars(mapped_t ptr)
     {
         return reinterpret_cast<char*>(ptr);
