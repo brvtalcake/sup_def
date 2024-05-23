@@ -1,10 +1,19 @@
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/report_target_properties.cmake)
 
+include(FetchContent)
+
 find_package(Boost ${BOOST_VER_NEEDED} REQUIRED)
 
 if (NOT Boost_FOUND)
     message(FATAL_ERROR "Boost not found")
 endif()
+
+# TODO: Add a FetchContent_Declare for `simdutf` and link sdthirdparty to it
+FetchContent_Declare(
+    simdutf
+    SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/simdutf"
+)
+FetchContent_MakeAvailable(simdutf)
 
 add_subdirectory("./empty_macro")
 add_subdirectory("./map")
@@ -12,6 +21,7 @@ add_subdirectory("./gnulib_modules")
 add_library(sdthirdparty INTERFACE)
 add_dependencies(sdthirdparty build_gnulib_modules)
 target_link_libraries(sdthirdparty INTERFACE sdthirdparty_empty_macro sdthirdparty_map)
+target_link_libraries(sdthirdparty INTERFACE simdutf::simdutf)
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/chaos-pp/")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../")

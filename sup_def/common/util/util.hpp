@@ -3371,6 +3371,7 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
             requires
                 requires(T t1, T t2)
                 {
+                    { t1 == t2 } -> std::convertible_to<bool>;
                     { t1 > t2 } -> std::convertible_to<bool>;
                     T(0);
                 }
@@ -3419,6 +3420,7 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
 
         namespace
         {
+#if 0
             template <typename Int>
                 requires std::integral<Int>
             constexpr static inline bool add_exceeds_max(Int a, Int b)
@@ -3439,6 +3441,7 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
             {
                 return same_sign(a, b);
             }
+#endif
 
             template <typename Int>
                 requires std::integral<Int>
@@ -3452,111 +3455,307 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
 
         STATIC_TODO(
             "Maybe use Boost.NumericConversion ? "
-            "Maybe use Boost.Saturating ? "
+            /* "Maybe use Boost.Saturating ? " */
             "Maybe use Boost.SafeNumerics ?"
         );
 
-        template <typename Int>
-            requires std::integral<Int>
+        template <std::integral Int>
         constexpr static inline Int saturated_add(
             Int a, Int b,
             Int min = std::numeric_limits<Int>::lowest(),
             Int max = std::numeric_limits<Int>::max()
         )
         {
-            if (min != std::numeric_limits<Int>::lowest() || max != std::numeric_limits<Int>::max())
-            {
-                TODO("Implement a `saturated_add_explicit` function");
-            }
-#if __cpp_lib_saturation_arithmetic >= 202311L
-            return std::add_sat(a, b);
-#else
             Int res;
-            if (!ckd_add(&res, a, b))
-                return res;
-            else if (add_exceeds_max(a, b))
-                return std::numeric_limits<Int>::max();
-            else
-                return std::numeric_limits<Int>::lowest();
+
+            if (min == std::numeric_limits<Int>::lowest() && max == std::numeric_limits<Int>::max())
+            {
+                // Classic saturated addition with signed integral type
+#if __cpp_lib_saturation_arithmetic >= 202311L
+                res = std::add_sat(a, b);
+#else
+                if (ckd_add(&res, a, b))
+                {
+                    if (a < 0)
+                        res = std::numeric_limits<Int>::lowest();
+                    res = std::numeric_limits<Int>::max();
+                }
 #endif
+            }
+            else
+            {
+                // Saturated addition with explicit min and max, with signed integral type
+                unlikely_if (a < min || b < min)
+                    throw InternalException("saturated_add: a and b should be >= min");
+                unlikely_if (a > max || b > max)
+                    throw InternalException("saturated_add: a and b should be <= max");
+                
+                res = saturated_add(a, b);
+                if (res > max)
+                    res = max;
+                else if (res < min)
+                    res = min;
+            }
+
+            return res;
         }
 
-        template <typename Int>
-            requires std::integral<Int>
+        template <std::integral Int>
+            requires std::unsigned_integral<Int>
+        constexpr static inline Int saturated_add(
+            Int a, Int b,
+            Int min = std::numeric_limits<Int>::lowest(),
+            Int max = std::numeric_limits<Int>::max()
+        )
+        {
+            Int res;
+
+            if (min == std::numeric_limits<Int>::lowest() && max == std::numeric_limits<Int>::max())
+            {
+                // Classic saturated addition with unsigned integral type
+#if __cpp_lib_saturation_arithmetic >= 202311L
+                res = std::add_sat(a, b);
+#else
+                res = Int(a) + Int(b);
+                if (res < a)
+                    res = std::numeric_limits<Int>::max();
+#endif
+            }
+            else
+            {
+                // Saturated addition with explicit min and max, with unsigned integral type
+                unlikely_if (a < min || b < min)
+                    throw InternalException("saturated_add: a and b should be >= min");
+                unlikely_if (a > max || b > max)
+                    throw InternalException("saturated_add: a and b should be <= max");
+                
+                res = saturated_add(a, b);
+                if (res > max)
+                    res = max;
+                // No need to check if res < min, since a + b >= min && a + b == res --> res >= min
+            }
+
+            return res;
+        }
+
+        template <std::integral Int>
         constexpr static inline Int saturated_sub(
             Int a, Int b,
             Int min = std::numeric_limits<Int>::lowest(),
             Int max = std::numeric_limits<Int>::max()
         )
         {
-            if (min != std::numeric_limits<Int>::lowest() || max != std::numeric_limits<Int>::max())
-            {
-                TODO("Implement a `saturated_sub_explicit` function");
-            }
-#if __cpp_lib_saturation_arithmetic >= 202311L
-            return std::sub_sat(a, b);
-#else
             Int res;
-            if (!ckd_sub(&res, a, b))
-                return res;
-            else if (sub_exceeds_max(a, b))
-                return std::numeric_limits<Int>::max();
-            else
-                return std::numeric_limits<Int>::lowest();
+
+            if (min == std::numeric_limits<Int>::lowest() && max == std::numeric_limits<Int>::max())
+            {
+                // Classic saturated subtraction with signed integral type
+#if __cpp_lib_saturation_arithmetic >= 202311L
+                res = std::sub_sat(a, b);
+#else
+                if (ckd_sub(&res, a, b))
+                {
+                    if (a < 0)
+                        res = std::numeric_limits<Int>::lowest();
+                    res = std::numeric_limits<Int>::max();
+                }
 #endif
+            }
+            else
+            {
+                // Saturated subtraction with explicit min and max, with signed integral type
+                unlikely_if (a < min || b < min)
+                    throw InternalException("saturated_sub: a and b should be >= min");
+                unlikely_if (a > max || b > max)
+                    throw InternalException("saturated_sub: a and b should be <= max");
+                
+                res = saturated_sub(a, b);
+                if (res < min)
+                    res = min;
+                else if (res > max)
+                    res = max;
+            }
+
+            return res;
         }
 
-        template <typename Int>
-            requires std::integral<Int>
+        template <std::integral Int>
+            requires std::unsigned_integral<Int>
+        constexpr static inline Int saturated_sub(
+            Int a, Int b,
+            Int min = std::numeric_limits<Int>::lowest(),
+            Int max = std::numeric_limits<Int>::max()
+        )
+        {
+            Int res;
+
+            if (min == std::numeric_limits<Int>::lowest() && max == std::numeric_limits<Int>::max())
+            {
+                // Classic saturated subtraction with unsigned integral type
+#if __cpp_lib_saturation_arithmetic >= 202311L
+                res = std::sub_sat(a, b);
+#else
+                res = Int(a) - Int(b);
+                if (res > a)
+                    res = std::numeric_limits<Int>::lowest();
+#endif
+            }
+            else
+            {
+                // Saturated subtraction with explicit min and max, with unsigned integral type
+                unlikely_if (a < min || b < min)
+                    throw InternalException("saturated_sub: a and b should be >= min");
+                unlikely_if (a > max || b > max)
+                    throw InternalException("saturated_sub: a and b should be <= max");
+                
+                res = saturated_sub(a, b);
+                if (res < min)
+                    res = min;
+                // No need to check if res > max, since a - b <= max && a - b == res --> res <= max
+            }
+
+            return res;
+        }
+
+
+        template <std::integral Int>
         constexpr static inline Int saturated_mul(
             Int a, Int b,
             Int min = std::numeric_limits<Int>::lowest(),
             Int max = std::numeric_limits<Int>::max()
         )
         {
-            if (min != std::numeric_limits<Int>::lowest() || max != std::numeric_limits<Int>::max())
-            {
-                TODO("Implement a `saturated_mul_explicit` function");
-            }
-#if __cpp_lib_saturation_arithmetic >= 202311L
-            return std::mul_sat(a, b);
-#else
             Int res;
-            if (!ckd_mul(&res, a, b))
-                return res;
-            else if (mul_exceeds_max(a, b))
-                return std::numeric_limits<Int>::max();
-            else
-                return std::numeric_limits<Int>::lowest();
+
+            if (min == std::numeric_limits<Int>::lowest() && max == std::numeric_limits<Int>::max())
+            {
+                // Classic saturated multiplication with signed integral type
+#if __cpp_lib_saturation_arithmetic >= 202311L
+                res = std::mul_sat(a, b);
+#else
+                if (ckd_mul(&res, a, b))
+                {
+                    if constexpr (std::unsigned_integral<Int>)
+                        res = std::numeric_limits<Int>::max();
+                    else
+                    {
+                        if (bool(a < 0) != bool(b < 0))
+                            res = std::numeric_limits<Int>::lowest();
+                        res = std::numeric_limits<Int>::max();
+                    }
+                }
 #endif
+            }
+            else
+            {
+                // Saturated multiplication with explicit min and max, with signed integral type
+                unlikely_if (a < min || b < min)
+                    throw InternalException("saturated_mul: a and b should be >= min");
+                unlikely_if (a > max || b > max)
+                    throw InternalException("saturated_mul: a and b should be <= max");
+                
+                res = saturated_mul(a, b);
+                if (res > max)
+                    res = max;
+                else if (res < min)
+                    res = min;
+            }
+
+            return res;
         }
 
-        template <typename Int>
-            requires std::integral<Int>
+        template <std::integral Int>
         constexpr static inline Int saturated_div(
             Int a, Int b,
             Int min = std::numeric_limits<Int>::lowest(),
             Int max = std::numeric_limits<Int>::max()
         )
         {
-            if (min != std::numeric_limits<Int>::lowest() || max != std::numeric_limits<Int>::max())
+            unlikely_if (b == 0)
+                throw InternalException("saturated_div: b should be != 0");
+
+            Int res;
+
+            if (min == std::numeric_limits<Int>::lowest() && max == std::numeric_limits<Int>::max())
             {
-                TODO("Implement a `saturated_div_explicit` function");
+                // Classic saturated division with signed integral type
+#if __cpp_lib_saturation_arithmetic >= 202311L
+                res = std::div_sat(a, b);
+#else
+                if constexpr (std::signed_integral<Int>)
+	            {
+                    if (a == std::numeric_limits<Int>::lowest() && b == Int(-1))
+	                    res = std::numeric_limits<Int>::max();
+                    else
+                        res = Int(a) / Int(b);
+                }
+                else
+                    res = Int(a) / Int(b);
+#endif
             }
-            TODO();
+            else
+            {
+                // Saturated division with explicit min and max, with signed integral type
+                unlikely_if (a < min || b < min)
+                    throw InternalException("saturated_div: a and b should be >= min");
+                unlikely_if (a > max || b > max)
+                    throw InternalException("saturated_div: a and b should be <= max");
+                
+                res = saturated_div(a, b);
+                if (res > max)
+                    res = max;
+                else if (res < min)
+                    res = min;
+            }
+
+            return res;
         }
 
-        template <typename Int1, typename Int2>
-            requires std::integral<Int1> && std::integral<Int2>
-        constexpr static inline Int1 saturated_cast(Int2 val)
+        template <std::integral Res, std::integral From>
+        constexpr static inline Res saturated_cast(From val)
         {
+            if constexpr (std::same_as<Res, From>)
+                return val;
+
 #if __cpp_lib_saturation_arithmetic >= 202311L
-            return std::saturate_cast<Int1>(val);
+            return std::saturate_cast<Res>(val);
 #else
-            TODO();
+            constexpr int digits_res  = std::numeric_limits<Res >::digits;
+            constexpr int digits_from = std::numeric_limits<From>::digits;
+            
+            constexpr Res max_res = std::numeric_limits<Res>::max();
+
+            if constexpr (bool(std::signed_integral<Res>) == bool(std::signed_integral<From>))
+	        {
+	            if constexpr (digits_res < digits_from)
+	            {
+	                constexpr Res min_res = std::numeric_limits<Res>::lowest();
+
+	                if (val < static_cast<From>(min_res))
+		                return min_res;
+	                else if (val > static_cast<From>(max_res))
+                        return max_res;
+	            }
+	        }
+            else if constexpr (bool(std::signed_integral<From>)) // Res is unsigned
+	        {
+	            if (val < 0)
+	                return 0;
+	            else if (std::make_unsigned_t<From>(val) > max_res)
+                    return max_res;
+	        }
+            else // From is unsigned, Res is signed
+	        {
+	            if (val > std::make_unsigned_t<Res>(max_res))
+	                return max_res;
+	        }
+            return static_cast<Res>(val);
 #endif
         }
 
+        STATIC_TODO(
+            "Verify saturated_<op> functions, and rewrite tests for them"
+        );
         static_assert(saturated_add(1, 2) == 3);
         static_assert(saturated_add(std::numeric_limits<int>::max(), int(1)) == std::numeric_limits<int>::max());
         static_assert(saturated_add(std::numeric_limits<int>::lowest(), int(-1)) == std::numeric_limits<int>::lowest());
@@ -3576,7 +3775,9 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
         static_assert(saturated_mul(std::numeric_limits<int>::lowest() / 2, int(-5)) == std::numeric_limits<int>::max());
 
         STATIC_TODO("As for `saturated_<op>` functions, add optional parameters to specify the min and max values");
-        
+        STATIC_TODO(
+            "Rewrite wrapped_<op> functions, and write tests for them"
+        );
         template <typename Int>
             requires std::integral<Int>
         constexpr static inline Int wrapped_add(Int a, Int b)
