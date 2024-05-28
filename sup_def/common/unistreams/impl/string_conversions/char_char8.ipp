@@ -26,8 +26,13 @@
 #undef CURRENT_CONVERTER_TYPE
 #define CURRENT_CONVERTER_TYPE void
 
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION uni::detail::string_conversions<char, char8_t>
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING PP_STRINGIZE(::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION)
+
 template <>
-struct ::uni::detail::string_conversions<char, char8_t>
+struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
     : protected ::uni::detail::str_conv_base
 {
     private:
@@ -51,22 +56,60 @@ struct ::uni::detail::string_conversions<char, char8_t>
             using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
             using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
 
-            unlikely_if (f.size() == 0)
+            unlikely_if (from.size() == 0)
                 return to_type();
 
-            to_type to(f.size(), base_char_to{0});
+            to_type to(from.size(), base_char_to{0});
 
-            for (size_t i = 0; i < f.size(); ++i)
+            for (size_t i = 0; i < from.size(); ++i)
                 to[i] = static_cast<base_char_to>(f[i]);
 
             return to;
         }
 };
 
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION uni::detail::string_conversions<char8_t, char>
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING PP_STRINGIZE(::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION)
+
 template <>
-struct ::uni::detail::string_conversions<char8_t, char>
+struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
     : protected ::uni::detail::str_conv_base
 {
+    private:
+        typedef char8_t char_from;
+        typedef char    char_to;
+
+        typedef ::uni::char_traits<char_from> traits_from;
+        typedef ::uni::char_traits<char_to>   traits_to;
+
+        typedef traits_from::base_char_type base_char_from;
+        typedef traits_to  ::base_char_type base_char_to;
+
+        typedef CURRENT_CONVERTER_TYPE converter_type;
+
+    public:
+        template <typename AllocFrom, typename AllocTo>
+        static constexpr ::uni::string<char_to, traits_to, AllocTo> operator()(
+            const ::uni::string<char_from, traits_from, AllocFrom>& from
+        )
+        {
+            using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
+            using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
+
+            unlikely_if (from.size() == 0)
+                return to_type();
+
+            to_type to(from.size(), base_char_to{0});
+
+            for (size_t i = 0; i < from.size(); ++i)
+                to[i] = static_cast<base_char_to>(f[i]);
+
+            return to;
+        }
 };
 
 #undef CURRENT_CONVERTER_TYPE
+#undef UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING

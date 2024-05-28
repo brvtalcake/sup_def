@@ -15,7 +15,7 @@ prog_name : str        = sys.argv[0]
 prog_args : list[str]  = sys.argv[1:]
 call_dir  : str        = os.path.abspath(os.getcwd())
 
-LICENSE_STR = """
+license_str = """
 /* 
  * MIT License
  * 
@@ -41,7 +41,7 @@ LICENSE_STR = """
  */
 """
 
-TYPES_LIST = [
+types_list = [
     ["char", "wchar"],
     ["char", "char8"],
     ["char", "char16"],
@@ -78,7 +78,7 @@ TYPES_LIST = [
     ["utf16", "utf32"]
 ]
 
-STRUCT_TEMPLATE = Template("""
+struct_template = Template("""
 
 #undef  CURRENT_CONVERTER_TYPE
 #define CURRENT_CONVERTER_TYPE /* Define the converter type here if used, void otherwise */
@@ -130,27 +130,28 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
 """)
 
 def parse_cmdline_type_pairs(args: list[str]) -> list[tuple[str, str]]:
+    def print_groups(groups: re.Match):
+        for i in range(1, len(groups.groups()) + 1):
+            print(f"Group {i}: {groups.group(i)}")
     if len(args) == 0:
         unreachable()
-    type_regex  : str                   = r"(char|wchar|char8|char16|char32|utf8|utf16|utf32)"
-    tuple_regex : re.Pattern            = re.compile(r"^\s*" + type_regex + r"\s*,\s*" + type_regex + r"\s*$")
-    ret         : list[tuple[str, str]] = []
+    type_regex = r"(char|wchar|char8|char16|char32|utf8|utf16|utf32)"
+    tuple_regex = re.compile(r"^\s*" + type_regex + r"\s*,\s*" + type_regex + r"\s*$")
+    type_list = []
     for arg in args:
         match = tuple_regex.match(arg)
         if match is None:
             print_error(f"Invalid type pair: {arg}")
             return []
-        if match.group(1) == match.group(2):
-            print_error(f"Type pair {arg} is invalid: types must be different")
-            return []
-        ret.append((match.group(1), match.group(2)))
-    return ret
+        print_groups(match)
+        type_list.append((match.group(1), match.group(2)))
+    return type_list
 
-def anyof(args: list[typing.Any], func: typing.Callable[[typing.Any], bool]) -> tuple[bool, int]:
-    for i, arg in enumerate(args):
+def anyof(args: list[typing.Any], func: typing.Callable[[typing.Any], bool]) -> bool:
+    for arg in args:
         if func(arg):
-            return (True, i)
-    return (False, -1)
+            return True
+    return False
 
 @typing.no_type_check
 def unreachable() -> typing.NoReturn:
@@ -199,13 +200,13 @@ def generate_content(t1: str, t2: str) -> str:
             return "utf32_char"
         else:
             raise ValueError(f"Invalid type {t}")
-    return LICENSE_STR + STRUCT_TEMPLATE.substitute(type1=generate_type(t1), type2=generate_type(t2))
+    return license_str + struct_template.substitute(type1=generate_type(t1), type2=generate_type(t2))
 
 def generate_file_name(t1: str, t2: str) -> str:
     return f"{t1}_{t2}.ipp"    
 
 def generate_classic():
-    for types in TYPES_LIST:
+    for types in types_list:
         file = os.path.abspath(generate_file_name(types[0], types[1]))
         if os.path.exists(file):
             os.remove(file)
@@ -215,7 +216,7 @@ def generate_classic():
     return
 
 def generate_noremove():
-    for types in TYPES_LIST:
+    for types in types_list:
         file = os.path.abspath(generate_file_name(types[0], types[1]))
         if os.path.exists(file):
             print(f"File {file} already exists, skipping")
@@ -225,18 +226,8 @@ def generate_noremove():
             f.write(generate_content(types[0], types[1]))
     return
 
-def generate_allof(genlist: list[tuple[str, str]], force: bool = False):
-    for types in genlist:
-        file = os.path.abspath(generate_file_name(types[0], types[1]))
-        if os.path.exists(file):
-            if force:
-                os.remove(file)
-            else:
-                print(f"File {file} already exists, skipping")
-                continue
-        with open(file, "w") as f:
-            print(f"Creating file {file}")
-            f.write(generate_content(types[0], types[1]))
+def generate_allof(genlist: list[tuple[str, str]]):
+    assert False, "Not implemented"
     return
 
 def print_error(msg: str):
@@ -244,12 +235,11 @@ def print_error(msg: str):
     return
 
 def usage():
-    print(f"Usage: {prog_name} [help|classic|noremove|allof [-f|--force] type,type [type,type ...]]")
+    print(f"Usage: {prog_name} [help|classic|noremove|allof (type, type) [(type, type) ...]]")
     print("\thelp: Display this message")
     print("\tclassic: Generate all files and remove existing ones")
     print("\tnoremove: Generate all files and skip existing ones")
     print("\tallof: Generate all files for all specified type pairs")
-    print("\t\t-f, --force: Force generation of all files, even if they already exist")
     return
 
 def main() -> int:
@@ -259,7 +249,7 @@ def main() -> int:
         print_error("Invalid number of arguments: expected at least one argument")
         usage()
         return 1
-    if anyof(prog_args, lambda x: str(x).strip() == "help")[0]:
+    if anyof(prog_args, lambda x: str(x).strip() == "help"):
         usage()
         return 1
     if prog_args[0] == "classic":
@@ -281,25 +271,21 @@ def main() -> int:
             print_error("Invalid number of arguments: expected at least two arguments")
             usage()
             return 1
-        currated_args : list[str] = prog_args[1:]
-        force         : bool      = False
-        # Remove all the args that are -f or --force, and set the force flag accordingly
-        if anyof(currated_args, lambda x: str(x).strip() == "-f" or str(x).strip() == "--force")[0]:
-            force = True
-            currated_args = [x for x in currated_args if str(x).strip() != "-f" and str(x).strip() != "--force"]
-        if len(currated_args) == 0:
-            print_error("Invalid number of arguments: expected at least one type pair")
-            usage()
-            return 1
-        type_pairs = parse_cmdline_type_pairs(currated_args)
-        if len(type_pairs) == 0:
-            return 1
-        generate_allof(type_pairs, force)
+        genlist = []
+        generate_allof(genlist)
         return 0
     else:
         print_error(f"Invalid argument \"{prog_args[0]}\"")
         usage()
         return 1
 
-if __name__ == "__main__":
-    exit(main())
+""" if __name__ == "__main__":
+    exit(main()) """
+
+import pprint
+
+#pprint.pprint(types_list)
+
+pprint.pprint(
+    parse_cmdline_type_pairs(prog_args)
+)

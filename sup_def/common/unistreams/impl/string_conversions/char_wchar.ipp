@@ -52,10 +52,10 @@ struct ::uni::detail::string_conversions<char, wchar_t>
             using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
             using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
 
-            unlikely_if (f.size() == 0)
+            unlikely_if (from.size() == 0)
                 return to_type();
 
-            to_type to(f.size(), base_char_to{0});
+            to_type to(from.size(), base_char_to{0});
 
             std::mbstate_t state{0};
             std::locale loc = getloc();
@@ -127,10 +127,10 @@ struct ::uni::detail::string_conversions<wchar_t, char>
             using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
             using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
 
-            unlikely_if (f.size() == 0)
+            unlikely_if (from.size() == 0)
                 return to_type();
 
-            to_type to(f.size(), base_char_to{0});
+            to_type to(from.size(), base_char_to{0});
 
             std::mbstate_t state{0};
             std::locale loc = getloc();

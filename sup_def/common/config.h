@@ -1554,19 +1554,15 @@
     #endif
 #endif
 
+#undef SUPDEF_HAVE_CPP_ATTRIBUTES_LIKELY_UNLIKELY
+#define SUPDEF_HAVE_CPP_ATTRIBUTES_LIKELY_UNLIKELY (SUPDEF_HAVE_CPP_ATTRIBUTE_LIKELY && SUPDEF_HAVE_CPP_ATTRIBUTE_UNLIKELY)
+
 #undef LIKELY_BRANCH_IMPL
-#ifdef likely_if
-    #undef likely_if
-#endif
-#ifdef likely_else_if
-    #undef likely_else_if
-#endif
-#ifdef likely_else
-    #undef likely_else
-#endif
-#ifdef likely_while
-    #undef likely_while
-#endif
+#undef likely_if
+#undef likely_else_if
+#undef likely_else
+#undef likely_while
+#undef SUPDEF_HAVE_CPP_ATTRIBUTE_LIKELY
 
 #define likely_if(expr) if LIKELY_BRANCH_IMPL(expr)
 #define likely_else_if(expr) else if LIKELY_BRANCH_IMPL(expr)
@@ -1576,6 +1572,7 @@
     #if __has_cpp_attribute(likely)
         #define LIKELY_BRANCH_IMPL(expr) (bool((expr))) [[likely]]
         #define likely_else else [[likely]]
+        #define SUPDEF_HAVE_CPP_ATTRIBUTE_LIKELY 1
     #endif
 #endif
 #ifndef likely_else
@@ -1601,18 +1598,11 @@
 #endif
 
 #undef UNLIKELY_BRANCH_IMPL
-#ifdef unlikely_if
-    #undef unlikely_if
-#endif
-#ifdef unlikely_else_if
-    #undef unlikely_else_if
-#endif
-#ifdef unlikely_else
-    #undef unlikely_else
-#endif
-#ifdef unlikely_while
-    #undef unlikely_while
-#endif
+#undef unlikely_if
+#undef unlikely_else_if
+#undef unlikely_else
+#undef unlikely_while
+#undef SUPDEF_HAVE_CPP_ATTRIBUTE_UNLIKELY
 
 #define unlikely_if(expr) if UNLIKELY_BRANCH_IMPL(expr)
 #define unlikely_else_if(expr) else if UNLIKELY_BRANCH_IMPL(expr)
@@ -1622,6 +1612,7 @@
     #if __has_cpp_attribute(unlikely)
         #define UNLIKELY_BRANCH_IMPL(expr) (bool((expr))) [[unlikely]]
         #define unlikely_else else [[unlikely]]
+        #define SUPDEF_HAVE_CPP_ATTRIBUTE_UNLIKELY 1
     #endif
 #endif
 #ifndef unlikely_else
