@@ -31,6 +31,9 @@ STATIC_TODO(
     "Finish / fix the static allocator implementation, and improve it"
     " (see https://www.boost.org/doc/libs/1_84_0/doc/html/interprocess/memory_algorithms.html for ideas)"
 );
+STATIC_TODO(
+    "Use stdemul::start_lifetime_as"
+);
 
 namespace SupDef
 {

@@ -140,10 +140,17 @@ def parse_cmdline_type_pairs(args: list[str]) -> list[tuple[str, str]]:
         if match is None:
             print_error(f"Invalid type pair: {arg}")
             return []
-        if match.group(1) == match.group(2):
-            print_error(f"Type pair {arg} is invalid: types must be different")
+        if bool([match.group(1), match.group(2)] in TYPES_LIST) == bool([match.group(2), match.group(1)] in TYPES_LIST):
+            if [match.group(1), match.group(2)] in TYPES_LIST:
+                print_fatal_internal_error(f"[{match.group(1)}, {match.group(2)}] and [{match.group(2)}, {match.group(1)}] are both in the types list. Please edit the script to fix this issue.")
+            else:
+                print_error(f"Type pair {arg} is invalid: types must be different")
             return []
-        ret.append((match.group(1), match.group(2)))
+        else:
+            ret.append(
+                (match.group(1), match.group(2)) if [match.group(1), match.group(2)] in TYPES_LIST else
+                (match.group(2), match.group(1))
+            )            
     return ret
 
 def anyof(args: list[typing.Any], func: typing.Callable[[typing.Any], bool]) -> tuple[bool, int]:
@@ -239,17 +246,22 @@ def generate_allof(genlist: list[tuple[str, str]], force: bool = False):
             f.write(generate_content(types[0], types[1]))
     return
 
+def print_fatal_internal_error(msg: str) -> typing.NoReturn:
+    print(f"{TERM_RED}{TERM_BOLD}FATAL INTERNAL ERROR: {TERM_RESET}{msg}")
+    return exit(-1)
+
 def print_error(msg: str):
     print(f"{TERM_RED}{TERM_BOLD}ERROR: {TERM_RESET}{msg}")
     return
 
 def usage():
     print(f"Usage: {prog_name} [help|classic|noremove|allof [-f|--force] type,type [type,type ...]]")
-    print("\thelp: Display this message")
-    print("\tclassic: Generate all files and remove existing ones")
-    print("\tnoremove: Generate all files and skip existing ones")
-    print("\tallof: Generate all files for all specified type pairs")
-    print("\t\t-f, --force: Force generation of all files, even if they already exist")
+    print("    help         Display this message")
+    print("    classic      Generate all files and remove existing ones")
+    print("    noremove     Generate all files and skip existing ones")
+    print("    allof        Generate all files for all specified type pairs")
+    print("      -f")
+    print("      --force    Force the generation of all files, even if they already exist")
     return
 
 def main() -> int:

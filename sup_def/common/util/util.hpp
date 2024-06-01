@@ -75,6 +75,70 @@ namespace SupDef
 {
     template<typename Tp, typename... Types>
     concept IsOneOf = std::disjunction_v<std::is_same<Tp, Types>...>;
+
+    namespace Util
+    {
+        namespace FeaturesEmulation
+        {
+            namespace
+            {
+                // If not implemented by libstdc++, make it a no-op (always std::true_type)
+                template <typename T>
+                struct is_implicit_lifetime : public std::true_type
+                { };
+
+                // Specialize if libstdc++ implements it
+                template <typename T>
+                    requires requires {
+                        { std::is_implicit_lifetime<T>::value } -> std::convertible_to<bool>;
+                    }
+                struct is_implicit_lifetime<T> : public std::is_implicit_lifetime<T>
+                { };
+
+                template <typename T>
+                constexpr inline bool is_implicit_lifetime_v = is_implicit_lifetime<T>::value;
+            }
+
+#ifdef __cpp_lib_start_lifetime_as
+            template <typename T, typename Void>
+                requires std::is_void_v<std::remove_cvref_t<Void>>
+            static constexpr decltype(auto) start_lifetime_as(Void* ptr) noexcept
+            {
+                return std::start_lifetime_as<T>(ptr);
+            }
+#else
+            template <typename T>
+                requires std::is_trivially_copyable_v<T> && is_implicit_lifetime_v<T>
+            static constexpr T* start_lifetime_as(void* ptr) noexcept
+            {
+                // On GCC (even in C++20/C++23 or later), only the std::memmove version seems to work
+                // (the C++ object model is apparently incorrectly implemented in GCC)
+                // ***
+                // Well actually, what is wrongly implemented in GCC isn't completely clear to me,
+                // but after some tests in different situations/linkages/lto/optimizations/etc,
+                // it seems that this version is the best and the most resilient. 
+                // One could also add ...
+                // `__attribute__((__optimize__("-fno-strict-aliasing")))`
+                // ... to the function declaration to make sure everything is fine.
+                // ***
+                // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95349 and
+                // https://gcc.gnu.org/onlinedocs/gcc-14.1.0/gccint/Memory-model.html for more information
+                T* ret = std::assume_aligned<alignof(T)>(
+                    std::memmove(
+                        std::assume_aligned<alignof(T)>(ptr),
+                        std::launder(
+                            reinterpret_cast<T*>(
+                                std::assume_aligned<alignof(T)>(ptr)
+                            )
+                        ),
+                        sizeof(T)
+                    )
+                );
+                return std::launder(ret);
+            }
+#endif
+        }
+    }
 };
 
 #if COMPILING_EXTERNAL

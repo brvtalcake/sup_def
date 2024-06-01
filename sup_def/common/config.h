@@ -2722,6 +2722,10 @@ namespace stdpbds = __gnu_pbds; // Not standard at all but let's pretend it is
 /* namespace stdtr1 = std::tr1; */
 /* namespace stdtr2 = std::tr2; */
 
+namespace SupDef { namespace Util { namespace FeaturesEmulation { } } }
+
+namespace stdemul = ::SupDef::Util::FeaturesEmulation;
+
 #endif
 
 #undef UNIQUE_ID

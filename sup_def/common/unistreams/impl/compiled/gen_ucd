@@ -1,0 +1,230 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import re
+import requests
+import argparse
+from string import Template
+
+#url = "https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt"
+#response = requests.get(url)
+#if response.status_code != 200:
+#    print("Error: unable to download UnicodeData.txt")
+#    sys.exit(1)
+#
+## Parse UnicodeData.txt
+#unicode_data = {}
+
+def parallel_for(start, end, body, num_procs = 4, *args, **kwargs):
+    import multiprocessing
+    with multiprocessing.Pool(num_procs) as pool:
+        for i in range(start, end):
+            pool.apply_async(body, (i, *args), kwargs)
+        pool.close()
+        pool.join()
+    return None
+
+UNICODE_DATABASE_URL = Template("https://www.unicode.org/Public/${version}/ucd/${filename}")
+
+UNICODEDATA_PROPERTIES : list[tuple[str, str]] = [
+    ("name", "const char*"),
+    ("category", "const char*"),
+    ("canonical_combining_class", "uint8_t"),
+    ("bidi_class", "const char*"),
+    ("decomposition_mapping", "const char*"),
+    ("decimal_digit_value", "int"),
+    ("digit_value", "int"),
+    ("numeric_value", "double"),
+    ("mirrored", "bool"),
+    ("unicode_1_name", "const char*"),
+    ("iso_comment", "const char*"),
+    ("simple_uppercase_mapping", "const char*"),
+    ("simple_lowercase_mapping", "const char*"),
+    ("simple_titlecase_mapping", "const char*")
+]
+
+def interpret_as(type, value, language):
+    nullptr = "nullptr" if language == "c++" else "((void*)0)"
+    trueval = "true" if language == "c++" else "1"
+    falseval = "false" if language == "c++" else "0"
+    match type:
+        case "const char*":
+            return f"\"{value}\"" if value else nullptr
+        case "uint8_t":
+            return f"{value}"
+        case "int":
+            return f"{value}"
+        case "double":
+            return f"{value}"
+        case "bool":
+            return trueval if value else falseval
+        case _:
+            raise ValueError(f"Unknown type {type}")
+        
+def make_table_name(prop, lang, prefix, suffix):
+    return f"{prop}" if lang == "c++" else f"{prefix}{prop}{suffix}"
+
+
+def dump_unicode_data_properties_table(filename, unidata_lines, lang, namespace, prefix, suffix, verify=True):
+    print(f"Dumping Unicode data properties tables to {filename}")
+    if os.path.exists(filename):
+        os.remove(filename)
+    with open(filename, "w") as f:
+        if lang == "c++" and namespace:
+            f.write(f"namespace {namespace}\n")
+            f.write("{\n")
+        for tuple in UNICODEDATA_PROPERTIES:
+            curr_type = tuple[1]
+            curr_prop = tuple[0]
+            f.write(f"static const {curr_type} {make_table_name(curr_prop, lang, prefix, suffix)}[] = ")
+            f.write("{\n")
+            curr_cp = unidata_lines[0]["code_point"]
+            prev_cp = curr_cp
+            prev_line = None
+            for line in unidata_lines:
+                curr_cp = line["code_point"]
+                if not prev_line or prev_cp + 1 == curr_cp:
+                    f.write(f"    [ {curr_cp} ] = {interpret_as(curr_type, line[curr_prop], lang)},\n")
+                else:
+                    for i in range(prev_cp + 1, curr_cp):
+                        to_write = f"    [ {i} ] = {interpret_as(curr_type, prev_line[curr_prop], lang)},\n"
+                        if curr_prop == "name" or curr_prop == "iso_comment" or curr_prop == "unicode_1_name":
+                            # Replace the ", first" or ", First" with ""
+                            to_write = re.sub(r",\s+First", "", to_write)
+                            to_write = re.sub(r",\s+first", "", to_write)
+                            # If what has to be repeated contains ", Last" or ", last", replace everything with "unassigned or private use"
+                            if re.search(r",\s+Last", to_write) or re.search(r",\s+last", to_write):
+                                to_write = f"    [ {i} ] = \"unassigned or private use\",\n"
+                        f.write(to_write)
+                    f.write(f"    [ {curr_cp} ] = {interpret_as(curr_type, line[curr_prop], lang)},\n")
+                prev_cp = curr_cp
+                prev_line = line
+            f.write("};\n")
+        if lang == "c++" and namespace:
+            f.write("}\n")
+        f.close()
+    if verify:
+        print(f"Verifying correct generation of {filename}")
+        with open(filename, "r") as f:
+            CONTENT = f.read()
+            f.close()
+            def verif(*locvars):
+                n, cont, unidata_props, fname = locvars
+                if cont.count(f"[ {n} ]") != len(unidata_props):
+                    print(f"Error: verification failed for {fname} at code point {hex(n)}: {cont.count(f'[ {n} ]')} != {len(unidata_props)}")
+                    sys.exit(1)
+                return None
+            parallel_for(0, 1114109, verif, 10, (CONTENT, UNICODEDATA_PROPERTIES, filename))
+    return None
+
+def parse_unicode_data_line(line):
+    fields = line.split(";")
+    code_point = int(fields[0], 16)
+    name = fields[1]
+    category = fields[2]
+    canonical_combining_class = int(fields[3])
+    bidi_class = fields[4]
+    decomposition_mapping = fields[5]
+    decimal_digit_value = fields[6]
+    digit_value = fields[7]
+    numeric_value = fields[8]
+    mirrored = fields[9]
+    unicode_1_name = fields[10]
+    iso_comment = fields[11]
+    simple_uppercase_mapping = fields[12]
+    simple_lowercase_mapping = fields[13]
+    simple_titlecase_mapping = fields[14]
+    return {
+        "code_point": code_point,
+        "name": name,
+        "category": category,
+        "canonical_combining_class": canonical_combining_class,
+        "bidi_class": bidi_class,
+        "decomposition_mapping": decomposition_mapping,
+        "decimal_digit_value": decimal_digit_value,
+        "digit_value": digit_value,
+        "numeric_value": numeric_value,
+        "mirrored": mirrored,
+        "unicode_1_name": unicode_1_name,
+        "iso_comment": iso_comment,
+        "simple_uppercase_mapping": simple_uppercase_mapping,
+        "simple_lowercase_mapping": simple_lowercase_mapping,
+        "simple_titlecase_mapping": simple_titlecase_mapping
+    }
+
+def parse_cmd_line():
+    parser = argparse.ArgumentParser(
+        prog=sys.argv[0],
+        description="Generate Unicode related data tables for C and C++ programs."
+    )
+    parser.add_argument(
+        "-u", "--unicode-version",
+        help="Unicode version to use",
+        action="store",
+        default="15.1.0",
+        dest="unicode_version"
+    )
+    parser.add_argument(
+        "-o", "--output-dir",
+        help="Output directory",
+        action="store",
+        default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated/"),
+        dest="output_dir"
+    )
+    parser.add_argument(
+        "-l", "--language",
+        help="Output language",
+        action="store",
+        default="c++",
+        dest="language"
+    )
+    parser.add_argument(
+        "-n", "--namespace",
+        help="Namespace for C++ output",
+        action="store",
+        default="uni::detail::unicodedata",
+        dest="namespace"
+    )
+    parser.add_argument(
+        "-p", "--prefix",
+        help="Prefix for C output",
+        action="store",
+        default="uni_",
+        dest="prefix"
+    )
+    parser.add_argument(
+        "-s", "--suffix",
+        help="Suffix for C output",
+        action="store",
+        default="",
+        dest="suffix"
+    )
+    return parser.parse_args()
+
+def download_unicode_file(unicode_version, file):
+    url = UNICODE_DATABASE_URL.substitute(version=unicode_version, filename=file)
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"Error: unable to download {file} from {url}")
+        sys.exit(1)
+    return response.text
+
+def main():
+    args = parse_cmd_line()
+    unicode_data = download_unicode_file(args.unicode_version, "UnicodeData.txt")
+    unicode_data_lines = unicode_data.split("\n")
+    unicode_data_lines = [line for line in unicode_data_lines if line]
+    unicode_data_lines = [parse_unicode_data_line(line) for line in unicode_data_lines]
+    fileext = "cpp" if args.language == "c++" else "c"
+    dump_unicode_data_properties_table(
+        os.path.join(args.output_dir, f"unicode_data_properties_table.{fileext}"),
+        unicode_data_lines,
+        args.language,
+        args.namespace,
+        args.prefix,
+        args.suffix
+    )
+
+if __name__ == "__main__":
+    main()

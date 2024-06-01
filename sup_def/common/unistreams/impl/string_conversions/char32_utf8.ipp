@@ -24,15 +24,50 @@
  */
 
 
-template <>
-struct ::uni::detail::string_conversions<char32_t, utf8_char>
-    : protected ::uni::detail::str_conv_base
-{
-};
+#undef  CURRENT_CONVERTER_TYPE
+#define CURRENT_CONVERTER_TYPE /* Define the converter type here if used, void otherwise */
+
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION uni::detail::string_conversions<char32_t, utf8_char>
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING PP_STRINGIZE(::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION)
 
 template <>
-struct ::uni::detail::string_conversions<utf8_char, char32_t>
+struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
     : protected ::uni::detail::str_conv_base
 {
+    private:
+        typedef char32_t char_from;
+        typedef utf8_char char_to;
+
+        typedef CURRENT_CONVERTER_TYPE converter_type;
+
+        /* Add needed typedefs here */
+
+    public:
 };
+                           
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION uni::detail::string_conversions<utf8_char, char32_t>
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING PP_STRINGIZE(::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION)
+
+template <>
+struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+    : protected ::uni::detail::str_conv_base
+{
+    private:
+        typedef utf8_char char_from;
+        typedef char32_t char_to;
+
+        typedef CURRENT_CONVERTER_TYPE converter_type;
+
+        /* Add needed typedefs here */
+
+    public:
+};
+
+#undef  CURRENT_CONVERTER_TYPE
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
 

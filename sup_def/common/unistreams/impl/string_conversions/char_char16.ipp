@@ -24,12 +24,18 @@
  */
 
 #include <simdutf.h>
+#include <magic_enum/magic_enum_all.hpp>
 
-#undef CURRENT_CONVERTER_TYPE
+#undef  CURRENT_CONVERTER_TYPE
 #define CURRENT_CONVERTER_TYPE void
 
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION uni::detail::string_conversions<char, char16_t>
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING PP_STRINGIZE(::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION)
+
 template <>
-struct ::uni::detail::string_conversions<char, char16_t>
+struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
     : protected ::uni::detail::str_conv_base
 {
     private:
@@ -45,7 +51,7 @@ struct ::uni::detail::string_conversions<char, char16_t>
         typedef CURRENT_CONVERTER_TYPE converter_type;
 
     public:
-        template <typename AllocFrom, typename AllocTo>
+        template <typename AllocTo, typename AllocFrom>
         static constexpr ::uni::string<char_to, traits_to, AllocTo> operator()(
             const ::uni::string<char_from, traits_from, AllocFrom>& from,
             const ::uni::endianness end_to
@@ -57,11 +63,11 @@ struct ::uni::detail::string_conversions<char, char16_t>
             unlikely_if (from.size() == 0)
                 return to_type();
 
-            const size_t cp_count = ::simdutf::count_utf8(from.c_str(), from.size());
-            to_type to(cp_count * 2, base_char_to{0});
+            const size_t cu_count = ::simdutf::utf16_length_from_utf8(from.c_str(), from.size());
+            to_type to(cu_count + 1, char_to{});
 
-            using func_type = decltype(&::simdutf::convert_utf8_to_utf16_with_errors);
-            func_type func = nullptr;
+            using func_type = decltype(::simdutf::convert_utf8_to_utf16_with_errors);
+            func_type* func = nullptr;
 
             switch (end_to)
             {
@@ -75,24 +81,31 @@ struct ::uni::detail::string_conversions<char, char16_t>
                 [[unlikely]]
 #endif
                 default:
-                    throw InternalError("uni::detail::string_conversions<char, char16_t>: desired endianness is undefined");
+                    throw InternalError(
+                        UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": desired endianness is undefined"
+                    );
             }
 
-            const ::simdutf::result res = func(from.c_str(), from.size(), to.data(), to.size());
+            const ::simdutf::result res = func(from.c_str(), from.size(), to.data());
             unlikely_if (res.error != ::simdutf::error_code::SUCCESS)
                 throw InternalError(
-                    "uni::detail::string_conversions<char, char16_t>: conversion failed"
+                    UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": conversion failed"
                     " with error code " + std::to_string(res.error) +
-                    " at position " + std::to_string(res.count)
+                    "(" + magic_enum::enum_name(res.error) + ")"    +
+                    " at position "     + std::to_string(res.count)
                 );
 
-            to.shrink_to_fit();
             return to;
         }
 };
 
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION uni::detail::string_conversions<char16_t, char>
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING PP_STRINGIZE(::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION)
+
 template <>
-struct ::uni::detail::string_conversions<char16_t, char>
+struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
     : protected ::uni::detail::str_conv_base
 {
     private:
@@ -108,7 +121,7 @@ struct ::uni::detail::string_conversions<char16_t, char>
         typedef CURRENT_CONVERTER_TYPE converter_type;
 
     public:
-        template <typename AllocFrom, typename AllocTo>
+        template <typename AllocTo, typename AllocFrom>
         static constexpr ::uni::string<char_to, traits_to, AllocTo> operator()(
             const ::uni::string<char_from, traits_from, AllocFrom>& from,
             const ::uni::endianness end_from
@@ -120,37 +133,38 @@ struct ::uni::detail::string_conversions<char16_t, char>
             unlikely_if (from.size() == 0)
                 return to_type();
 
-            const size_t cp_count = ::simdutf::count_utf16(from.c_str(), from.size());
-            to_type to(cp_count, base_char_to{0});
+            size_t cu_count;
+            if (end_from == ::uni::endianness::big)
+                cu_count = ::simdutf::utf8_length_from_utf16be(from.c_str(), from.size());
+            else if (end_from == ::uni::endianness::little)
+                cu_count = ::simdutf::utf8_length_from_utf16le(from.c_str(), from.size());
+            unlikely_else
+                throw InternalError(
+                    UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": source endianness is undefined"
+                );
+            to_type to(cu_count + 1, char_to{});
 
-            using func_type = decltype(&::simdutf::convert_utf16_to_utf8_with_errors);
-            func_type func = nullptr;
+            using func_type = decltype(::simdutf::convert_utf16_to_utf8_with_errors);
+            func_type* func = nullptr;
 
-            switch (end_from)
-            {
-                case ::uni::endianness::little:
-                    func = &::simdutf::convert_utf16le_to_utf8_with_errors;
-                    break;
-                case ::uni::endianness::big:
-                    func = &::simdutf::convert_utf16be_to_utf8_with_errors;
-                    break;
-#if SUPDEF_HAVE_CPP_ATTRIBUTE_UNLIKELY
-                [[unlikely]]
-#endif
-                default:
-                    throw InternalError("uni::detail::string_conversions<char16_t, char>: source endianness is undefined");
-            }
+            if (end_from == ::uni::endianness::big)
+                func = &::simdutf::convert_utf16be_to_utf8_with_errors;
+            else if (end_from == ::uni::endianness::little)
+                func = &::simdutf::convert_utf16le_to_utf8_with_errors;
 
-            const ::simdutf::result res = func(from.c_str(), from.size(), to.data(), to.size());
+            const ::simdutf::result res = func(from.c_str(), from.size(), to.data());
             unlikely_if (res.error != ::simdutf::error_code::SUCCESS)
                 throw InternalError(
-                    "uni::detail::string_conversions<char16_t, char>: conversion failed"
+                    UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": conversion failed"
                     " with error code " + std::to_string(res.error) +
-                    " at position " + std::to_string(res.count)
+                    "(" + magic_enum::enum_name(res.error) + ")"    +
+                    " at position "     + std::to_string(res.count)
                 );
 
-            to.shrink_to_fit();
             return to;
         }
 };
 
+#undef  CURRENT_CONVERTER_TYPE
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING

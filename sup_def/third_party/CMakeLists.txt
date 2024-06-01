@@ -15,6 +15,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(simdutf)
 
+FetchContent_Declare(
+    magic_enum
+    SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/magic_enum"
+)
+FetchContent_MakeAvailable(magic_enum)
+
 add_subdirectory("./empty_macro")
 add_subdirectory("./map")
 add_subdirectory("./gnulib_modules")
@@ -22,6 +28,7 @@ add_library(sdthirdparty INTERFACE)
 add_dependencies(sdthirdparty build_gnulib_modules)
 target_link_libraries(sdthirdparty INTERFACE sdthirdparty_empty_macro sdthirdparty_map)
 target_link_libraries(sdthirdparty INTERFACE simdutf::simdutf)
+target_link_libraries(sdthirdparty INTERFACE magic_enum::magic_enum)
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/chaos-pp/")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../")

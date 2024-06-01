@@ -10,3 +10,6 @@
 [submodule "sup_def/third_party/simdutf"]
 	path = sup_def/third_party/simdutf
 	url = https://github.com/simdutf/simdutf.git
+[submodule "sup_def/third_party/magic_enum"]
+	path = sup_def/third_party/magic_enum
+	url = https://github.com/Neargye/magic_enum.git

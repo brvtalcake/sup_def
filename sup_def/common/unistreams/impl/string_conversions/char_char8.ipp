@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-#undef CURRENT_CONVERTER_TYPE
+#undef  CURRENT_CONVERTER_TYPE
 #define CURRENT_CONVERTER_TYPE void
 
 #undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
@@ -48,7 +48,7 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
         typedef CURRENT_CONVERTER_TYPE converter_type;
 
     public:
-        template <typename AllocFrom, typename AllocTo>
+        template <typename AllocTo, typename AllocFrom>
         static constexpr ::uni::string<char_to, traits_to, AllocTo> operator()(
             const ::uni::string<char_from, traits_from, AllocFrom>& from
         )
@@ -59,10 +59,10 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
             unlikely_if (from.size() == 0)
                 return to_type();
 
-            to_type to(from.size(), base_char_to{0});
+            to_type to(from.size() + 1, char_to{});
 
             for (size_t i = 0; i < from.size(); ++i)
-                to[i] = static_cast<base_char_to>(f[i]);
+                to[i] = reinterpret_cast<const char_to&>(from[i]);
 
             return to;
         }
@@ -90,7 +90,7 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
         typedef CURRENT_CONVERTER_TYPE converter_type;
 
     public:
-        template <typename AllocFrom, typename AllocTo>
+        template <typename AllocTo, typename AllocFrom>
         static constexpr ::uni::string<char_to, traits_to, AllocTo> operator()(
             const ::uni::string<char_from, traits_from, AllocFrom>& from
         )
@@ -101,10 +101,10 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
             unlikely_if (from.size() == 0)
                 return to_type();
 
-            to_type to(from.size(), base_char_to{0});
+            to_type to(from.size() + 1, char_to{});
 
             for (size_t i = 0; i < from.size(); ++i)
-                to[i] = static_cast<base_char_to>(f[i]);
+                to[i] = reinterpret_cast<const char_to&>(from[i]);
 
             return to;
         }

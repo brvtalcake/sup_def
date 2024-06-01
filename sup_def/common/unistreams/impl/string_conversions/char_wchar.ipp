@@ -24,11 +24,16 @@
  */
 
 
-#undef CURRENT_CONVERTER_TYPE
+#undef  CURRENT_CONVERTER_TYPE
 #define CURRENT_CONVERTER_TYPE std::codecvt<wchar_t, char, std::mbstate_t>
 
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION uni::detail::string_conversions<char, wchar_t>
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING PP_STRINGIZE(::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION)
+
 template <>
-struct ::uni::detail::string_conversions<char, wchar_t>
+struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
     : protected ::uni::detail::str_conv_base
 {
     private:
@@ -44,7 +49,7 @@ struct ::uni::detail::string_conversions<char, wchar_t>
         typedef CURRENT_CONVERTER_TYPE converter_type;
 
     public:
-        template <typename AllocFrom, typename AllocTo>
+        template <typename AllocTo, typename AllocFrom>
         static constexpr ::uni::string<char_to, traits_to, AllocTo> operator()(
             const ::uni::string<char_from, traits_from, AllocFrom>& from
         )
@@ -55,7 +60,7 @@ struct ::uni::detail::string_conversions<char, wchar_t>
             unlikely_if (from.size() == 0)
                 return to_type();
 
-            to_type to(from.size(), base_char_to{0});
+            to_type to(from.size(), char_to{});
 
             std::mbstate_t state{0};
             std::locale loc = getloc();
@@ -93,17 +98,26 @@ struct ::uni::detail::string_conversions<char, wchar_t>
             } while (res == std::codecvt_base::partial);
 
             if (res == std::codecvt_base::error)
-                throw InternalError("Error while converting string");
+                throw InternalError(
+                    UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": Error while converting string"
+                );
             unlikely_if (res == std::codecvt_base::noconv)
-                throw InternalError("No conversion needed");
+                throw InternalError(
+                    UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": No conversion needed"
+                );
 
             to.shrink_to_fit();
             return to;
         }
 };
 
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION uni::detail::string_conversions<wchar_t, char>
+#define UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING PP_STRINGIZE(::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION)
+
 template <>
-struct ::uni::detail::string_conversions<wchar_t, char>
+struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
     : protected ::uni::detail::str_conv_base
 {
     private:
@@ -119,7 +133,7 @@ struct ::uni::detail::string_conversions<wchar_t, char>
         typedef CURRENT_CONVERTER_TYPE converter_type;
 
     public:
-        template <typename AllocFrom, typename AllocTo>
+        template <typename AllocTo, typename AllocFrom>
         static constexpr ::uni::string<char_to, traits_to, AllocTo> operator()(
             const ::uni::string<char_from, traits_from, AllocFrom>& from
         )
@@ -130,7 +144,7 @@ struct ::uni::detail::string_conversions<wchar_t, char>
             unlikely_if (from.size() == 0)
                 return to_type();
 
-            to_type to(from.size(), base_char_to{0});
+            to_type to(from.size(), char_to{});
 
             std::mbstate_t state{0};
             std::locale loc = getloc();
@@ -168,9 +182,13 @@ struct ::uni::detail::string_conversions<wchar_t, char>
             } while (res == std::codecvt_base::partial);
 
             if (res == std::codecvt_base::error)
-                throw InternalError("Error while converting string");
+                throw InternalError(
+                    UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": Error while converting string"
+                );
             unlikely_if (res == std::codecvt_base::noconv)
-                throw InternalError("No conversion needed");
+                throw InternalError(
+                    UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": No conversion needed"
+                );
 
             to.shrink_to_fit();
             return to;
@@ -179,3 +197,5 @@ struct ::uni::detail::string_conversions<wchar_t, char>
 };
 
 #undef CURRENT_CONVERTER_TYPE
+#undef UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
+#undef UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING

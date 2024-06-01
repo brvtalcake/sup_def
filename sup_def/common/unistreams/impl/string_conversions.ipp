@@ -30,10 +30,10 @@
 
 // List TODO:
 //
-// char <--> wchar_t                 : TODO
-// char <--> char8_t                 : TODO
-// char <--> char16_t                : TODO
-// char <--> char32_t                : TODO
+// char <--> wchar_t                 : DONE, NEEDS TESTING
+// char <--> char8_t                 : DONE, NEEDS TESTING
+// char <--> char16_t                : DONE, NEEDS TESTING
+// char <--> char32_t                : DONE, NEEDS TESTING
 // char <--> utf8_char               : TODO
 // char <--> utf16_char              : TODO
 // char <--> utf32_char              : TODO
@@ -93,7 +93,13 @@ namespace uni
                 using u_ptr_deleter_t = void(*)(T*);
 
                 template <typename T>
+                using u_array_deleter_t = void(*)(T*);
+
+                template <typename T>
                 using u_ptr_t = std::unique_ptr<T, u_ptr_deleter_t<T>>;
+
+                template <typename T>
+                using u_array_t = std::unique_ptr<T[], u_array_deleter_t<T>>;
 
                 template <typename T>
                 static constexpr void alloca_deleter(T* ptr)
@@ -101,7 +107,18 @@ namespace uni
                 template <typename T>
                 static constexpr void default_deleter(T* ptr)
                 {
-                    delete ptr;
+                    static const std::default_delete<T> del;
+                    del(ptr);
+                }
+
+                template <typename T>
+                static constexpr void array_alloca_deleter(T* ptr)
+                { }
+                template <typename T>
+                static constexpr void array_default_deleter(T* ptr)
+                {
+                    static const std::default_delete<T[]> del;
+                    del(ptr);
                 }
 
                 static constexpr size_t alloca_max_size = 4 * 1024;
