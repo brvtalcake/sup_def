@@ -78,3 +78,7 @@ blah.txt
 generator_reference_impl.cpp
 
 sup_def/common/unistreams/impl/compiled/generated/**
+
+test_c_bitset.h
+test.c
+test.cc

@@ -62,7 +62,7 @@ target_compile_options(sdthirdparty INTERFACE -fconcepts-diagnostics-depth=10)
 # TODO: Remove this workaround when GCC bug is fixed, and fix other bugs in my own code
 target_compile_definitions(sdthirdparty INTERFACE SUPDEF_WORKAROUND_GCC_INTERNAL_ERROR=0)
 
-if (${MAINTAINER_MODE} STREQUAL "ON")
+if (${SUPDEF_CREATOR_MODE} STREQUAL "ON")
     # TODO: Add other options I like to use (-fweb, -fgraphite, -fgraphite-identity, ...)
     target_compile_options(sdthirdparty INTERFACE -Wall -Wextra -march=alderlake -static-libgcc -static-libstdc++)
     # Link manually to libiconv
@@ -270,11 +270,11 @@ else()
 endif()
 
 
-if ((NOT MAINTAINER) OR (NOT (${MAINTAINER} STREQUAL "Unknown")))
-    message(STATUS "Maintainer is ${MAINTAINER}")
+if ((NOT SUPDEF_CREATOR) OR (NOT (${SUPDEF_CREATOR} STREQUAL "Unknown")))
+    message(STATUS "Maintainer is ${SUPDEF_CREATOR}")
 endif()
 
-if (${MAINTAINER} STREQUAL "Axel PASCON")
+if (${SUPDEF_CREATOR} STREQUAL "Axel PASCON")
     target_compile_options(sdthirdparty INTERFACE -march=alderlake -mtune=alderlake -fexceptions)
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
         target_compile_options(sdthirdparty INTERFACE -fstrict-aliasing -ffinite-loops -ffold-simple-inlines -fgcse-las -fgcse-sm -fgraphite -fgraphite-identity -fipa-pta -fira-loop-pressure -fira-region=mixed -flive-range-shrinkage -floop-nest-optimize -fmodulo-sched -fmodulo-sched-allow-regmoves -fprefetch-loop-arrays -frename-registers -frtti -fsched-pressure -fschedule-insns -fschedule-insns2 -fthreadsafe-statics -ftracer -ftree-cselim -ftree-loop-if-convert -ftree-lrs -ftree-parallelize-loops=${USER_NPROC} -ftree-vectorize -funreachable-traps -fvariable-expansion-in-unroller -fweb -maccumulate-outgoing-args -malign-data=cacheline)
