@@ -177,6 +177,24 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
             }
             
             const size_t cu_count = ::simdutf::utf8_length_from_utf32(vec_from.data(), vec_from.size());
+            to_type to(cu_count + 1, char_to{});
+
+            decltype(auto) func = &::simdutf::convert_utf32_to_utf8_with_errors;
+
+            const ::simdutf::result res = func(
+                vec_from.data(),
+                vec_from.size(),
+                to.data()
+            );
+            unlikely_if (res.error != ::simdutf::error_code::SUCCESS)
+                throw InternalError(
+                    UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": conversion failed"
+                    " with error code " + std::to_string(res.error) +
+                    "(" + magic_enum::enum_name(res.error) + ")"    +
+                    " at position "     + std::to_string(res.count)
+                );
+
+            return to;
         }
 };
 

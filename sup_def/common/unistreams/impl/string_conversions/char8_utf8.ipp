@@ -25,7 +25,7 @@
 
 
 #undef  CURRENT_CONVERTER_TYPE
-#define CURRENT_CONVERTER_TYPE /* Define the converter type here if used, void otherwise */
+#define CURRENT_CONVERTER_TYPE void
 
 #undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
 #undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING
@@ -37,14 +37,36 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
     : protected ::uni::detail::str_conv_base
 {
     private:
-        typedef char8_t char_from;
+        typedef char8_t   char_from;
         typedef utf8_char char_to;
+
+        typedef ::uni::char_traits<char_from> traits_from;
+        typedef ::uni::char_traits<char_to>   traits_to;
+
+        typedef traits_from::base_char_type base_char_from;
+        typedef traits_to  ::base_char_type base_char_to;
 
         typedef CURRENT_CONVERTER_TYPE converter_type;
 
-        /* Add needed typedefs here */
-
     public:
+        template <typename AllocTo, typename AllocFrom>
+        static constexpr ::uni::string<char_to, traits_to, AllocTo> operator()(
+            const ::uni::string<char_from, traits_from, AllocFrom>& from
+        )
+        {
+            using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
+            using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
+
+            unlikely_if (from.size() == 0)
+                return to_type();
+
+            const std::vector<char_to> vec_to = traits_to::from_base_char(
+                from.c_str(),
+                from.size()
+            );
+
+            return to_type(vec_to.cbegin(), vec_to.cend());
+        }
 };
                            
 #undef  UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
@@ -58,11 +80,15 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
 {
     private:
         typedef utf8_char char_from;
-        typedef char8_t char_to;
+        typedef char8_t   char_to;
+
+        typedef ::uni::char_traits<char_from> traits_from;
+        typedef ::uni::char_traits<char_to>   traits_to;
+
+        typedef traits_from::base_char_type base_char_from;
+        typedef traits_to  ::base_char_type base_char_to;
 
         typedef CURRENT_CONVERTER_TYPE converter_type;
-
-        /* Add needed typedefs here */
 
     public:
 };
