@@ -79,6 +79,8 @@ generator_reference_impl.cpp
 
 sup_def/common/unistreams/impl/compiled/generated/**
 
+sup_def/third_party/gnulib_modules/gnulib_build/**
+
 test_c_bitset.h
 test.c
 test.cc
