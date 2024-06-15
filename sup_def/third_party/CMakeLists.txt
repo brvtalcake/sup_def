@@ -34,6 +34,7 @@ target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/cha
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/../../")
 target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/patterns/include/")
+target_include_directories(sdthirdparty INTERFACE "${CMAKE_CURRENT_LIST_DIR}/magic_enum/include/")
 
 target_include_directories(sdthirdparty INTERFACE ${GNULIB_INCDIRS})
 target_link_libraries(sdthirdparty INTERFACE ${GNULIB_LIBS})

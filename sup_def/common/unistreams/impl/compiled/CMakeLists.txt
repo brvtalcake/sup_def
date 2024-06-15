@@ -1,3 +1,5 @@
+include("${SUPDEF_PROJECT_CMAKE_DIR}/get_header_list.cmake")
+
 # TODO...
 
 set(

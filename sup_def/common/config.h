@@ -34,19 +34,34 @@
     #define NEED_TPP_INC(...) 0
 #endif
 
-#define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
-#define __STDCPP_WANT_IEC_60559_TYPES_EXT__ 1
-#define __STDCPP_WANT_IEC_60559_FUNCS_EXT__ 1
-#define __STDCPP_WANT_IEC_60559_DFP_EXT__ 1
-#define __STDCPP_WANT_IEC_60559_BFP_EXT__ 1
+#ifndef __STDCPP_WANT_MATH_SPEC_FUNCS__
+    #define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
+#endif
+#ifndef __STDCPP_WANT_IEC_60559_TYPES_EXT__
+    #define __STDCPP_WANT_IEC_60559_TYPES_EXT__ 1
+#endif
+#ifndef __STDCPP_WANT_IEC_60559_FUNCS_EXT__
+    #define __STDCPP_WANT_IEC_60559_FUNCS_EXT__ 1
+#endif
+#ifndef __STDCPP_WANT_IEC_60559_DFP_EXT__
+    #define __STDCPP_WANT_IEC_60559_DFP_EXT__ 1
+#endif
+#ifndef __STDCPP_WANT_IEC_60559_BFP_EXT__
+    #define __STDCPP_WANT_IEC_60559_BFP_EXT__ 1
+#endif
 
-#define __STDC_WANT_LIB_EXT2__ 1
-#define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
-#define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
-#define __STDC_WANT_IEC_60559_DFP_EXT__ 1
-
-#include <cmath>
-#include <cfloat>
+#ifndef __STDC_WANT_LIB_EXT2__
+    #define __STDC_WANT_LIB_EXT2__ 1
+#endif
+#ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
+    #define __STDC_WANT_IEC_60559_TYPES_EXT__ 1
+#endif
+#ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
+    #define __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
+#endif
+#ifndef __STDC_WANT_IEC_60559_DFP_EXT__
+    #define __STDC_WANT_IEC_60559_DFP_EXT__ 1
+#endif
 
 #define UNISTREAMS_STRING_USE_STD_BASIC_STRING 1
 
@@ -54,6 +69,10 @@
 #undef unreachable
 #undef assume
 #undef noreturn
+
+#include <cmath>
+#include <cfloat>
+#include <cinttypes>
 
 #include <sup_def/common/util/platform.hpp>
 

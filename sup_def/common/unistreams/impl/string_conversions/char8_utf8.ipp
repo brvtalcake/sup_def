@@ -57,7 +57,7 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
             using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
             using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
 
-            unlikely_if (from.size() == 0)
+            unlikely_if (from.empty())
                 return to_type();
 
             const std::vector<char_to> vec_to = traits_to::from_base_char(
@@ -99,7 +99,7 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
             using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
             using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
 
-            unlikely_if (from.size() == 0)
+            unlikely_if (from.empty())
                 return to_type();
 
             const std::vector<base_char_from> vec_from = traits_from::to_base_char(

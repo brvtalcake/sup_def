@@ -47,14 +47,10 @@ set(
     "${CMAKE_CURRENT_LIST_DIR}/impl/string_conversions/char16_utf32.ipp"
     "${CMAKE_CURRENT_LIST_DIR}/impl/string_conversions/char_char16.ipp"
     "${CMAKE_CURRENT_LIST_DIR}/impl/string_conversions/wchar_char16.ipp"
-
-    PARENT_SCOPE
 )
 
 get_header_list(
-    OUTPUT_VAR TMP_UNISTREAMS_HEADERS_LIST
+    OUTPUT_VAR UNISTREAMS_HEADERS_LIST
     SOURCES_LIST ${UNISTREAMS_SOURCES_LIST}
     VERIFY_EXISTS
 )
-
-set(UNISTREAMS_HEADERS_LIST ${TMP_UNISTREAMS_HEADERS_LIST} PARENT_SCOPE)

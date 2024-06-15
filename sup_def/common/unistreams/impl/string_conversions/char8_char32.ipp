@@ -23,6 +23,8 @@
  * SOFTWARE.
  */
 
+#include <magic_enum/magic_enum_all.hpp>
+#include <simdutf.h>
 
 #undef  CURRENT_CONVERTER_TYPE
 #define CURRENT_CONVERTER_TYPE void
@@ -58,7 +60,7 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
             using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
             using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
 
-            unlikely_if (from.size() == 0)
+            unlikely_if (from.empty())
                 return to_type();
 
             const size_t cu_count = ::simdutf::utf32_length_from_utf8(
@@ -137,7 +139,7 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
             using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
             using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
 
-            unlikely_if (from.size() == 0)
+            unlikely_if (from.empty())
                 return to_type();
 
             from_type from_swapped;
