@@ -91,6 +91,27 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
         typedef CURRENT_CONVERTER_TYPE converter_type;
 
     public:
+        template <typename AllocTo, typename AllocFrom>
+        static constexpr ::uni::string<char_to, traits_to, AllocTo> operator()(
+            const ::uni::string<char_from, traits_from, AllocFrom>& from
+        )
+        {
+            using from_type = ::uni::string<char_from, traits_from, AllocFrom>;
+            using to_type   = ::uni::string<char_to  , traits_to  , AllocTo>;
+
+            unlikely_if (from.size() == 0)
+                return to_type();
+
+            const std::vector<base_char_from> vec_from = traits_from::to_base_char(
+                from.c_str(),
+                from.size()
+            );
+
+            return to_type(
+                vec_from.data(),
+                vec_from.size()
+            );
+        }
 };
 
 #undef  CURRENT_CONVERTER_TYPE

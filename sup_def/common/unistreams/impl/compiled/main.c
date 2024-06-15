@@ -9,9 +9,11 @@
 #define _TIME_BITS 64
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <stddef.h>
+#include <inttypes.h>
 #include <stdckdint.h>
 #include <stdbool.h>
 #include <limits.h>
@@ -31,6 +33,7 @@
 #include <signal.h>
 #include <argp.h>
 #include <getopt.h>
+#include <tgmath.h>
 
 #include <curl/curl.h>
 #include <brotli/encode.h>
@@ -50,6 +53,13 @@
 #undef DEFAULT_OUTPUT_DIR
 #undef MAX_CODEPOINT
 #undef CODEPOINT_COUNT
+#undef STRINGIFY_IMPL
+#undef STRINGIFY
+#undef PP_CAT_IMPL
+#undef PP_CAT
+#undef MK_UNIQUE
+#undef UNIQUE
+#undef MK_UNIDATA_CACHED_FILEPATH
 
 // Those are valid keywords in C23 but editors may not colorize them appropriately,
 // so define them as macros so they're AT LEAST colored as such.
@@ -66,8 +76,28 @@
 #define MANUAL_ATOMIC_ACCESS /* Just to make it clear that we shall use atomic_load() etc to access the value */
 #define DEFAULT_UNICODE_VERSION "15.1.0"
 #define DEFAULT_OUTPUT_DIR      "generated"
-#define MAX_CODEPOINT           0x10FFFF
+#define MAX_CODEPOINT           0x10FFFFUL
 #define CODEPOINT_COUNT         (MAX_CODEPOINT + 1)
+#define STRINGIFY_IMPL(...) #__VA_ARGS__
+#define STRINGIFY(...) STRINGIFY_IMPL(__VA_ARGS__)
+#define PP_CAT_IMPL(a, b) a##b
+#define PP_CAT(a, b) PP_CAT_IMPL(a, b)
+#define MK_UNIQUE(type, name, init) type PP_CAT(unique_name_, PP_CAT(name, __LINE__)) = init
+#define UNIQUE(name) PP_CAT(unique_name_, PP_CAT(name, __LINE__))
+#define MK_UNIDATA_CACHED_FILEPATH(buf, buf_sz, version, filename)  \
+    ({                                                              \
+        MK_UNIQUE(char*, basepath, "%s/%s_%s.txt");                 \
+        snprintf(                                                   \
+            buf,                                                    \
+            buf_sz,                                                 \
+            UNIQUE(basepath),                                       \
+            get_cachedir(),                                         \
+            filename,                                               \
+            version                                                 \
+        );                                                          \
+        buf;                                                        \
+    })                                                              \
+    /**/
 
 enum general_category
 #if __STDC_VERSION__ > 201710L
@@ -254,6 +284,13 @@ struct thread_pool_args
     size_t index;
 };
 
+static inline bool path_exists(const char* filepath);
+static inline bool file_exists(const char* filepath);
+static inline bool dir_exists(const char* dirpath);
+static inline bool create_dir(const char* dirpath);
+static inline bool create_dir_recursive(const char* dirpath);
+static void gen_cachedir(void);
+
 static struct thread_pool* thread_pool_create(size_t thrd_count);
 static void thread_pool_destroy(struct thread_pool* pool);
 static void thread_pool_enqueue(struct thread_pool* pool, void* (*func)(void*), void* args, void** res_addr, bool* done_addr);
@@ -264,8 +301,14 @@ static int thread_pool_func(void* args);
 static inline const char* general_category_to_string(enum general_category category);
 static inline enum general_category general_category_from_string(const char* category);
 
+static bool read_if_exists(const char* filepath, struct dynamic_string* string);
+[[maybe_unused]]
+static void write_if_different(const char* filepath, const struct dynamic_string* orig /* Nullable */, const struct dynamic_string* new);
+static void write_to_file(const char* filepath, const struct dynamic_string* data);
+
 static inline struct dynamic_string* strip_comments(struct dynamic_string* string);
 static inline struct dynamic_string* shrink_to_fit(struct dynamic_string* string);
+static inline int dynamic_string_diff(const struct dynamic_string* a, const struct dynamic_string* b);
 
 [[gnu::format(printf, 1, 2)]]
 static void emit_warning(const char* format, ...);
@@ -283,6 +326,13 @@ static void print_usage(FILE* stream, int status, const char* progname);
 static const char* get_executable_dir();
 static const char* current_unicode_version(const char* opt_unicode_version);
 static const char* current_output_dir(const char* opt_output_dir);
+static const char* current_output_lang(const char* opt_lang);
+static const char* current_output_ns(const char* opt_ns);
+
+static void mk_symbol_prefix(char* const buf, size_t buf_size);
+
+static bool currlang_is_c(void);
+static bool currlang_is_cpp(void);
 
 // Returns a malloc'd string containing the contents of the file at the given URL
 // (whose version is the one provided via argument, or the default one if none provided).
@@ -293,18 +343,24 @@ static struct parsed_unicode_data* parse_unicode_data(struct dynamic_string* uni
 static bool dump_unicode_data_cat(enum general_category cat, const struct parsed_unicode_data* parsed);
 
 static const struct option long_opts[] = {
-    { "help",            no_argument,       nullptr, 'h' },
-    { "unicode-version", required_argument, nullptr, 'u' },
-    { "output-dir",      required_argument, nullptr, 'o' },
+    { "compress",        no_argument,       nullptr, 'c' },
     { "debug",           no_argument,       nullptr, 'd' },
+    { "help",            no_argument,       nullptr, 'h' },
+    { "output-language", required_argument, nullptr, 'l' },
+    { "namespaces",      required_argument, nullptr, 'n' },
+    { "output-dir",      required_argument, nullptr, 'o' },
+    { "raw",             no_argument,       nullptr, 'r' },
     { "threads",         required_argument, nullptr, 't' },
+    { "unicode-version", required_argument, nullptr, 'u' },
     { nullptr,           0,                 nullptr,  0  }
 };
-static const char* const short_opts = "hu:o:dt:";
+static const char* const short_opts = "cdhl:n:o:rt:u:";
 
 static FILE* log_file = nullptr;
 static char log_file_path[PATH_MAX] = { 0 };
 static atomic_bool want_debug = false;
+static atomic_bool want_raw = false;
+static atomic_bool want_compressed = false;
 static atomic_size_t thread_count = (size_t)-1;
 
 static struct thread_pool* tpool = nullptr;
@@ -325,8 +381,40 @@ static void destroy_thread_pool(void)
         thread_pool_destroy(tpool);
 }
 
+static const char* homedir = nullptr;
+
+static char cachedir[PATH_MAX] = { 0 };
+
+static void set_cachedir(void)
+{
+    char* xdgcachehome = getenv("XDG_CACHE_HOME");
+    if (xdgcachehome)
+    {
+        strcpy(cachedir, xdgcachehome);
+        strcat(cachedir, "/unicode_database_gen");
+    }
+    else if (homedir)
+    {
+        strcpy(cachedir, homedir);
+        strcat(cachedir, "/.cache/unicode_database_gen");
+    }
+    else
+        strcpy(cachedir, "/tmp/unicode_database_gen");
+}
+
+static const char* get_cachedir(void)
+{
+    return (const char*)cachedir;
+}
+
 int main(int argc, const char* const* const argv)
 {
+    homedir = getenv("HOME");
+    if (unlikely(!homedir))
+        emit_error("failed to get HOME environment variable\n");
+    set_cachedir();
+    gen_cachedir();
+
     CURLcode curlret = curl_global_init(CURL_GLOBAL_ALL);
     if (unlikely(curlret != CURLE_OK))
         exit_with_error(ERROR_KIND_FATAL_ERROR, "curl_global_init() failed: %s\n", curl_easy_strerror(curlret));
@@ -342,14 +430,27 @@ int main(int argc, const char* const* const argv)
     {
         switch (opt)
         {
+            case 'c':
+                want_compressed = true;
+                want_raw = true;
+                break;
             case 'd':
                 want_debug = true;
                 break;
             case 'h':
                 print_usage(stdout, EXIT_SUCCESS, progname);
                 break;
+            case 'l':
+                current_output_lang(optarg);
+                break;
+            case 'n':
+                current_output_ns(optarg);
+                break;
             case 'o':
                 current_output_dir(optarg);
+                break;
+            case 'r':
+                want_raw = true;
                 break;
             case 't':
                 thread_count = strtoul(optarg, nullptr, 10);
@@ -418,29 +519,67 @@ int main(int argc, const char* const* const argv)
     // TODO: Also download:
     // - Files related to case algorithms
     // - Files needed to build POSIX properties as defined here (https://www.unicode.org/reports/tr18/#Compatibility_Properties)
-    //   (Maybe also build the equivalent Unicode properties)
     // - Files needed to determine the name of a codepoint (not the most important)
-    struct dynamic_string string = download_unicode_file("https://www.unicode.org/Public", "UnicodeData.txt");
-    if (unlikely(!string.data) || unlikely(!string.length))
+    struct dynamic_string unicodedata_txt_file = download_unicode_file("https://www.unicode.org/Public", "UnicodeData.txt");
+    if (unlikely(!unicodedata_txt_file.data) || unlikely(!unicodedata_txt_file.length))
         exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to download UnicodeData.txt\n");
 
-    struct parsed_unicode_data* parsed = parse_unicode_data(shrink_to_fit(&string));
+    struct parsed_unicode_data* parsed = parse_unicode_data(shrink_to_fit(&unicodedata_txt_file));
 
     if (unlikely(!parsed))
         exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to parse UnicodeData.txt\n");
 
-    printf("Generating files...\n");
-    // TODO: Dispatch tasks to thread pool, and provide compressed output
-    for (size_t i = 0; i < ARRAY_SIZE(all_cats); ++i)
+    printf("Generating general category related files...\n");
+    if (thread_count == 1)
     {
-        enum general_category cat = all_cats[i];
-        bool ok = dump_unicode_data_cat(cat, parsed);
-        if (unlikely(!ok))
-            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to dump UnicodeData.txt for category %s\n", general_category_to_string(cat));
+        for (size_t i = 0; i < ARRAY_SIZE(all_cats); ++i)
+        {
+            enum general_category cat = all_cats[i];
+            bool ok = dump_unicode_data_cat(cat, parsed);
+            if (unlikely(!ok))
+                exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to dump UnicodeData.txt for category %s\n", general_category_to_string(cat));
+        }
+    }
+    else
+    {
+        struct dump_cat_args
+        {
+            enum general_category cat;
+            const struct parsed_unicode_data* parsed;
+            bool* ok;
+        };
+        void* wrapper_func(void* args)
+        {
+            struct dump_cat_args* dca = (struct dump_cat_args*)args;
+            *dca->ok = dump_unicode_data_cat(dca->cat, dca->parsed);
+            return nullptr;
+        };
+
+        struct dump_cat_args dca[ARRAY_SIZE(all_cats)];
+        bool oks[ARRAY_SIZE(all_cats)];
+        bool done[ARRAY_SIZE(all_cats)];
+
+        for (size_t i = 0; i < ARRAY_SIZE(all_cats); ++i)
+        {
+            dca[i].cat = all_cats[i];
+            dca[i].parsed = parsed;
+            dca[i].ok = &oks[i];
+            done[i] = false;
+            thread_pool_enqueue(tpool, &wrapper_func, dca + i, nullptr, done + i);
+        }
+
+        for (size_t i = 0; i < ARRAY_SIZE(all_cats); ++i)
+            thread_pool_wait_task(tpool, done + i);
+
+        for (size_t i = 0; i < ARRAY_SIZE(all_cats); ++i)
+        {
+            if (unlikely(!oks[i]))
+                exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to dump UnicodeData.txt for category %s\n", general_category_to_string(all_cats[i]));
+        }
     }
 
     free(parsed);
-    free(string.data);
+    free(unicodedata_txt_file.data);
 
     curl_global_cleanup();
     exit(EXIT_SUCCESS);
@@ -450,15 +589,31 @@ int main(int argc, const char* const* const argv)
 [[noreturn]]
 static void print_usage(FILE* stream, int status, const char* progname)
 {
+    size_t online_procs = sysconf(_SC_NPROCESSORS_ONLN);
+    size_t default_thread_count = online_procs > 1 ? online_procs / 2 : 1;
+
     fprintf(stream, "Usage: %s [OPTION]...\n", progname);
     fprintf(stream, "Generate Unicode data files.\n\n");
     fprintf(stream, "Options:\n");
     fprintf(stream, "  -h, --help            display this help and exit\n");
+    fprintf(stream, "  -c, --compress        enable compressed output (implies --raw)\n");
+    fprintf(stream, "                        (default: false)\n");
+    fprintf(stream, "  -d, --debug           enable debug mode\n");
+    fprintf(stream, "                        (default: false)\n");
+    fprintf(stream, "  -l, --output-language=LANG\n");
+    fprintf(stream, "                        specify the output language\n");
+    fprintf(stream, "                        (default: %s)\n", current_output_lang(nullptr));
+    fprintf(stream, "  -n, --namespaces=NS   specify the output namespaces\n");
+    fprintf(stream, "                        (default: %s)\n", current_output_ns(nullptr));
+    fprintf(stream, "  -o, --output-dir=DIR  specify the output directory\n");
+    fprintf(stream, "                        (default: %s)\n", current_output_dir(nullptr));
+    fprintf(stream, "  -r, --raw             output raw data\n");
+    fprintf(stream, "                        (default: false)\n");
+    fprintf(stream, "  -t, --threads=COUNT   specify the number of threads to use\n");
+    fprintf(stream, "                        (default: %zu)\n", default_thread_count);
     fprintf(stream, "  -u, --unicode-version=VERSION\n");
     fprintf(stream, "                        specify the Unicode version\n");
     fprintf(stream, "                        (default: %s)\n", current_unicode_version(nullptr));
-    fprintf(stream, "  -o, --output-dir=DIR  specify the output directory\n");
-    fprintf(stream, "                        (default: %s)\n", current_output_dir(nullptr));
     exit(status);
 }
 
@@ -526,6 +681,129 @@ static const char* current_unicode_version(const char* opt_unicode_version)
             exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to unlock mutex\n");
     }
     return version;
+}
+
+static const char* current_output_lang(const char* opt_lang)
+{
+    static char lang[32] = "c++";
+
+    static mtx_t mtx;
+    static once_flag once = ONCE_FLAG_INIT;
+
+    void init_once(void)
+    {
+        if (unlikely(mtx_init(&mtx, mtx_plain) != thrd_success))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to initialize mutex\n");
+    };
+    call_once(&once, &init_once);
+
+    if (opt_lang)
+    {
+        if (unlikely(mtx_lock(&mtx) != thrd_success))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to lock mutex\n");
+
+        strncpy(lang, opt_lang, ARRAY_SIZE(lang) - 1);
+
+        if (unlikely(mtx_unlock(&mtx) != thrd_success))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to unlock mutex\n");
+    }
+    return lang;
+}
+
+static const char* current_output_ns(const char* opt_ns)
+{
+    static char ns[1024] = "uni,detail,ucd";
+
+    static mtx_t mtx;
+    static once_flag once = ONCE_FLAG_INIT;
+
+    void init_once(void)
+    {
+        if (unlikely(mtx_init(&mtx, mtx_plain) != thrd_success))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to initialize mutex\n");
+    };
+    call_once(&once, &init_once);
+
+    if (opt_ns)
+    {
+        if (unlikely(mtx_lock(&mtx) != thrd_success))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to lock mutex\n");
+
+        strncpy(ns, opt_ns, ARRAY_SIZE(ns) - 1);
+
+        if (unlikely(mtx_unlock(&mtx) != thrd_success))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to unlock mutex\n");
+    }
+    return ns;
+}
+
+static bool currlang_is_c(void)
+{
+    const char* lang = current_output_lang(nullptr);
+    return strcasecmp(lang, "c") == 0;
+}
+static bool currlang_is_cpp(void)
+{
+    const char* lang = current_output_lang(nullptr);
+    return strcasecmp(lang, "c++") == 0 || strcasecmp(lang, "cpp") == 0;
+}
+
+static void mk_symbol_prefix(char* const buf, size_t buf_size)
+{
+#if 0
+    char* declare_ns(char* b, size_t buf_sz, const char* ns)
+    {
+        char* nscpy = strdupa(ns);
+
+        char* p = b;
+        char* tok = nullptr;
+        size_t count = 0;
+        while ((tok = strsep(&nscpy, ",")))
+        {
+            if (unlikely(p - b + strlen(tok) + 1 > buf_sz))
+                exit_with_error(ERROR_KIND_FATAL_ERROR, "namespace prefix too long\n");
+            p += snprintf(p, buf_sz - (p - b), "namespace %s { ", tok);
+            ++count;
+        }
+        while (count--)
+        {
+            if (unlikely(p - b + 2 > (intptr_t)buf_sz))
+                exit_with_error(ERROR_KIND_FATAL_ERROR, "namespace prefix too long\n");
+            p += snprintf(p, buf_sz - (p - b), "} ");
+        }
+        return p;
+    };
+#endif
+
+    const char* lang = current_output_lang(nullptr);
+    const char* ns   = current_output_ns(nullptr);
+
+    if (currlang_is_c())
+    {
+        char* nscpy = strdupa(ns);
+        char* p     = buf;
+        char* tok   = nullptr;
+        while ((tok = strsep(&nscpy, ",")))
+        {
+            if (unlikely(p - buf + strlen(tok) + 1 > buf_size))
+                exit_with_error(ERROR_KIND_FATAL_ERROR, "symbol prefix too long\n");
+            p += snprintf(p, buf_size - (p - buf), "%s_", tok);
+        }
+    }
+    else if (currlang_is_cpp())
+    {
+        char* nscpy = strdupa(ns);
+        char* p     = buf;
+        char* tok   = nullptr;
+        while ((tok = strsep(&nscpy, ",")))
+        {
+            if (unlikely(p - buf + strlen(tok) + 1 > buf_size))
+                exit_with_error(ERROR_KIND_FATAL_ERROR, "symbol prefix too long\n");
+            p += snprintf(p, buf_size - (p - buf), "%s::", tok);
+        }
+    }
+    else
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "unknown output language: %s\n", lang);
 }
 
 static const char* current_output_dir(const char* opt_output_dir)
@@ -647,6 +925,79 @@ static void emit_fatal_error(const char* format, ...)
     va_end(args);
 }
 
+static bool read_if_exists(const char* filepath, struct dynamic_string* out)
+{
+    FILE* file = fopen(filepath, "r");
+    if (unlikely(!file))
+        return false;
+
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    if (unlikely(length == -1))
+    {
+        fclose(file);
+        return false;
+    }
+    fseek(file, 0, SEEK_SET);
+
+    char* data = calloc(length + 1, sizeof(char));
+    if (unlikely(!data))
+    {
+        fclose(file);
+        return false;
+    }
+
+    size_t read = fread(data, sizeof(char), length, file);
+    if (unlikely(read != (size_t)length))
+    {
+        fclose(file);
+        free(data);
+        return false;
+    }
+
+    fclose(file);
+
+    out->data = data;
+    out->length = length;
+    out->capacity = length + 1;
+    return true;
+}
+
+static void write_if_different(const char* filepath, const struct dynamic_string* orig /* Nullable */, const struct dynamic_string* new)
+{
+    if (orig && dynamic_string_diff(orig, new) == 0)
+        return;
+
+    FILE* file = fopen(filepath, "w");
+    if (unlikely(!file))
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to open file for writing: %s\n", strerror(errno));
+
+    size_t written = fwrite(new->data, sizeof(char), new->length, file);
+    if (unlikely(written != new->length))
+    {
+        fclose(file);
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to write to file: %s\n", strerror(errno));
+    }
+
+    fclose(file);
+}
+
+static void write_to_file(const char* filepath, const struct dynamic_string* data)
+{
+    FILE* file = fopen(filepath, "w");
+    if (unlikely(!file))
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to open file for writing: %s\n", strerror(errno));
+
+    size_t written = fwrite(data->data, sizeof(char), data->length, file);
+    if (unlikely(written != data->length))
+    {
+        fclose(file);
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to write to file: %s\n", strerror(errno));
+    }
+
+    fclose(file);
+}
+
 static struct dynamic_string download_unicode_file(const char* base_url, const char* filename)
 {
     size_t write_callback(void* ptr, size_t size, size_t nmemb, void* userdata)
@@ -667,6 +1018,12 @@ static struct dynamic_string download_unicode_file(const char* base_url, const c
         data->length = new_length;
         return size * nmemb;
     };
+
+    struct dynamic_string test = { 0 };
+    char cached_filepath[PATH_MAX] = { 0 };
+    MK_UNIDATA_CACHED_FILEPATH(cached_filepath, ARRAY_SIZE(cached_filepath), current_unicode_version(nullptr), filename);
+    if (read_if_exists(cached_filepath, &test))
+        return test;
 
     size_t pagesize = sysconf(_SC_PAGESIZE);
     struct dynamic_string data = {
@@ -713,6 +1070,8 @@ static struct dynamic_string download_unicode_file(const char* base_url, const c
     curl_easy_cleanup(curl);
     free(url);
 
+    write_to_file(cached_filepath, &data);
+
     return data;
 }
 
@@ -747,6 +1106,11 @@ static inline struct dynamic_string* shrink_to_fit(struct dynamic_string* string
         string->capacity = string->length;
     }
     return string;
+}
+
+static inline int dynamic_string_diff(const struct dynamic_string* a, const struct dynamic_string* b)
+{
+    return memcmp(a->data, b->data, a->length < b->length ? a->length : b->length);
 }
 
 static inline const char* general_category_to_string(enum general_category category)
@@ -1437,12 +1801,272 @@ static struct parsed_unicode_data* parse_unicode_data(struct dynamic_string* uni
     return parsed_data;
 }
 
+static char* gen_ns_decl(void)
+{
+    size_t count_commas(const char* str)
+    {
+        size_t count = 0;
+        for (size_t i = 0; i < strlen(str); ++i)
+            if (str[i] == ',')
+                ++count;
+        return count;
+    };
+
+    if (currlang_is_cpp())
+    {
+        const char* restrict curr_ns = current_output_ns(nullptr);
+        if (unlikely(!curr_ns))
+            return nullptr;
+
+        size_t commas = count_commas(curr_ns);
+        size_t len    = strlen(curr_ns) + (2 * commas * strlen("namespace {  };"));
+        char* new     = malloc(len);
+        if (unlikely(!new))
+            return nullptr;
+        new[0] = '\0';
+
+        char* tok = nullptr;
+        char* ns  = strdupa(curr_ns);
+        if (unlikely(!ns))
+        {
+            free(new);
+            return nullptr;
+        }
+
+        while ((tok = strsep(&ns, ",")))
+        {
+            strcat(new, "namespace ");
+            strcat(new, tok);
+            strcat(new, " { ");
+        }
+
+        for (size_t i = 0; i < commas + 1; ++i)
+            strcat(new, " };");
+
+        return new;
+    }
+    else
+        return nullptr;
+}
+
+static char* gen_bitset_decl(const char* restrict const name, char* restrict const elems, int* const len_written)
+{
+    if (currlang_is_cpp())
+    {
+        const char* restrict const fmt = "%s\nstatic constinit const std::bitset<%zu> %s = \"%s\";\n";
+        
+        char* ns_decl = gen_ns_decl();
+        if (unlikely(!ns_decl))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to generate namespace declaration\n");
+
+        char* new = nullptr;
+        *len_written = asprintf(&new, fmt, ns_decl, CODEPOINT_COUNT, name, elems);
+
+        free(elems);
+        free(ns_decl);
+        
+        return new;
+    }
+    else if (currlang_is_c())
+    {
+
+#pragma push_macro("NEED_ONE_MORE")
+#pragma push_macro("CBITSET_DATA_SIZE")
+#pragma push_macro("CBITSET_STRUCT")
+
+#undef  NEED_ONE_MORE
+#undef  CBITSET_DATA_SIZE
+#undef  CBITSET_STRUCT
+
+#define NEED_ONE_MORE(size) ((size % 64) ? 1 : 0)
+#define CBITSET_DATA_SIZE(size) ((size / 64) + NEED_ONE_MORE(size))
+#define CBITSET_STRUCT(size)                    \
+    struct {                                    \
+        uint64_t data[CBITSET_DATA_SIZE(size)]; \
+    }
+
+        const char* restrict const base = "static const " STRINGIFY(CBITSET_STRUCT(CODEPOINT_COUNT)) " ";
+        const char* restrict const fmt  = "%s %s = { .data = { %s } };\n";
+
+        constexpr size_t decimal_digits_count = 20;
+        char* buffer = calloc((decimal_digits_count + strlen("UINT64_C(), ") + 1) * ((CODEPOINT_COUNT / 64) + 1), sizeof(char));
+        if (unlikely(!buffer))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to allocate memory\n");
+        
+        uint64_t current = 0;
+        size_t i;
+        for (i = 0; i < CODEPOINT_COUNT; ++i)
+        {
+            [[maybe_unused]]
+            size_t idx = i / 64;
+            size_t bit = 63 - (i % 64);
+            if (elems[i] == '1')
+                current |=  (UINT64_C(1) << bit);
+            else
+                current &= ~(UINT64_C(1) << bit);
+
+            if (bit == 0)
+            {
+                char num[decimal_digits_count] = { 0 };
+                snprintf(num, ARRAY_SIZE(num), "%" PRIu64, current);
+                
+                if (i != 0)
+                    strcat(buffer, ", ");
+                strcat(buffer, "UINT64_C(");
+                strcat(buffer, num);
+                strcat(buffer, ") ");
+                
+                current = 0;
+            }
+        }
+        assert(i == CODEPOINT_COUNT);
+        if (CODEPOINT_COUNT % 64)
+        {
+            char num[decimal_digits_count] = { 0 };
+            snprintf(num, ARRAY_SIZE(num), "%" PRIu64, current);
+            
+            strcat(buffer, ", ");
+            strcat(buffer, "UINT64_C(");
+            strcat(buffer, num);
+            strcat(buffer, ")");
+        }
+
+        char* new = nullptr;
+        *len_written = asprintf(&new, fmt, base, name, buffer);
+
+        free(elems);
+        free(buffer);
+
+        return new;
+    }
+    else
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "unsupported language\n");
+
+#pragma pop_macro("NEED_ONE_MORE")
+#pragma pop_macro("CBITSET_DATA_SIZE")
+#pragma pop_macro("CBITSET_STRUCT")
+}
+
+static char* compress_data(char* data, size_t len, int* new_len)
+{
+    if (CODEPOINT_COUNT % __CHAR_BIT__ != 0 || len != CODEPOINT_COUNT)
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "invalid input data for compress_data()\n");
+
+    uint8_t current = 0;
+    size_t i;
+    for (i = 0; i < len; ++i)
+    {
+        size_t idx = i / __CHAR_BIT__;
+        size_t bit = __CHAR_BIT__ - (i % __CHAR_BIT__) - 1;
+        if (data[i] == '1')
+            current |=  (UINT8_C(1) << bit);
+        else
+            current &= ~(UINT8_C(1) << bit);
+        if (bit == 0)
+            data[idx] = current;
+    }
+    assert(i == len);
+    *new_len = len / __CHAR_BIT__;
+
+    // Use brotli to compress the data
+    const size_t max_compressed_size = BrotliEncoderMaxCompressedSize(*new_len);
+#if 0
+    char* const compressed = malloc(max_compressed_size);
+    if (unlikely(!compressed))
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to allocate memory\n");
+
+    size_t lwin = BROTLI_MIN_WINDOW_BITS;
+    size_t compressed_size = max_compressed_size;
+    BROTLI_BOOL tmp = BrotliEncoderCompress(
+        BROTLI_MAX_QUALITY,
+        lwin,
+        BROTLI_MODE_GENERIC,
+        *new_len,
+        (const uint8_t*)data,
+        &compressed_size,
+        (uint8_t*)compressed
+    );
+    if (unlikely(tmp != BROTLI_TRUE) || unlikely(compressed_size == 0))
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to compress data\n");
+    
+    free(data);
+    *new_len = compressed_size;
+    return compressed;
+#else
+    char* returned = nullptr;
+    size_t best_size = max_compressed_size;
+    for (size_t i = BROTLI_MIN_WINDOW_BITS; i <= BROTLI_LARGE_MAX_WINDOW_BITS; ++i)
+    {
+        char* const compressed = malloc(max_compressed_size);
+        if (unlikely(!compressed))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to allocate memory\n");
+
+        size_t compressed_size = max_compressed_size;
+        BROTLI_BOOL tmp = BrotliEncoderCompress(
+            BROTLI_MAX_QUALITY,
+            i,
+            BROTLI_MODE_GENERIC,
+            *new_len,
+            (const uint8_t*)data,
+            &compressed_size,
+            (uint8_t*)compressed
+        );
+        if (unlikely(tmp != BROTLI_TRUE) || unlikely(compressed_size == 0))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to compress data\n");
+
+        if (compressed_size < best_size)
+        {
+            free(returned);
+            returned = compressed;
+            best_size = compressed_size;
+        }
+        else
+            free(compressed);
+    }
+
+    free(data);
+    *new_len = best_size;
+    return returned;
+#endif
+}
+
 static bool dump_unicode_data_cat(enum general_category cat, const struct parsed_unicode_data* parsed)
 {
+#undef  MAYBE_DEALLOC
+#define MAYBE_DEALLOC       \
+    if (original)           \
+        fclose(original);   \
+    if (buffer)             \
+        free(buffer);       \
+    if (file)               \
+        fclose(file)
+
+    FILE* original = nullptr;
+
     const char* restrict const output_dir = current_output_dir(nullptr);
 
+    char* ext_c = ".i";
+    char* ext_cpp = ".ipp";
+    char* ext_raw = ".dat";
+    char* ext_raw_compressed = ".dat.br";
+
+    char* ext = nullptr;
+    if (want_raw)
+    {
+        if (want_compressed)
+            ext = ext_raw_compressed;
+        else
+            ext = ext_raw;
+    }
+    else if (currlang_is_c())
+        ext = ext_c;
+    else if (currlang_is_cpp())
+        ext = ext_cpp;
+    else
+        exit_with_error(ERROR_KIND_FATAL_ERROR, "unsupported language\n");
+
     char filename[PATH_MAX] = { 0 };
-    snprintf(filename, ARRAY_SIZE(filename), "%s/cp_is_%s.dat", output_dir, general_category_to_string(cat));
+    snprintf(filename, ARRAY_SIZE(filename), "%s/cp_is_%s%s", output_dir, general_category_to_string(cat), ext);
 
     if (want_debug)
         printf("Dumping category information for cat: %s, to file: %s\n", general_category_to_string(cat), filename);
@@ -1453,12 +2077,23 @@ static bool dump_unicode_data_cat(enum general_category cat, const struct parsed
         emit_warning("failed to open file: %s\n", strerror(errno));
         return false;
     }
+    if (want_debug)
+    {
+        snprintf(filename, ARRAY_SIZE(filename), "%s/cp_is_%s.orig", output_dir, general_category_to_string(cat));
+        original = fopen(filename, "wb");
+        if (unlikely(!original))
+        {
+            emit_warning("failed to open file: %s\n", strerror(errno));
+            fclose(file);
+            return false;
+        }
+    }
 
-    char* buffer = malloc(CODEPOINT_COUNT);
+    char* buffer = malloc(CODEPOINT_COUNT + 1);
     if (unlikely(!buffer))
     {
         emit_warning("failed to allocate memory\n");
-        fclose(file);
+        MAYBE_DEALLOC;
         return false;
     }
 
@@ -1469,18 +2104,55 @@ static bool dump_unicode_data_cat(enum general_category cat, const struct parsed
         else
             buffer[i] = '0';
     }
+    buffer[CODEPOINT_COUNT] = '\0';
 
-    size_t written = fwrite(buffer, sizeof(char), CODEPOINT_COUNT, file);
-    if (unlikely(written != CODEPOINT_COUNT))
+    if (want_debug)
+    {
+        size_t written = fwrite(buffer, sizeof(char), CODEPOINT_COUNT, original);
+        if (unlikely(written != CODEPOINT_COUNT))
+        {
+            emit_warning("failed to write to file: %s\n", strerror(errno));
+            MAYBE_DEALLOC;
+            return false;
+        }
+    }
+
+    int len = CODEPOINT_COUNT;
+    if (!want_raw)
+    {
+        char symname[1024] = { 0 };
+        mk_symbol_prefix(symname, ARRAY_SIZE(symname));
+        strcat(symname, "cp_is_");
+        strcat(symname, general_category_to_string(cat));
+
+        buffer = gen_bitset_decl(symname, buffer, &len);
+        if (unlikely(!buffer) || unlikely(len < 0))
+        {
+            emit_warning("failed to generate bitset declaration\n");
+            MAYBE_DEALLOC;
+            return false;
+        }
+    }
+    else if (want_compressed)
+    {
+        buffer = compress_data(buffer, len, &len);
+        if (unlikely(!buffer) || unlikely(len < 0))
+        {
+            emit_warning("failed to compress data\n");
+            MAYBE_DEALLOC;
+            return false;
+        }
+    }
+
+    size_t written = fwrite(buffer, sizeof(char), len, file);
+    if (unlikely(written != (size_t)len))
     {
         emit_warning("failed to write to file: %s\n", strerror(errno));
-        fclose(file);
-        free(buffer);
+        MAYBE_DEALLOC;
         return false;
     }
 
-    fclose(file);
-    free(buffer);
+    MAYBE_DEALLOC;
     return true;
 }
 
@@ -1737,4 +2409,63 @@ static void thread_pool_enqueue(struct thread_pool* pool, void* (*func)(void*), 
 
     if (want_debug)
         printf("Task has been enqueued\n");
+}
+
+static inline bool path_exists(const char* filepath)
+{
+    struct stat st;
+    return stat(filepath, &st) == 0;
+}
+
+static inline bool file_exists(const char* filepath)
+{
+    struct stat st;
+    return stat(filepath, &st) == 0 && S_ISREG(st.st_mode);
+}
+
+static inline bool dir_exists(const char* dirpath)
+{
+    struct stat st;
+    return stat(dirpath, &st) == 0 && S_ISDIR(st.st_mode);
+}
+
+static inline bool create_dir(const char* dirpath)
+{
+    printf("Creating directory: %s\n", dirpath);
+    return mkdir(dirpath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0;
+}
+
+static inline bool create_dir_recursive(const char* dirpath)
+{
+    char buffer[PATH_MAX];
+    char* real = strdupa(dirpath);
+
+    buffer[0] = '\0';
+    char* tok = nullptr;
+    while ((tok = strsep(&real, "/")))
+    {
+        if (tok[0] == '\0')
+            continue;
+
+        strcat(buffer, "/");
+        strcat(buffer, tok);
+
+        if (!dir_exists(buffer))
+        {
+            if (!create_dir(buffer))
+                return false;
+        }
+    }
+
+    return true;
+}
+
+static void gen_cachedir(void)
+{
+    const char* restrict const output_dir = get_cachedir();
+    if (!dir_exists(output_dir))
+    {
+        if (!create_dir_recursive(output_dir))
+            exit_with_error(ERROR_KIND_FATAL_ERROR, "failed to create directory %s: %s\n", output_dir, strerror(errno));
+    }
 }

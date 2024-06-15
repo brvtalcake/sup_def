@@ -1,7 +1,32 @@
-include(${CMAKE_CURRENT_LIST_DIR}/../cmake/report_target_properties.cmake)
+include("${SUPDEF_PROJECT_CMAKE_DIR}/report_target_properties.cmake")
 
-file(GLOB_RECURSE LIBSDCOMMON_SOURCES LIST_DIRECTORIES FALSE "*.h" ".hpp" "*.c" "*.cpp")
-file(GLOB_RECURSE LIBSDCOMMON_HEADERS LIST_DIRECTORIES FALSE "*.h" ".hpp")
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/unistreams/impl/compiled/")
+
+include("${CMAKE_CURRENT_LIST_DIR}/supdefcommon.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/unistreams/unistreams.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/fs-watch/fs-watch.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/sigmanager/sigmanager.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/threadkiller/threadkiller.cmake")
+
+# Append SUPDEFCOMMON_SOURCES_LIST, UNISTREAMS_SOURCES_LIST, ... etc, to LIBSDCOMMON_SOURCES
+set(LIBSDCOMMON_SOURCES
+    ${SUPDEFCOMMON_SOURCES_LIST}
+    ${UNISTREAMS_SOURCES_LIST}
+    ${FS_WATCH_SOURCES_LIST}
+    ${SIGMANAGER_SOURCES_LIST}
+    ${THREADKILLER_SOURCES_LIST}
+)
+set(LIBSDCOMMON_HEADERS
+    ${SUPDEFCOMMON_HEADERS_LIST}
+    ${UNISTREAMS_HEADERS_LIST}
+    ${FS_WATCH_HEADERS_LIST}
+    ${SIGMANAGER_HEADERS_LIST}
+    ${THREADKILLER_HEADERS_LIST}
+)
+
+#file(GLOB_RECURSE LIBSDCOMMON_SOURCES LIST_DIRECTORIES FALSE "*.h" ".hpp" "*.i" "*.ipp" "*.tpp" "*.c" "*.cpp")
+#file(GLOB_RECURSE LIBSDCOMMON_HEADERS LIST_DIRECTORIES FALSE "*.h" ".hpp" "*.i" "*.ipp" "*.tpp")
+
 
 add_library(sdcommon STATIC ${LIBSDCOMMON_SOURCES})
 target_link_libraries(sdcommon PUBLIC sdthirdparty)

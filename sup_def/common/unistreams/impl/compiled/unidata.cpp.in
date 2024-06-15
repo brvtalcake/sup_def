@@ -1,0 +1,182 @@
+#undef  STR
+#undef  STR_IMPL
+#define STR_IMPL(...) #__VA_ARGS__
+#define STR(...) STR_IMPL(__VA_ARGS__)
+
+#undef  PP_CAT
+#undef  PP_CAT_IMPL
+#define PP_CAT_IMPL(a, ...) a ## __VA_ARGS__
+#define PP_CAT(a, ...) PP_CAT_IMPL(a, __VA_ARGS__)
+
+#undef UNISTREAMS_UNIDATA_COMPRESSED
+#undef UNISTREAMS_UNIDATA_BITSET
+#undef UNISTREAMS_UNIDATA_OUTPUT_PATH
+
+#cmakedefine01 @UNISTREAMS_UNIDATA_COMPRESSED@
+#cmakedefine01 @UNISTREAMS_UNIDATA_BITSET@
+
+#cmakedefine @UNISTREAMS_UNIDATA_OUTPUT_PATH@
+
+// Configure the path of the 38 general categories data file
+/*     GENERAL_CATEGORY_Lu
+    GENERAL_CATEGORY_Ll
+    GENERAL_CATEGORY_Lt
+    GENERAL_CATEGORY_Lm
+    GENERAL_CATEGORY_Lo
+
+    GENERAL_CATEGORY_Mn
+    GENERAL_CATEGORY_Mc
+    GENERAL_CATEGORY_Me
+
+    GENERAL_CATEGORY_Nd
+    GENERAL_CATEGORY_Nl
+    GENERAL_CATEGORY_No
+
+    GENERAL_CATEGORY_Pc
+    GENERAL_CATEGORY_Pd
+    GENERAL_CATEGORY_Ps
+    GENERAL_CATEGORY_Pe
+    GENERAL_CATEGORY_Pi
+    GENERAL_CATEGORY_Pf
+    GENERAL_CATEGORY_Po
+
+    GENERAL_CATEGORY_Sm
+    GENERAL_CATEGORY_Sc
+    GENERAL_CATEGORY_Sk
+    GENERAL_CATEGORY_So
+
+    GENERAL_CATEGORY_Zs
+    GENERAL_CATEGORY_Zl
+    GENERAL_CATEGORY_Zp
+
+    GENERAL_CATEGORY_Cc
+    GENERAL_CATEGORY_Cf
+    GENERAL_CATEGORY_Cs
+    GENERAL_CATEGORY_Co
+    GENERAL_CATEGORY_Cn
+
+    GENERAL_CATEGORY_LC
+    GENERAL_CATEGORY_L
+    GENERAL_CATEGORY_M
+    GENERAL_CATEGORY_N
+    GENERAL_CATEGORY_P
+    GENERAL_CATEGORY_S
+    GENERAL_CATEGORY_Z
+    GENERAL_CATEGORY_C */
+
+#if UNISTREAMS_UNIDATA_COMPRESSED == UNISTREAMS_UNIDATA_BITSET
+    #error "UNISTREAMS_UNIDATA_COMPRESSED and UNISTREAMS_UNIDATA_BITSET cannot be both defined or both undefined"
+#endif
+
+#include <cstddef>
+
+#if UNISTREAMS_UNIDATA_BITSET
+    #include <bitset>
+    
+    #undef  MK_UNIDATA_PATH
+    #define MK_UNIDATA_PATH(cat) STR(PP_CAT(UNISTREAMS_UNIDATA_OUTPUT_PATH, PP_CAT(/cp_is_, cat.ipp)))
+
+    #include MK_UNIDATA_PATH(Lu)
+    #include MK_UNIDATA_PATH(Ll)
+    #include MK_UNIDATA_PATH(Lt)
+    #include MK_UNIDATA_PATH(Lm)
+    #include MK_UNIDATA_PATH(Lo)
+
+    #include MK_UNIDATA_PATH(Mn)
+    #include MK_UNIDATA_PATH(Mc)
+    #include MK_UNIDATA_PATH(Me)
+
+    #include MK_UNIDATA_PATH(Nd)
+    #include MK_UNIDATA_PATH(Nl)
+    #include MK_UNIDATA_PATH(No)
+
+    #include MK_UNIDATA_PATH(Pc)
+    #include MK_UNIDATA_PATH(Pd)
+    #include MK_UNIDATA_PATH(Ps)
+    #include MK_UNIDATA_PATH(Pe)
+    #include MK_UNIDATA_PATH(Pi)
+    #include MK_UNIDATA_PATH(Pf)
+    #include MK_UNIDATA_PATH(Po)
+
+    #include MK_UNIDATA_PATH(Sm)
+    #include MK_UNIDATA_PATH(Sc)
+    #include MK_UNIDATA_PATH(Sk)
+    #include MK_UNIDATA_PATH(So)
+
+    #include MK_UNIDATA_PATH(Zs)
+    #include MK_UNIDATA_PATH(Zl)
+    #include MK_UNIDATA_PATH(Zp)
+
+    #include MK_UNIDATA_PATH(Cc)
+    #include MK_UNIDATA_PATH(Cf)
+    #include MK_UNIDATA_PATH(Cs)
+    #include MK_UNIDATA_PATH(Co)
+    #include MK_UNIDATA_PATH(Cn)
+
+    #include MK_UNIDATA_PATH(LC)
+    #include MK_UNIDATA_PATH(L)
+    #include MK_UNIDATA_PATH(M)
+    #include MK_UNIDATA_PATH(N)
+    #include MK_UNIDATA_PATH(P)
+    #include MK_UNIDATA_PATH(S)
+    #include MK_UNIDATA_PATH(Z)
+    #include MK_UNIDATA_PATH(C)
+
+#elif UNISTREAMS_UNIDATA_COMPRESSED
+    #undef  INCBIN_PREFIX
+    #undef  INCBIN_STYLE
+    #define INCBIN_PREFIX compressed_ucd_
+    #define INCBIN_STYLE  INCBIN_STYLE_SNAKE
+    #include <incbin.h>
+    
+    #undef  MK_UNIDATA_PATH
+    #define MK_UNIDATA_PATH(cat) STR(PP_CAT(UNISTREAMS_UNIDATA_OUTPUT_PATH, PP_CAT(/cp_is_, cat.dat.br)))
+
+    INCBIN(cp_is_Lu, MK_UNIDATA_PATH(Lu));
+    INCBIN(cp_is_Ll, MK_UNIDATA_PATH(Ll));
+    INCBIN(cp_is_Lt, MK_UNIDATA_PATH(Lt));
+    INCBIN(cp_is_Lm, MK_UNIDATA_PATH(Lm));
+    INCBIN(cp_is_Lo, MK_UNIDATA_PATH(Lo));
+
+    INCBIN(cp_is_Mn, MK_UNIDATA_PATH(Mn));
+    INCBIN(cp_is_Mc, MK_UNIDATA_PATH(Mc));
+    INCBIN(cp_is_Me, MK_UNIDATA_PATH(Me));
+
+    INCBIN(cp_is_Nd, MK_UNIDATA_PATH(Nd));
+    INCBIN(cp_is_Nl, MK_UNIDATA_PATH(Nl));
+    INCBIN(cp_is_No, MK_UNIDATA_PATH(No));
+
+    INCBIN(cp_is_Pc, MK_UNIDATA_PATH(Pc));
+    INCBIN(cp_is_Pd, MK_UNIDATA_PATH(Pd));
+    INCBIN(cp_is_Ps, MK_UNIDATA_PATH(Ps));
+    INCBIN(cp_is_Pe, MK_UNIDATA_PATH(Pe));
+    INCBIN(cp_is_Pi, MK_UNIDATA_PATH(Pi));
+    INCBIN(cp_is_Pf, MK_UNIDATA_PATH(Pf));
+    INCBIN(cp_is_Po, MK_UNIDATA_PATH(Po));
+
+    INCBIN(cp_is_Sm, MK_UNIDATA_PATH(Sm));
+    INCBIN(cp_is_Sc, MK_UNIDATA_PATH(Sc));
+    INCBIN(cp_is_Sk, MK_UNIDATA_PATH(Sk));
+    INCBIN(cp_is_So, MK_UNIDATA_PATH(So));
+
+    INCBIN(cp_is_Zs, MK_UNIDATA_PATH(Zs));
+    INCBIN(cp_is_Zl, MK_UNIDATA_PATH(Zl));
+    INCBIN(cp_is_Zp, MK_UNIDATA_PATH(Zp));
+
+    INCBIN(cp_is_Cc, MK_UNIDATA_PATH(Cc));
+    INCBIN(cp_is_Cf, MK_UNIDATA_PATH(Cf));
+    INCBIN(cp_is_Cs, MK_UNIDATA_PATH(Cs));
+    INCBIN(cp_is_Co, MK_UNIDATA_PATH(Co));
+    INCBIN(cp_is_Cn, MK_UNIDATA_PATH(Cn));
+
+    INCBIN(cp_is_LC, MK_UNIDATA_PATH(LC));
+    INCBIN(cp_is_L, MK_UNIDATA_PATH(L));
+    INCBIN(cp_is_M, MK_UNIDATA_PATH(M));
+    INCBIN(cp_is_N, MK_UNIDATA_PATH(N));
+    INCBIN(cp_is_P, MK_UNIDATA_PATH(P));
+    INCBIN(cp_is_S, MK_UNIDATA_PATH(S));
+    INCBIN(cp_is_Z, MK_UNIDATA_PATH(Z));
+    INCBIN(cp_is_C, MK_UNIDATA_PATH(C));
+#else
+    #error "UNISTREAMS_UNIDATA_COMPRESSED and UNISTREAMS_UNIDATA_BITSET cannot be both defined or both undefined"
+#endif
