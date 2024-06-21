@@ -22,13 +22,22 @@
  * SOFTWARE.
  */
 
+#include <sup_def/common/config.h>
 #include <sup_def/common/sigmanager/sigmanager.hpp>
+#include <boost/callable_traits.hpp>
 #include <chaos/preprocessor/repetition/enum_from_to.h>
 #include <chaos/preprocessor/arithmetic/add.h>
 #include <chaos/preprocessor/arithmetic/sub.h>
 #include <chaos/preprocessor/comparison/max.h>
 #include <chaos/preprocessor/comparison/min.h>
 #include <csignal>
+#include <list>
+#include <map>
+#include <mutex>
+#include <set>
+#include <thread>
+#include <variant>
+
 
 #undef MAX_SIGUSR
 #define MAX_SIGUSR CHAOS_PP_MAX(SIGUSR1, SIGUSR2)
@@ -55,11 +64,6 @@
         )                                   \
     )
 
-/* #if __SIGRTMIN <= 0 || __SIGRTMAX <= 0
-    // For now, throw an error
-    #error "Missing __SIGRTMIN or __SIGRTMAX"
-#endif */
-
 // From GLIBC source code:
 //  sysdeps/unix/sysv/linux/internal-signals.h
 #if __SIGRTMIN > 0 && __SIGRTMAX > 0
@@ -79,99 +83,115 @@
     #endif
 #endif
 
+namespace
+{
+    template<typename...>
+    concept have_tgkill = requires(sigmgr::pid_t pid, sigmgr::tid_t tid, int sig)
+    {
+        { ::tgkill(pid, tid, sig) } -> std::same_as<int>;
+    };
+
+    template<typename...>
+    concept have_pthread_kill = requires(pthread_t pthread, int sig)
+    {
+        { ::pthread_kill(pthread, sig) } -> std::same_as<int>;
+    };
+}
+
 namespace sigmgr
 {
-    static std::atomic<::sigmgr::tid_t> signaled_thread_tid;
-    static std::atomic<pthread_t> signaled_thread_pthread;
-
-    no_return
-    static void signaled_thread_func() noexcept
+    class client_callbacks
     {
-        tid_t tid = TRY_SYSCALL_WHILE_EINTR(::gettid, ());
-        signaled_thread_tid.store(tid, std::memory_order::release);
+        public:
+            client_callbacks() = delete;
 
-        signaled_thread_pthread.store(::pthread_self(), std::memory_order::release);
+            constexpr client_callbacks(const std::string& id) noexcept
+                : id(id)
+            { }
+            constexpr client_callbacks(std::string&& id) noexcept
+                : id(std::move(id))
+            { }
 
-        while (true)
-        {
-            ::pause();
-        }
-    }
+            client_callbacks(const client_callbacks&) = delete;
+            client_callbacks(client_callbacks&& other) noexcept
+                : id(std::move(other.id)), callbacks(std::move(other.callbacks))
+            { }
 
-    static std::thread signaled_thread;
+            client_callbacks& operator=(const client_callbacks&) = delete;
+            client_callbacks& operator=(client_callbacks&& other) noexcept
+            {
+                this->id = std::move(other.id);
+                this->callbacks = std::move(other.callbacks);
+                return *this;
+            }
 
-    static std::atomic<bool> rtsig_tracking_initialized = false;
-    static std::map<int, bool> rtsig_available;
-    static std::unordered_multimap<std::string, int> rtsig_use;
-    static std::mutex rtsig_mtx;
+            ~client_callbacks() noexcept
+            {
+                this->reset_callbacks();
+            }
 
-    static std::atomic<bool> sigusr_tracking_initialized = false;
-    static std::array<bool, 2> sigusr_available;
-    static std::unordered_multimap<std::string, int> sigusr_use;
-    static std::mutex sigusr_mtx;
+            callback_iterator add_callback(const callback_t& callback) noexcept
+            {
+                return this->callbacks.insert(this->callbacks.cend(), callback);
+            }
+            callback_iterator add_callback(callback_t&& callback) noexcept
+            {
+                return this->callbacks.insert(this->callbacks.cend(), std::move(callback));
+            }
+            void remove_callback(const callback_iterator& it) noexcept
+            {
+                this->callbacks.erase(it);
+            }
+            void reset_callbacks() noexcept
+            {
+                this->callbacks.clear();
+            }
 
-    namespace
-    {
-#undef SIGMGR_DEFINE_SIGNAL_TEST
-#define SIGMGR_DEFINE_SIGNAL_TEST(tested, sig)  \
-    if (tested == sig)                          \
-        return false;
+            constexpr const std::string& get_id() const noexcept
+            {
+                return this->id;
+            }
 
-        static constexpr bool can_be_handled(const int sig) noexcept
-        {
-#ifdef SIGKILL
-            SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGKILL)
-#endif
+            constexpr std::strong_ordering operator<=>(const client_callbacks& other) const noexcept
+            {
+                return this->id <=> other.id;
+            }
+            constexpr std::strong_ordering operator<=>(const std::string& other) const noexcept
+            {
+                return this->id <=> other;
+            }
 
-#ifdef SIGSTOP
-            SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGSTOP)
-#endif
-            return true;
-        }
+            constexpr callback_iterator begin() noexcept
+            {
+                return this->callbacks.begin();
+            }
+            constexpr const_callback_iterator begin() const noexcept
+            {
+                return this->cbegin();
+            }
+            constexpr const_callback_iterator cbegin() const noexcept
+            {
+                return this->callbacks.cbegin();
+            }
 
-        static constexpr bool shall_be_handled(const int sig) noexcept
-        {
-            if (!can_be_handled(sig))
-                return false;
+            constexpr callback_iterator end() noexcept
+            {
+                return this->callbacks.end();
+            }
+            constexpr const_callback_iterator end() const noexcept
+            {
+                return this->cend();
+            }
+            constexpr const_callback_iterator cend() const noexcept
+            {
+                return this->callbacks.cend();
+            }
             
-            if consteval
-            {
-#ifdef SIGSEGV
-                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGSEGV)
-#endif
+        private:
+            std::string id;
+            std::list<callback_t> callbacks;
+    };
 
-#ifdef SIGFPE
-                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGFPE)
-#endif
-
-#ifdef SIGILL
-                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGILL)
-#endif
-
-#ifdef SIGBUS
-                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGBUS)
-#endif
-
-#ifdef SIGABRT
-                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGABRT)
-#endif
-
-#if __SIGRTMIN > 0 && __SIGRTMAX > 0
-                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGCANCEL)
-                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGTIMER)
-                SIGMGR_DEFINE_SIGNAL_TEST(sig, SIGSETXID)
-#endif
-                return true;
-            }
-            else
-            {
-                /*             if (!std::is_constant_evaluated() && sig >= SIGRTMIN && sig <= SIGRTMAX)
-                return true; */
-
-            }
-        }
-
-    }
 #undef SIGMGR_DEFINE_SIGNAL_ENTRY
 #define SIGMGR_DEFINE_SIGNAL_ENTRY(sig, ...)    \
     CHAOS_PP_COMMA_IF(                          \
@@ -180,9 +200,9 @@ namespace sigmgr
         )                                       \
         (1)                                     \
         (FIRST_ARG(__VA_ARGS__))                \
-    ) { (sig), (std::bool_constant<shall_be_handled(sig)>::value) }
+    ) (sig)
 
-    static std::multimap<int, bool> handleable_signals{
+    static std::set<int> allsigs{
 #ifdef SIGABRT
         SIGMGR_DEFINE_SIGNAL_ENTRY(SIGABRT, 0)
 #endif
@@ -239,10 +259,6 @@ namespace sigmgr
         SIGMGR_DEFINE_SIGNAL_ENTRY(SIGIOT)
 #endif
 
-#ifdef SIGKILL
-        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGKILL)
-#endif
-
 #ifdef SIGLOST
         SIGMGR_DEFINE_SIGNAL_ENTRY(SIGLOST)
 #endif
@@ -273,10 +289,6 @@ namespace sigmgr
 
 #ifdef SIGSTKFLT
         SIGMGR_DEFINE_SIGNAL_ENTRY(SIGSTKFLT)
-#endif
-
-#ifdef SIGSTOP
-        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGSTOP)
 #endif
 
 #ifdef SIGTSTP
@@ -335,478 +347,416 @@ namespace sigmgr
         SIGMGR_DEFINE_SIGNAL_ENTRY(SIGWINCH)
 #endif
 
-#if __SIGRTMIN > 0 && __SIGRTMAX > 0
-        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGCANCEL)
-        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGTIMER)
-        SIGMGR_DEFINE_SIGNAL_ENTRY(SIGSETXID)
-
-        , CHAOS_PP_EXPR(
-            CHAOS_PP_ENUM_FROM_TO(
-                CHAOS_PP_ADD(__SIGRTMIN, RESERVED_FOR_PTHREADS),
-                CHAOS_PP_ADD(__SIGRTMAX, 1),
-                CHAOS_PP_LAMBDA(CHAOS_PP_LAMBDA(SIGMGR_DEFINE_SIGNAL_ENTRY)(CHAOS_PP_ARG(1), 0))
-            )
-        )
-#endif
     };
 #undef SIGMGR_DEFINE_SIGNAL_ENTRY
 
+    enum class management_type : uint_fast8_t
+    {
+        DEFAULT = 0, // Default signal management (i.e. SIG_DFL)
+        USERDEFINED, // User provides a custom signal handler
+        CALLBACKS    // User provides callbacks that we call when the signal is received
+    };
+
+    static std::atomic<bool> initialized = false;
+
+    static std::atomic<tid_t> signaled_thread_tid;
+    static std::atomic<pthread_t> signaled_thread_pthread;
+    static std::thread signaled_thread;
+
+    static std::multimap<int, client_callbacks> signal_callbacks;
+    static std::mutex signal_callbacks_mutex;
+
+    static std::map<int, generic_handler_t> signal_handlers;
+    static std::mutex signal_handlers_mutex;
+
+    static std::map<int, management_type> managed;
+    static std::mutex managed_mutex;
+
+    namespace
+    {
+        const std::set<int>& get_all_signals() noexcept
+        {
+            return allsigs;
+        }
+    }
     namespace detail
     {
-        static void assert_preconditions() noexcept
+        namespace
         {
-            /* hard_assert(handleable_signals.size() == NSIG, "Missing signal entry in handleable_signals"); */
+            static void call_client_callbacks(int sig, siginfo_t* info, ucontext_t* context) noexcept
+            {
+                auto range = signal_callbacks.equal_range(sig);
+                for (auto it = range.first; it != range.second; ++it)
+                {
+                    for (callback_t& callback : it->second)
+                    {
+                        if (callback)
+                            callback(info, context);
+                    }
+                }
+            }
+
+            static void generic_handler(int sig, siginfo_t* info, ucontext_t* context) noexcept
+            {
+                unlikely_if (!allsigs.contains(sig))
+                    std::terminate(); // Shall not be installed for this signal
+
+                std::scoped_lock lock(signal_handlers_mutex, managed_mutex, signal_callbacks_mutex);
+
+                switch (managed[sig])
+                {
+                    case management_type::DEFAULT:
+                        std::terminate(); // Shall not be called
+                        break;
+                    case management_type::USERDEFINED:
+                        std::visit(
+                            [&](auto&& handler)
+                            {
+                                if constexpr (std::same_as<
+                                    std::remove_cvref_t<decltype(handler)>,
+                                    simple_handler_t
+                                >) { handler(sig); }
+                                else
+                                {
+                                    static_assert(std::same_as<
+                                        std::remove_cvref_t<decltype(handler)>,
+                                        handler_t
+                                    >);
+                                    handler(sig, info, context);
+                                }
+                            },
+                            signal_handlers[sig]
+                        );
+                        break;
+                    case management_type::CALLBACKS:
+                        call_client_callbacks(sig, info, context);
+                        break;
+                }
+            }
+    
+            symbol_cold
+            static void assert_preconditions() noexcept
+            {
+                hard_assert(allsigs.size() == 31);
+                hard_assert(::getpid() == ::gettid());
+
+                hard_assert(       0 < SIGRTMIN);
+                hard_assert(       0 < SIGRTMAX);
+                hard_assert(SIGRTMIN < SIGRTMAX);
+
+                const int& curr_max = *stdrg::max_element(allsigs);
+
 #if __SIGRTMIN > 0 && __SIGRTMAX > 0
-            hard_assert(SIGRTMIN == __SIGRTMIN + RESERVED_FOR_PTHREADS);
-            hard_assert(SIGRTMAX == __SIGRTMAX);
+                hard_assert(__SIGRTMIN < SIGRTMIN);
+                hard_assert(SIGRTMIN == __SIGRTMIN + RESERVED_FOR_PTHREADS);
+                hard_assert(SIGRTMAX == __SIGRTMAX);
+                hard_assert(curr_max < __SIGRTMIN);
 #endif
+                hard_assert(curr_max < SIGRTMAX);
+                hard_assert(curr_max < SIGRTMIN);
+            }
         }
 
-        static void assert_preconditions2() noexcept
-        {
-#ifdef _NSIG
-            hard_assert(handleable_signals.size() >= _NSIG, "Missing signal entry in handleable_signals");
-#endif
-        }
-
+        symbol_cold
         static void init() noexcept
         {
             assert_preconditions();
 
-#if __SIGRTMIN <= 0 || __SIGRTMAX <= 0
-            const int curr_max = stdrg::max_element(handleable_signals.cbegin(), handleable_signals.cend(), [](const std::pair<int, bool>& lhs, const std::pair<int, bool>& rhs)
-            {
-                return lhs.first < rhs.first;
-            })->first;
+            for (int s = SIGRTMIN; s <= SIGRTMAX; ++s)
+                allsigs.insert(s);
 
-            if (curr_max != 31)
-                std::terminate();
-
-            switch (SIGRTMIN - curr_max)
-            {
-                case 4: // 3 rt signals are reserved for pthreads
-                    handleable_signals.insert({SIGRTMIN - 3, false});
-                    case_fallthrough;
-                case 3: // 2 rt signals are reserved for pthreads
-                    handleable_signals.insert({SIGRTMIN - 2, false});
-                    case_fallthrough;
-                case 2: // 1 rt signal is reserved for pthreads (unlikely, but possible)
-                    handleable_signals.insert({SIGRTMIN - 1, false});
-                    case_fallthrough;
-                case 1: // SIGRTMIN through SIGRTMAX are usable
-                    break;
-                default: // Either bad programming from me, or very (very very very very) strange system
-                    std::terminate();
-            }
-
-            const auto rtsig_range = stdviews::iota(SIGRTMIN, SIGRTMAX + 1);
-            for (const int& s : rtsig_range)
-            {
-                handleable_signals.insert({s, true});
-            }
-#endif
-            assert_preconditions2();
+            for (const int& sig : allsigs)
+                managed[sig] = management_type::DEFAULT;
         }
+
+        
+        /// @pre `signal_handlers_mutex` is locked
+        static void install_signal_handler_for(
+            const int sig,
+            const bool default_handler = true,
+            generic_handler_t&& handler = generic_handler_t(&generic_handler)
+        ) noexcept
+        {
+            struct ::sigaction sa{0};
+
+            if (!default_handler)
+                signal_handlers[sig] = std::move(handler);
+
+            static const auto adapter = [](int sig, siginfo_t* info, void* context) static noexcept -> void
+            {
+                generic_handler(sig, info, static_cast<ucontext_t*>(context));
+            };
+            sa.sa_sigaction = static_cast<void (*)(int, siginfo_t*, void*)>(adapter);
+            sa.sa_flags = SA_SIGINFO;
+
+            TRY_SYSCALL_WHILE_EINTR(::sigaction, (sig, &sa, nullptr));
+        }
+
+        /// @pre `signal_handlers_mutex` is locked
+        static void uninstall_signal_handler_for(const int sig) noexcept
+        {
+            struct ::sigaction sa{0};
+
+            signal_handlers.erase(sig);
+
+            sa.sa_handler = SIG_DFL;
+
+            TRY_SYSCALL_WHILE_EINTR(::sigaction, (sig, &sa, nullptr));
+        }
+
+        static void mask_all_signals(bool while_init) noexcept
+        {
+            sigset_t mask{0};
+
+            TRY_SYSCALL_WHILE_EINTR(::sigemptyset, (&mask));
+
+            for (const int& sig : get_all_signals())
+                TRY_SYSCALL_WHILE_EINTR(::sigaddset, (&mask, sig));
+
+            if (while_init)
+                TRY_SYSCALL_WHILE_EINTR(::sigprocmask, (SIG_BLOCK, &mask, nullptr));
+            else
+                TRY_SYSCALL_WHILE_EINTR(::pthread_sigmask, (SIG_BLOCK, &mask, nullptr));
+        }
+
+        static void unmask_all_signals() noexcept
+        {
+            sigset_t mask{0};
+
+            TRY_SYSCALL_WHILE_EINTR(::sigemptyset, (&mask));
+
+            for (const int& sig : get_all_signals())
+                TRY_SYSCALL_WHILE_EINTR(::sigaddset, (&mask, sig));
+
+            TRY_SYSCALL_WHILE_EINTR(::pthread_sigmask, (SIG_UNBLOCK, &mask, nullptr));
+        }
+    }
+
+    warn_unused_result()
+    std::optional<callback_id_t> register_callback(const int sig, const std::string& id, const callback_t& callback) noexcept
+    {
+        unlikely_if (!get_all_signals().contains(sig))
+            return std::nullopt;
+
+        std::scoped_lock lock(signal_callbacks_mutex, managed_mutex, signal_handlers_mutex);
+
+        switch (managed[sig])
+        {
+            case management_type::DEFAULT:
+                managed[sig] = management_type::CALLBACKS;
+                detail::install_signal_handler_for(sig);
+                break;
+            case management_type::USERDEFINED:
+                return std::nullopt;
+            case management_type::CALLBACKS:
+                break;
+        }
+
+        // With libstdc++: mm_iter_t = std::_Rb_tree_iterator<std::pair<const int, sigmgr::client_callbacks>>
+        using mm_iter_t = decltype(signal_callbacks)::iterator;
+        std::pair<mm_iter_t, mm_iter_t> eqrange = signal_callbacks.equal_range(sig);
+        // First element equal to sig, or end() if key not found
+        mm_iter_t sigfirst = std::move(eqrange.first);
+        // One past the last element equal to sig, or end() if key not found
+        mm_iter_t siglast  = std::move(eqrange.second);
+
+        mm_iter_t found    = sigfirst;
+        while (
+            found != signal_callbacks.end() &&
+            found != siglast                &&
+            found->second.get_id() != id
+        ) { ++found; }
+        
+        if (found == signal_callbacks.end() || found == siglast || found->second.get_id() != id)
+        {
+            auto ret = signal_callbacks.emplace(sig, client_callbacks(id));
+            return std::make_optional(callback_id_t(sig, id, ret->second.add_callback(callback)));
+        }
+        else
+        {
+            // Verify we do not have another one matching the same id
+            // Normally should be either:
+            // - a callback record for the same sig but different id if found was not the last of the callbacks for sig
+            // - end of the multimap if no other callback for the same sig and no callbacks registered for signals past sig
+            // - a callback record for next sig in the multimap if found was the last of the callbacks for sig
+            mm_iter_t next = found;
+            ++next;
+
+            unlikely_if (
+                next != signal_callbacks.end() &&
+                next != siglast                &&
+                next->second.get_id() == id
+            )
+            {
+                // Shall not happen if we do our job correctly and append the
+                // potentially new callbacks to the end of the list of the
+                // corresponding client_callbacks object
+                std::cerr << "Callback with id " << id << " exists multiple times for signal " << sig << std::endl;
+                std::terminate();
+            }
+            return std::make_optional(callback_id_t(sig, id, found->second.add_callback(callback)));
+        }
+    }
+
+    warn_unused_result()
+    bool unregister_callback(const callback_id_t& cbid) noexcept
+    {
+        const int& sig                            = std::get<0>(cbid);
+        const std::string& id                     = std::get<1>(cbid);
+        const std::list<callback_t>::iterator& it = std::get<2>(cbid);
+
+        unlikely_if (!get_all_signals().contains(sig))
+            return false;
+
+        std::scoped_lock lock(signal_callbacks_mutex, managed_mutex, signal_handlers_mutex);
+
+        using mm_iter_t    = decltype(signal_callbacks)::iterator;
+        
+        std::pair<mm_iter_t, mm_iter_t>
+            eqrange        = signal_callbacks.equal_range(sig);
+
+        mm_iter_t sigfirst = std::move(eqrange.first);
+        mm_iter_t siglast  = std::move(eqrange.second);
+
+        mm_iter_t found = sigfirst;
+        while (
+            found != signal_callbacks.end() &&
+            found != siglast                &&
+            found->second.get_id() != id
+        ) { ++found; }
+
+        unlikely_if (found == signal_callbacks.end() || found == siglast || found->second.get_id() != id)
+            return false;
+
+        found->second.remove_callback(it);
+
+        if (found->second.begin() == found->second.end())
+        {
+            signal_callbacks.erase(found);
+
+            eqrange  = signal_callbacks.equal_range(sig);
+            sigfirst = std::move(eqrange.first);
+            siglast  = std::move(eqrange.second);
+            
+            if (std::distance(sigfirst, siglast) < 1)
+            {
+                managed[sig] = management_type::DEFAULT;
+                detail::uninstall_signal_handler_for(sig);
+            }
+        }
+
+        return true;
+    }
+    void reset_callbacks(const int sig, const std::string& id) noexcept
+    {
+        unlikely_if (!get_all_signals().contains(sig))
+            return;
+
+        std::scoped_lock lock(signal_callbacks_mutex, managed_mutex, signal_handlers_mutex);
+
+        using mm_iter_t = decltype(signal_callbacks)::iterator;
+
+        std::pair<mm_iter_t, mm_iter_t> eqrange = signal_callbacks.equal_range(sig);
+        mm_iter_t sigfirst = std::move(eqrange.first);
+        mm_iter_t siglast  = std::move(eqrange.second);
+
+        mm_iter_t found = sigfirst;
+        while (
+            found != signal_callbacks.end() &&
+            found != siglast                &&
+            found->second.get_id() != id
+        ) { ++found; }
+
+        unlikely_if (found == signal_callbacks.end() || found == siglast || found->second.get_id() != id)
+            return;
+
+        found->second.reset_callbacks();
+
+        signal_callbacks.erase(found);
+        managed[sig] = management_type::DEFAULT;
+        detail::uninstall_signal_handler_for(sig);
+    }
+    void reset_callbacks(const std::string& id) noexcept
+    {
+        std::scoped_lock lock(signal_callbacks_mutex, managed_mutex, signal_handlers_mutex);
+
+        using mm_iter_t = decltype(signal_callbacks)::iterator;
+        mm_iter_t found = signal_callbacks.begin();
+        auto fdif = [&id](const mm_iter_t::reference pair) noexcept -> bool
+        {
+            return pair.second.get_id() == id;
+        };
+        while (
+            (found = std::find_if(found, signal_callbacks.end(), fdif)) != signal_callbacks.end()
+        )
+        {
+            int sig = found->first;
+            found->second.reset_callbacks();
+            found = signal_callbacks.erase(found);
+            if (signal_callbacks.count(sig) < 1)
+            {
+                managed[sig] = management_type::DEFAULT;
+                detail::uninstall_signal_handler_for(sig);
+            }
+        }
+    }
+
+    warn_unused_result()
+    bool set_signal_handler(const int sig, generic_handler_t&& handler) noexcept
+    {
+        unlikely_if (!get_all_signals().contains(sig))
+            return false;
+
+        std::scoped_lock lock(signal_handlers_mutex, managed_mutex);
+        if (managed[sig] != management_type::DEFAULT)
+            return false;
+        managed[sig] = management_type::USERDEFINED;
+        detail::install_signal_handler_for(sig, false, std::move(handler));
+        return true;
+    }
+    
+    warn_unused_result()
+    bool remove_signal_handler(const int sig) noexcept
+    {
+        unlikely_if (!get_all_signals().contains(sig))
+            return false;
+
+        std::scoped_lock lock(signal_handlers_mutex, managed_mutex);
+        if (managed[sig] != management_type::USERDEFINED)
+            return false;
+        managed[sig] = management_type::DEFAULT;
+        detail::uninstall_signal_handler_for(sig);
+        return true;
     }
 
     namespace
     {
-        enum class sig_type : uint_fast64_t
+        no_return
+        static void signaled_thread_func() noexcept
         {
-            rtsig = uint_fast64_t{1} << 0,
-            sigusr = uint_fast64_t{1} << 1,
-            classicsig = uint_fast64_t{1} << 2
-        };
-        ENUM_CLASS_OPERATORS(sig_type);
+            tid_t tid = TRY_SYSCALL_WHILE_EINTR(::gettid, ());
+            signaled_thread_tid.store(tid, std::memory_order::release);
 
-        static inline size_t map_sigusr(const int sig) noexcept
-        {
-            sig == SIGUSR1 ? 0 : (sig == SIGUSR2 ? 1 : -1);
-        }
+            signaled_thread_pthread.store(::pthread_self(), std::memory_order::release);
 
-        static inline int map_index(size_t index) noexcept
-        {
-            index == 0 ? SIGUSR1 : (index == 1 ? SIGUSR2 : -1);
-        }
+            detail::unmask_all_signals();
 
-        static void erase_duplicates(std::unordered_multimap<std::string, int>& map, const std::string& id, const int sig) noexcept
-        {
-            const auto range = map.equal_range(id);
-            for (const auto& it = range.first; it != range.second; ++it)
+            while (true)
             {
-                if (it->second == sig)
-                {
-                    map.erase(it);
-                    return;
-                }
+                ::pause();
             }
         }
-
-        static constexpr bool verify_sig(const int sig, const sig_type type) noexcept
-        {
-            unlikely_if (sig < 0)
-                return false;
-
-            static const std::multimap<sig_type, std::pair<int, int>> sig_ranges = {
-                {sig_type::rtsig, {SIGRTMIN, SIGRTMAX}},
-
-#if SIGUSR1_SIGUSR2_ARE_FOLLOWING
-                {sig_type::sigusr, {MIN_SIGUSR, MAX_SIGUSR}},
-
-                {sig_type::classicsig, {0, MIN_SIGUSR - 1}},
-                {sig_type::classicsig, {MAX_SIGUSR + 1, 31}}
-#else
-                {sig_type::sigusr, {MIN_SIGUSR, MIN_SIGUSR}},
-                {sig_type::sigusr, {MAX_SIGUSR, MAX_SIGUSR}},
-
-                {sig_type::classicsig, {0, MIN_SIGUSR - 1}},
-                {sig_type::classicsig, {MIN_SIGUSR + 1, MAX_SIGUSR - 1}},
-                {sig_type::classicsig, {MAX_SIGUSR + 1, 31}}
-#endif
-            };
-
-            std::vector<std::pair<int, int>> ranges(sig_ranges.size());
-            std::copy_if(sig_ranges.cbegin(), sig_ranges.cend(), std::back_inserter(ranges), [&](const auto& pair)
-            {
-                return bool(pair.first & type);
-            });
-
-            for (const auto& range : ranges)
-            {
-                if (sig >= range.first && sig <= range.second)
-                    return true;
-            }
-            return false;
-        }
-
-        static void redirect_signals_to_signaled_thread() noexcept
-        {
-            int res;
-            sigset_t signal_set;
-            if ((res = TRY_SYSCALL_WHILE_EINTR(::sigemptyset, (&signal_set))) != 0)
-                std::terminate();
-            std::for_each(handleable_signals.cbegin(), handleable_signals.cend(), [&](const std::pair<int, bool>& pair) noexcept
-            {
-                if (pair.second)
-                {
-                    if ((res = TRY_SYSCALL_WHILE_EINTR(::sigaddset, (&signal_set, pair.first))) != 0)
-                        std::terminate();
-                }
-            });
-        
-            /* sigaddset(&signal_set, SIGINT);
-            sigprocmask(SIG_BLOCK, &signal_set, NULL); */
-        }
-    }
-
-
-    static void init_rtsig_tracking() noexcept
-    {
-        if (rtsig_tracking_initialized.load(std::memory_order::acquire))
-            return;
-        rtsig_mtx.lock();
-        for (int i = SIGRTMIN; i < SIGRTMAX; ++i)
-            rtsig_available[i] = true;
-        rtsig_mtx.unlock();
-        rtsig_tracking_initialized.store(true, std::memory_order::release);
-    }
-
-    static void init_sigusr_tracking() noexcept
-    {
-        if (sigusr_tracking_initialized.load(std::memory_order::acquire))
-            return;
-        sigusr_mtx.lock();
-        sigusr_available[0] = true;
-        sigusr_available[1] = true;
-        sigusr_mtx.unlock();
-        sigusr_tracking_initialized.store(true, std::memory_order::release);
-    }
-
-    bool is_rtsig_usable() noexcept
-    {
-        init_rtsig_tracking();
-        std::lock_guard<std::mutex> lock(rtsig_mtx);
-        return std::any_of(rtsig_available.cbegin(), rtsig_available.cend(), [](const auto& pair)
-        {
-            return pair.second;
-        });
-    }
-    bool is_rtsig_usable(const int sig) noexcept
-    {
-        init_rtsig_tracking();
-        if (!verify_sig(sig, sig_type::rtsig))
-            return false;
-        std::lock_guard<std::mutex> lock(rtsig_mtx);
-        return rtsig_available[sig];
-    }
-
-    bool is_sigusr_usable() noexcept
-    {
-        init_sigusr_tracking();
-        std::lock_guard<std::mutex> lock(sigusr_mtx);
-        return std::any_of(sigusr_available.cbegin(), sigusr_available.cend(), [](const bool& available)
-        {
-            return available;
-        });
-    }
-    bool is_sigusr_usable(const int sig) noexcept
-    {
-        init_sigusr_tracking();
-        if (!verify_sig(sig, sig_type::sigusr))
-            return false;
-        std::lock_guard<std::mutex> lock(sigusr_mtx);
-        return sigusr_available[map_sigusr(sig)];
-    }
-
-    std::pair<bool, int> register_rtsig_use(const std::string& id) noexcept
-    {
-        init_rtsig_tracking();
-        std::lock_guard<std::mutex> lock(rtsig_mtx);
-        for (int i = SIGRTMAX - 1; i >= SIGRTMIN; --i)
-        {
-            if (rtsig_available[i])
-            {
-                rtsig_use.insert({id, i});
-                rtsig_available[i] = false;
-
-                erase_duplicates(rtsig_use, id, i);
-
-                return {true, i};
-            }
-        }
-        return {false, -1};
-    }
-    warn_usage_suggest_alternative("register_rtsig_use(const std::string&)")
-    bool register_rtsig_use(const std::string& id, const int sig) noexcept
-    {
-        init_rtsig_tracking();
-
-        unlikely_if (!verify_sig(sig, sig_type::rtsig))
-            return false;
-
-        std::lock_guard<std::mutex> lock(rtsig_mtx);
-        if (rtsig_available[sig])
-        {
-            rtsig_use.insert({id, sig});
-            rtsig_available[sig] = false;
-
-            erase_duplicates(rtsig_use, id, sig);
-
-            return true;
-        }
-        return false;
-    }
-
-    void unregister_rtsig_use(const std::string& id) noexcept
-    {
-        init_rtsig_tracking();
-
-        std::lock_guard<std::mutex> lock(rtsig_mtx);
-        unlikely_if (!rtsig_use.contains(id))
-            return;
-        const std::pair<
-            decltype(rtsig_use)::iterator,
-            decltype(rtsig_use)::iterator
-        > range = rtsig_use.equal_range(id);
-        const size_t distance = std::distance(range.first, range.second);
-        std::for_each(range.first, range.second, [&](const decltype(rtsig_use)::iterator& it)
-        {
-            hard_assert(it->first == id);
-            rtsig_available[it->second] = true;
-        });
-        const size_t erased_count = rtsig_use.erase(id);
-        hard_assert(erased_count == distance);
-    }
-    void unregister_rtsig_use(const std::string& id, const int sig) noexcept
-    {
-        init_rtsig_tracking();
-
-        unlikely_if (!verify_sig(sig, sig_type::rtsig))
-            return;
-
-        std::lock_guard<std::mutex> lock(rtsig_mtx);
-        unlikely_if (!rtsig_use.contains(id))
-            return;
-        rtsig_available[sig] = true;
-        std::erase_if(rtsig_use, [&](const decltype(rtsig_use)::value_type& pair)
-        {
-            return (pair.first == id) && (pair.second == sig);
-        });
-    }
-    warn_usage_suggest_alternative(
-        "unregister_rtsig_use(const std::string&, int)",
-        "unregister_rtsig_use(const std::string&)"
-    )
-    void unregister_rtsig_use(const int sig) noexcept
-    {
-        init_rtsig_tracking();
-
-        unlikely_if (!verify_sig(sig, sig_type::rtsig))
-            return;
-
-        std::lock_guard<std::mutex> lock(rtsig_mtx);
-        std::erase_if(rtsig_use, [&](const decltype(rtsig_use)::value_type& pair)
-        {
-            return pair.second == sig;
-        });
-        rtsig_available[sig] = true;
-    }
-
-    std::pair<bool, int> register_sigusr_use(const std::string& id) noexcept
-    {
-        init_sigusr_tracking();
-
-        std::lock_guard<std::mutex> lock(sigusr_mtx);
-        for (size_t i = 0; i < sigusr_available.size(); ++i)
-        {
-            if (sigusr_available[i])
-            {
-                sigusr_use.insert({id, map_index(i)});
-                sigusr_available[i] = false;
-
-                erase_duplicates(sigusr_use, id, map_index(i));
-
-                return {true, map_index(i)};
-            }
-        }
-        return {false, -1};
-    }
-    warn_usage_suggest_alternative("register_sigusr_use(const std::string&)")
-    bool register_sigusr_use(const std::string& id, const int sig) noexcept
-    {
-        init_sigusr_tracking();
-
-        unlikely_if (!verify_sig(sig, sig_type::sigusr))
-            return false;
-
-        std::lock_guard<std::mutex> lock(sigusr_mtx);
-        if (sigusr_available[map_sigusr(sig)])
-        {
-            sigusr_use.insert({id, sig});
-            sigusr_available[map_sigusr(sig)] = false;
-            return true;
-        }
-        return false;
-    }
-
-    void unregister_sigusr_use(const std::string& id) noexcept
-    {
-        init_sigusr_tracking();
-
-        std::lock_guard<std::mutex> lock(sigusr_mtx);
-        unlikely_if (!sigusr_use.contains(id))
-            return;
-        const std::pair<
-            decltype(sigusr_use)::iterator,
-            decltype(sigusr_use)::iterator
-        > range = sigusr_use.equal_range(id);
-        const size_t distance = std::distance(range.first, range.second);
-        std::for_each(range.first, range.second, [&](const decltype(sigusr_use)::iterator& it)
-        {
-            hard_assert(it->first == id);
-            sigusr_available[map_sigusr(it->second)] = true;
-        });
-        const size_t erased_count = sigusr_use.erase(id);
-        hard_assert(erased_count == distance);
-    }
-    void unregister_sigusr_use(const std::string& id, const int sig) noexcept
-    {
-        init_sigusr_tracking();
-
-        unlikely_if (!verify_sig(sig, sig_type::sigusr))
-            return;
-
-        std::lock_guard<std::mutex> lock(sigusr_mtx);
-        unlikely_if (!sigusr_use.contains(id))
-            return;
-        sigusr_available[map_sigusr(sig)] = true;
-        std::erase_if(sigusr_use, [&](const decltype(sigusr_use)::value_type& pair)
-        {
-            return (pair.first == id) && (pair.second == sig);
-        });
-    }
-    warn_usage_suggest_alternative(
-        "unregister_sigusr_use(const std::string&, const int)",
-        "unregister_sigusr_use(const std::string&)"
-    )
-    void unregister_sigusr_use(const int sig) noexcept
-    {
-        init_sigusr_tracking();
-
-        unlikely_if (!verify_sig(sig, sig_type::sigusr))
-            return;
-
-        std::lock_guard<std::mutex> lock(sigusr_mtx);
-        std::erase_if(sigusr_use, [&](const decltype(sigusr_use)::value_type& pair)
-        {
-            return pair.second == sig;
-        });
-        sigusr_available[map_sigusr(sig)] = true;
-    }
-
-    tid_t get_signaled_thread_tid() noexcept
-    {
-        return signaled_thread_tid.load(std::memory_order::acquire);
-    }
-
-    // Needs to be called from main thread
-    warn_usage_suggest_alternative("sigmgr::init()")
-    void start_signaled_thread() noexcept
-    {
-        pid_t pid = TRY_SYSCALL_WHILE_EINTR(::getpid, ());
-        tid_t tid = TRY_SYSCALL_WHILE_EINTR(::gettid, ());
-        if (pid != tid)
-            std::terminate();
-
-        redirect_signals_to_signaled_thread();
-
-        if (!signaled_thread.joinable())
-            signaled_thread = std::thread(signaled_thread_func);
-    }
-
-    void stop_signaled_thread() noexcept
-    {
-        if (signaled_thread.joinable())
-        {
-            auto future = std::async(std::launch::async, [&]()
-            {
-                signaled_thread.join();
-            });
-            int res = ::pthread_cancel(signaled_thread_pthread.load(std::memory_order::acquire));
-            if (res != 0)
-                std::terminate();
-            future.get();
-        }
-    }
-
-    std::set<int> uses(const std::string& id) noexcept
-    {
-        std::set<int> ret;
-
-        std::unique_lock<std::mutex> lock_rtsig(rtsig_mtx);
-        for (const auto& pair : rtsig_use)
-        {
-            if (pair.first == id)
-                ret.insert(pair.second);
-        }
-        lock_rtsig.unlock();
-
-        std::unique_lock<std::mutex> lock_sigusr(sigusr_mtx);
-        for (const auto& pair : sigusr_use)
-        {
-            if (pair.first == id)
-                ret.insert(pair.second);
-        }
-
-        return ret;
     }
 
     void init() noexcept
     {
         detail::init();
 
-        start_signaled_thread();
-        init_rtsig_tracking();
-        init_sigusr_tracking();
+        detail::mask_all_signals(true);
+        
+        signaled_thread = std::thread(signaled_thread_func);
+        signaled_thread.detach();
+
+        initialized.store(true, std::memory_order::release);
     }
 }

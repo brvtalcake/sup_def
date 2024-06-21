@@ -22,60 +22,45 @@
  * SOFTWARE.
  */
 
+
 #ifndef SIGMANAGER_HPP
 #define SIGMANAGER_HPP
 
+#include <sup_def/common/start_header.h>
+
 #include <sup_def/common/util/util.hpp>
+#include <function2/function2.hpp>
 
 namespace sigmgr
 {
-    typedef decltype(::gettid()) tid_t;
+    typedef ::pid_t pid_t;
+    typedef ::pid_t tid_t;
+
+    template <typename Signature>
+    using function      = fu2::function_base<true,  true, fu2::capacity_default, true, false, Signature>;
+    template <typename Signature>
+    using function_view = fu2::function_base<false, true, fu2::capacity_default, true, false, Signature>;
+
+    typedef function<void(int) noexcept> simple_handler_t;
+    typedef function<void(int, siginfo_t*, ucontext_t*) noexcept> handler_t;
+    typedef std::variant<simple_handler_t, handler_t> generic_handler_t;
+
+    typedef function<void(const siginfo_t*, const ucontext_t*) noexcept> callback_t;
+    
+    using callback_iterator       = std::list<callback_t>::iterator;
+    using const_callback_iterator = std::list<callback_t>::const_iterator;
+
+    using callback_id_t = std::tuple<int, std::string, callback_iterator>;
 
     void init() noexcept;
 
-    bool is_rtsig_usable() noexcept;
-    bool is_rtsig_usable(const int sig) noexcept;
-
-    bool is_sigusr_usable() noexcept;
-    bool is_sigusr_usable(const int sig) noexcept;
-
-    std::pair<bool, int> register_rtsig_use(const std::string& id) noexcept;
-    warn_usage_suggest_alternative("register_rtsig_use(const std::string&)")
-    bool register_rtsig_use(const std::string& id, const int sig) noexcept;
-
-    void unregister_rtsig_use(const std::string& id) noexcept;
-    void unregister_rtsig_use(const std::string& id, const int sig) noexcept;
-    warn_usage_suggest_alternative(
-        "unregister_rtsig_use(const std::string&, const int)",
-        "unregister_rtsig_use(const std::string&)"
-    )
-    void unregister_rtsig_use(const int sig) noexcept;
-
-
-    std::pair<bool, int> register_sigusr_use(const std::string& id) noexcept;
-    warn_usage_suggest_alternative("register_sigusr_use(const std::string&)")
-    bool register_sigusr_use(const std::string& id, const int sig) noexcept;
-
-    void unregister_sigusr_use(const std::string& id) noexcept;
-    void unregister_sigusr_use(const std::string& id, const int sig) noexcept;
-    warn_usage_suggest_alternative(
-        "unregister_sigusr_use(const std::string&, const int)",
-        "unregister_sigusr_use(const std::string&)"
-    )
-    void unregister_sigusr_use(const int sig) noexcept;
-
-    std::set<int> uses(const std::string& id) noexcept;
-
-    tid_t get_signaled_thread_tid() noexcept;
-    // Needs to be called from main thread
-    warn_usage_suggest_alternative("sigmgr::init()")
-    void start_signaled_thread() noexcept;
-    void stop_signaled_thread() noexcept;
-
-    /* namespace detail
-    {
-        void assert_preconditions() noexcept;
-    } */
+    warn_unused_result()
+    std::optional<callback_id_t> register_callback(const int sig, const std::string& id, const callback_t& callback) noexcept;
+    warn_unused_result()
+    bool unregister_callback(const callback_id_t& id) noexcept;
+    void reset_callbacks(const int sig, const std::string& id) noexcept;
 }
 
 #endif
+
+#include <sup_def/common/end_header.h>

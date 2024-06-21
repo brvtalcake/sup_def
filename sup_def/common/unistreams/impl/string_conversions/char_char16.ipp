@@ -69,22 +69,14 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
             using func_type = decltype(::simdutf::convert_utf8_to_utf16_with_errors);
             func_type* func = nullptr;
 
-            switch (end_to)
-            {
-                case ::uni::endianness::little:
-                    func = &::simdutf::convert_utf8_to_utf16le_with_errors;
-                    break;
-                case ::uni::endianness::big:
-                    func = &::simdutf::convert_utf8_to_utf16be_with_errors;
-                    break;
-#if SUPDEF_HAVE_CPP_ATTRIBUTE_UNLIKELY
-                [[unlikely]]
-#endif
-                default:
-                    throw InternalError(
-                        UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": desired endianness is undefined"
-                    );
-            }
+           if (end_to == ::uni::endianness::big)
+                func = &::simdutf::convert_utf8_to_utf16be_with_errors;
+            else if (end_to == ::uni::endianness::little)
+                func = &::simdutf::convert_utf8_to_utf16le_with_errors;
+            unlikely_else
+                throw InternalError(
+                    UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": desired endianness is undefined"
+                );
 
             const ::simdutf::result res = func(from.c_str(), from.size(), to.data());
             unlikely_if (res.error != ::simdutf::error_code::SUCCESS)
@@ -133,24 +125,25 @@ struct ::UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION
             unlikely_if (from.empty())
                 return to_type();
 
+            using func_type = decltype(::simdutf::convert_utf16_to_utf8_with_errors);
+            func_type* func = nullptr;
+
             size_t cu_count;
             if (end_from == ::uni::endianness::big)
-                cu_count = ::simdutf::utf8_length_from_utf16be(from.c_str(), from.size());
+            {
+                cu_count =  ::simdutf::utf8_length_from_utf16be(from.c_str(), from.size());
+                func     = &::simdutf::convert_utf16be_to_utf8_with_errors;
+            }
             else if (end_from == ::uni::endianness::little)
-                cu_count = ::simdutf::utf8_length_from_utf16le(from.c_str(), from.size());
+            {
+                cu_count =  ::simdutf::utf8_length_from_utf16le(from.c_str(), from.size());
+                func     = &::simdutf::convert_utf16le_to_utf8_with_errors;
+            }
             unlikely_else
                 throw InternalError(
                     UNISTREAMS_CURRENT_STRCONV_SPECIALIZATION_STRING ": source endianness is undefined"
                 );
             to_type to(cu_count + 1, char_to{});
-
-            using func_type = decltype(::simdutf::convert_utf16_to_utf8_with_errors);
-            func_type* func = nullptr;
-
-            if (end_from == ::uni::endianness::big)
-                func = &::simdutf::convert_utf16be_to_utf8_with_errors;
-            else if (end_from == ::uni::endianness::little)
-                func = &::simdutf::convert_utf16le_to_utf8_with_errors;
 
             const ::simdutf::result res = func(from.c_str(), from.size(), to.data());
             unlikely_if (res.error != ::simdutf::error_code::SUCCESS)

@@ -56,11 +56,6 @@ namespace fswatch
             using response_t = struct ::fanotify_response;
             using response_info_header_t = struct ::fanotify_response_info_header;
             using response_info_audit_rule_t = struct ::fanotify_response_info_audit_rule;
-
-            struct fanotify_types
-            {
-
-            };
         }
     }
 

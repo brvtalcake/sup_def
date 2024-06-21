@@ -2763,7 +2763,11 @@ namespace stdemul = ::SupDef::Util::FeaturesEmulation;
             do                                              \
             {                                               \
                 UNIQUE_ID(retval) = std::invoke(            \
-                    &(func),                                \
+                    &(func) CHAOS_PP_COMMA_IF(              \
+                        CHAOS_PP_BOOL(                      \
+                            VA_COUNT tupled_args            \
+                        )                                   \
+                    )                                       \
                     EXPAND_ONE_TUPLE(tupled_args)           \
                 );                                          \
             } while (                                       \

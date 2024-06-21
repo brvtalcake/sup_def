@@ -82,27 +82,25 @@ namespace SupDef
         {
             namespace
             {
+#if __cpp_lib_is_implicit_lifetime < 202302L
                 // If not implemented by libstdc++, make it a no-op (always std::true_type)
                 template <typename T>
                 struct is_implicit_lifetime : public std::true_type
                 { };
-
+#else
                 // Specialize if libstdc++ implements it
                 template <typename T>
-                    requires requires {
-                        { std::is_implicit_lifetime<T>::value } -> std::convertible_to<bool>;
-                    }
-                struct is_implicit_lifetime<T> : public std::is_implicit_lifetime<T>
+                struct is_implicit_lifetime : public std::is_implicit_lifetime<T>
                 { };
+#endif
 
                 template <typename T>
                 constexpr inline bool is_implicit_lifetime_v = is_implicit_lifetime<T>::value;
             }
 
 #ifdef __cpp_lib_start_lifetime_as
-            template <typename T, typename Void>
-                requires std::is_void_v<std::remove_cvref_t<Void>>
-            static constexpr decltype(auto) start_lifetime_as(Void* ptr) noexcept
+            template <typename T>
+            static constexpr decltype(auto) start_lifetime_as(T* ptr) noexcept
             {
                 return std::start_lifetime_as<T>(ptr);
             }
@@ -742,35 +740,6 @@ namespace SupDef
                 template <template <typename> typename T, size_t N>
                 static constexpr bool apply_predicate_to = false;
 
-#if GCC_VERSION_AT_LEAST(14, 0, 0)
-                template <template <typename> typename T, size_t N>
-                    requires HasValueField<GetNthType<N, Types...>, T> && (!ConvertsToBool<GetNthType<N, Types...>, T>)
-                static constexpr bool apply_predicate_to<T, N> = T<GetNthType<N, Types...>>::value;
-
-                template <template <typename> typename T, size_t N>
-                    requires ConvertsToBool<GetNthType<N, Types...>, T>
-                static constexpr bool apply_predicate_to<T, N> = static_cast<bool>(T<GetNthType<N, Types...>>());
-#endif
-
-#if GCC_VERSION_AT_LEAST(14, 0, 0)
-                template <template <typename> typename T, size_t N = 0>
-                static constexpr bool apply_predicate_conjunction_impl = (apply_predicate_to<T, N> && apply_predicate_conjunction_impl<T, N + 1>);
-
-                template <template <typename> typename T>
-                static constexpr bool apply_predicate_conjunction_impl<T, size> = true;
-
-                template <template <typename> typename T, size_t N = 0>
-                static constexpr bool apply_predicate_disjunction_impl = (apply_predicate_to<T, N> || apply_predicate_disjunction_impl<T, N + 1>);
-
-                template <template <typename> typename T>
-                static constexpr bool apply_predicate_disjunction_impl<T, size> = false;
-
-                template <template <typename> typename T>
-                static constexpr bool apply_predicate_conjunction = apply_predicate_conjunction_impl<T, 0>;
-
-                template <template <typename> typename T>
-                static constexpr bool apply_predicate_disjunction = apply_predicate_disjunction_impl<T, 0>;
-#else
                 template <template <typename> typename T, size_t N = 0>
                 static consteval bool apply_predicate_conjunction_impl()
                 {
@@ -794,10 +763,10 @@ namespace SupDef
 
                 template <template <typename> typename T>
                 static constexpr bool apply_predicate_disjunction = apply_predicate_disjunction_impl<T, 0>();
-#endif
+
         };
 
-#if !GCC_VERSION_AT_LEAST(14, 0, 0)
+
         // Specialize apply_predicate_to etc. out of the class context
         template <typename... Types>
         template <template <typename> typename T, size_t N>
@@ -808,7 +777,6 @@ namespace SupDef
         template <template <typename> typename T, size_t N>
             requires ConvertsToBool<GetNthType<N, Types...>, T>
         constexpr bool TypeContainer<Types...>::apply_predicate_to<T, N> = static_cast<bool>(T<GetNthType<N, Types...>>());
-#endif
 
 
 
@@ -3542,7 +3510,8 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 {
                     if (a < 0)
                         res = std::numeric_limits<Int>::lowest();
-                    res = std::numeric_limits<Int>::max();
+                    else
+                        res = std::numeric_limits<Int>::max();
                 }
 #endif
             }
@@ -3621,7 +3590,8 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                 {
                     if (a < 0)
                         res = std::numeric_limits<Int>::lowest();
-                    res = std::numeric_limits<Int>::max();
+                    else
+                        res = std::numeric_limits<Int>::max();
                 }
 #endif
             }
@@ -3705,7 +3675,8 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
                     {
                         if (bool(a < 0) != bool(b < 0))
                             res = std::numeric_limits<Int>::lowest();
-                        res = std::numeric_limits<Int>::max();
+                        else
+                            res = std::numeric_limits<Int>::max();
                     }
                 }
 #endif
@@ -3820,6 +3791,7 @@ STATIC_TODO("Write more tests for `restrict` keyword support")
         STATIC_TODO(
             "Verify saturated_<op> functions, and rewrite tests for them"
         );
+        
         static_assert(saturated_add(1, 2) == 3);
         static_assert(saturated_add(std::numeric_limits<int>::max(), int(1)) == std::numeric_limits<int>::max());
         static_assert(saturated_add(std::numeric_limits<int>::lowest(), int(-1)) == std::numeric_limits<int>::lowest());

@@ -26,5 +26,8 @@
 
 namespace fswatch
 {
-    
+    fanotify_watcher::fanotify_watcher()
+    {
+        this->m_fanotify_queue = fanotify_init(FAN_CLOEXEC | FAN_NONBLOCK, O_RDONLY | O_LARGEFILE);
+    }
 }

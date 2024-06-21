@@ -1,0 +1,1016 @@
+In file included from [01m[K/usr/include/bits/libc-header-start.h:33[m[K,
+                 from [01m[K/usr/include/string.h:26[m[K,
+                 from [01m[K./sup_def/third_party/gnulib_modules/gnulib_build/gllib/string.h:41[m[K,
+                 from [01m[K./sup_def/third_party/gnulib_modules/gnulib_memset_explicit.h:34[m[K,
+                 from [01m[K./sup_def/third_party/gnulib_modules/gnulib.h:35[m[K,
+                 from [01m[K./sup_def/common/config.h:68[m[K,
+                 from [01m[Ksup_def/common/sigmanager/sigmanager.cpp:25[m[K:
+[01m[K/usr/include/features.h:414:4:[m[K [01;35m[Kwarning: [m[K#warning _FORTIFY_SOURCE requires compiling with optimization (-O) [[01;35m[K-Wcpp[m[K]
+  414 | #  [01;35m[Kwarning[m[K _FORTIFY_SOURCE requires compiling with optimization (-O)
+      |    [01;35m[K^~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/pstl/glue_execution_defs.h:50[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/execution:39[m[K,
+                 from [01m[K./sup_def/common/config.h:1334[m[K:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:[m[K In function ‘[01m[K_RandomAccessIterator __pstl::__internal::[01;32m[K__brick_unique[m[K(_RandomAccessIterator, _RandomAccessIterator, _BinaryPredicate, std::true_type)[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:1219:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message:  [Parallel STL message]: "Vectorized algorithm unimplemented, redirected to serial"[m[K’
+ 1219 |     _PST[01;36m[KL_PRAGMA_MESSAGE("V[m[Kectorized algorithm unimplemented, redirected to serial");
+      |         [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:[m[K In function ‘[01m[K_RandomAccessIterator __pstl::__internal::[01;32m[K__brick_partition[m[K(_RandomAccessIterator, _RandomAccessIterator, _UnaryPredicate, std::true_type)[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:1929:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message:  [Parallel STL message]: "Vectorized algorithm unimplemented, redirected to serial"[m[K’
+ 1929 |     _PST[01;36m[KL_PRAGMA_MESSAGE("V[m[Kectorized algorithm unimplemented, redirected to serial");
+      |         [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:[m[K In function ‘[01m[K_RandomAccessIterator __pstl::__internal::[01;32m[K__brick_stable_partition[m[K(_RandomAccessIterator, _RandomAccessIterator, _UnaryPredicate, std::true_type)[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:2029:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message:  [Parallel STL message]: "Vectorized algorithm unimplemented, redirected to serial"[m[K’
+ 2029 |     _PST[01;36m[KL_PRAGMA_MESSAGE("V[m[Kectorized algorithm unimplemented, redirected to serial");
+      |         [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:[m[K In function ‘[01m[K_RandomAccessIterator3 __pstl::__internal::[01;32m[K__brick_merge[m[K(_RandomAccessIterator1, _RandomAccessIterator1, _RandomAccessIterator2, _RandomAccessIterator2, _RandomAccessIterator3, _Compare, std::true_type)[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:2715:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message:  [Parallel STL message]: "Vectorized algorithm unimplemented, redirected to serial"[m[K’
+ 2715 |     _PST[01;36m[KL_PRAGMA_MESSAGE("V[m[Kectorized algorithm unimplemented, redirected to serial");
+      |         [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:[m[K In function ‘[01m[Kvoid __pstl::__internal::[01;32m[K__brick_inplace_merge[m[K(_RandomAccessIterator, _RandomAccessIterator, _RandomAccessIterator, _Compare, std::true_type)[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:2764:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message:  [Parallel STL message]: "Vectorized algorithm unimplemented, redirected to serial"[m[K’
+ 2764 |     _PST[01;36m[KL_PRAGMA_MESSAGE("V[m[Kectorized algorithm unimplemented, redirected to serial")
+      |         [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:[m[K In function ‘[01m[K_OutputIterator __pstl::__internal::[01;32m[K__brick_set_union[m[K(_RandomAccessIterator1, _RandomAccessIterator1, _RandomAccessIterator2, _RandomAccessIterator2, _OutputIterator, _Compare, std::true_type)[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:3141:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message:  [Parallel STL message]: "Vectorized algorithm unimplemented, redirected to serial"[m[K’
+ 3141 |     _PST[01;36m[KL_PRAGMA_MESSAGE("V[m[Kectorized algorithm unimplemented, redirected to serial");
+      |         [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:[m[K In function ‘[01m[K_RandomAccessIterator3 __pstl::__internal::[01;32m[K__brick_set_intersection[m[K(_RandomAccessIterator1, _RandomAccessIterator1, _RandomAccessIterator2, _RandomAccessIterator2, _RandomAccessIterator3, _Compare, std::true_type)[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:3202:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message:  [Parallel STL message]: "Vectorized algorithm unimplemented, redirected to serial"[m[K’
+ 3202 |     _PST[01;36m[KL_PRAGMA_MESSAGE("V[m[Kectorized algorithm unimplemented, redirected to serial");
+      |         [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:[m[K In function ‘[01m[K_RandomAccessIterator3 __pstl::__internal::[01;32m[K__brick_set_difference[m[K(_RandomAccessIterator1, _RandomAccessIterator1, _RandomAccessIterator2, _RandomAccessIterator2, _RandomAccessIterator3, _Compare, std::true_type)[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:3298:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message:  [Parallel STL message]: "Vectorized algorithm unimplemented, redirected to serial"[m[K’
+ 3298 |     _PST[01;36m[KL_PRAGMA_MESSAGE("V[m[Kectorized algorithm unimplemented, redirected to serial");
+      |         [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:[m[K In function ‘[01m[K_RandomAccessIterator3 __pstl::__internal::[01;32m[K__brick_set_symmetric_difference[m[K(_RandomAccessIterator1, _RandomAccessIterator1, _RandomAccessIterator2, _RandomAccessIterator2, _RandomAccessIterator3, _Compare, std::true_type)[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/pstl/algorithm_impl.h:3390:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message:  [Parallel STL message]: "Vectorized algorithm unimplemented, redirected to serial"[m[K’
+ 3390 |     _PST[01;36m[KL_PRAGMA_MESSAGE("V[m[Kectorized algorithm unimplemented, redirected to serial");
+      |         [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K./sup_def/common/config.h:[m[K At global scope:
+[01m[K./sup_def/common/config.h:2520:1:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Add tests for the following macros: all PP_FLOAT* macros, all macros relying on them (COMPTIME_SCALE for example), probably_if and friends, etc...[m[K’
+ 2520 | [01;36m[KSTATIC_TODO[m[K(
+      | [01;36m[K^~~~~~~~~~~[m[K
+In file included from [01m[K./sup_def/common/start_header.h:35[m[K,
+                 from [01m[K./sup_def/common/sigmanager/sigmanager.hpp:29[m[K,
+                 from [01m[Ksup_def/common/sigmanager/sigmanager.cpp:26[m[K:
+[01m[K./sup_def/common/config.h:2520:1:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Add tests for the following macros: all PP_FLOAT* macros, all macros relying on them (COMPTIME_SCALE for example), probably_if and friends, etc...[m[K’
+ 2520 | [01;36m[KSTATIC_TODO[m[K(
+      | [01;36m[K^~~~~~~~~~~[m[K
+In file included from [01m[K./sup_def/common/util/fwd_decls.hpp:119[m[K,
+                 from [01m[K./sup_def/common/start_header.h:36[m[K:
+[01m[K./sup_def/common/util/exception.hpp:134:1:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Maybe use boost::leaf for exception handling ?[m[K’
+  134 | [01;36m[KSTATIC_TODO[m[K(
+      | [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/exception.hpp:[m[K In member function ‘[01m[Kvoid SupDef::Exception<T, U>::[01;32m[Kinit_msg[m[K()[m[K’:
+[01m[K./sup_def/common/util/exception.hpp:204:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+  204 |                 [01;36m[KSUPDEF_EXIT[m[K();
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/exception.hpp:209:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+  209 |                 [01;36m[KSUPDEF_EXIT[m[K();
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/exception.hpp:214:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+  214 |                 [01;36m[KSUPDEF_EXIT[m[K();
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+In file included from [01m[K./sup_def/common/start_header.h:35[m[K,
+                 from [01m[K./sup_def/common/util/util.hpp:24[m[K,
+                 from [01m[K./sup_def/common/sigmanager/sigmanager.hpp:31[m[K:
+[01m[K./sup_def/common/config.h:[m[K At global scope:
+[01m[K./sup_def/common/config.h:2520:1:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Add tests for the following macros: all PP_FLOAT* macros, all macros relying on them (COMPTIME_SCALE for example), probably_if and friends, etc...[m[K’
+ 2520 | [01;36m[KSTATIC_TODO[m[K(
+      | [01;36m[K^~~~~~~~~~~[m[K
+In file included from [01m[K./sup_def/common/util/util.hpp:25[m[K:
+[01m[K./sup_def/common/config.h:2520:1:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Add tests for the following macros: all PP_FLOAT* macros, all macros relying on them (COMPTIME_SCALE for example), probably_if and friends, etc...[m[K’
+ 2520 | [01;36m[KSTATIC_TODO[m[K(
+      | [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:2014:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Prefer using Boost.ScopeExit instead of std::experimental::scope_*[m[K’
+ 2014 |         [01;36m[KSTATIC_TODO[m[K(
+      |         [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:[m[K In function ‘[01m[Kvoid SupDef::Util::[01;32m[Khard_assert_fail[m[K(bool, const char*, const char*, int, const char*)[m[K’:
+[01m[K./sup_def/common/util/util.hpp:2490:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+ 2490 |                 [01;36m[KSUPDEF_EXIT[m[K();
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:[m[K In function ‘[01m[Kvoid SupDef::Util::[01;32m[Khard_assert_fail[m[K(bool, const char*, const char*, int, const char*, const T&)[m[K’:
+[01m[K./sup_def/common/util/util.hpp:2506:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+ 2506 |                 [01;36m[KSUPDEF_EXIT[m[K();
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:[m[K At global scope:
+[01m[K./sup_def/common/util/util.hpp:2510:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Will the `hard_assert_fail_consteval` function below work as expected ?[m[K’
+ 2510 |         [01;36m[KSTATIC_TODO[m[K("Will the `hard_assert_fail_consteval` function below work as expected ?")
+      |         [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:3106:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Write tests for `wait_for_next_or`[m[K’
+ 3106 |                 [01;36m[KSTATIC_TODO[m[K("Write tests for `wait_for_next_or`")
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:3388:1:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Write more tests for `restrict` keyword support[m[K’
+ 3388 | [01;36m[KSTATIC_TODO[m[K("Write more tests for `restrict` keyword support")
+      | [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:3488:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Maybe use Boost.NumericConversion ? Maybe use Boost.SafeNumerics ?[m[K’
+ 3488 |         [01;36m[KSTATIC_TODO[m[K(
+      |         [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:3791:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Verify saturated_<op> functions, and rewrite tests for them[m[K’
+ 3791 |         [01;36m[KSTATIC_TODO[m[K(
+      |         [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:3813:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: As for `saturated_<op>` functions, add optional parameters to specify the min and max values[m[K’
+ 3813 |         [01;36m[KSTATIC_TODO[m[K("As for `saturated_<op>` functions, add optional parameters to specify the min and max values");
+      |         [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:3814:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Rewrite wrapped_<op> functions, and write tests for them[m[K’
+ 3814 |         [01;36m[KSTATIC_TODO[m[K(
+      |         [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:3926:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Add tests for `wrapped_add`, `wrapped_sub` and `wrapped_mul`[m[K’
+ 3926 |         [01;36m[KSTATIC_TODO[m[K("Add tests for `wrapped_add`, `wrapped_sub` and `wrapped_mul`")
+      |         [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:4016:5:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Maybe make this an __attribute__((constructor)) function ?[m[K’
+ 4016 |     [01;36m[KSTATIC_TODO[m[K(
+      |     [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:[m[K In lambda function:
+[01m[K./sup_def/common/util/util.hpp:4027:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+ 4027 |                 [01;36m[KSUPDEF_EXIT[m[K();
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:[m[K In lambda function:
+[01m[K./sup_def/common/util/util.hpp:4039:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+ 4039 |                 [01;36m[KSUPDEF_EXIT[m[K();
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:[m[K In lambda function:
+[01m[K./sup_def/common/util/util.hpp:4048:13:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+ 4048 |             [01;36m[KSUPDEF_EXIT[m[K();
+      |             [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:[m[K In lambda function:
+[01m[K./sup_def/common/util/util.hpp:4057:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+ 4057 |                 [01;36m[KSUPDEF_EXIT[m[K();
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:[m[K In lambda function:
+[01m[K./sup_def/common/util/util.hpp:4069:17:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: SUPDEF_EXIT is not yet implemented for GCC and Clang SupDef plugins[m[K’
+ 4069 |                 [01;36m[KSUPDEF_EXIT[m[K();
+      |                 [01;36m[K^~~~~~~~~~~[m[K
+[01m[K./sup_def/common/util/util.hpp:[m[K At global scope:
+[01m[K./sup_def/common/util/util.hpp:4229:9:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: 
+TODO: Prove that `RecursiveSharedMutex` is correctly implemented and working[m[K’
+ 4229 |         [01;36m[KSTATIC_TODO[m[K(
+      |         [01;36m[K^~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/format:52[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/ostream:43[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/bits/unique_ptr.h:43[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/memory:78[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/x86_64-solus-linux/bits/stdc++.h:56[m[K,
+                 from [01m[K./sup_def/common/config.h:1331[m[K:
+/usr/local/include/c++/14.1.0/variant: In instantiation of ‘[01m[Kstd::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)> mutable [35m[K[with auto:24 = const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >&; auto:25 = std::integral_constant<long unsigned int, 0>][m[K[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/type_traits:2640:26:[m[K   required by substitution of ‘[01m[Ktemplate<class _Fn, class ... _Args> static std::__result_of_success<decltype (declval<_Fn>()((declval<_Args>)()...)), std::__invoke_other> std::__result_of_other_impl::[01;32m[K_S_test[m[K(int) [35m[K[with _Fn = std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>; _Args = {const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >&, std::integral_constant<long unsigned int, 0>}][m[K[m[K’
+ 2640 |       [01;36m[Kstd::declval<_Fn>()(std::declval<_Args>()...)[m[K
+      |       [01;36m[K~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/type_traits:2651:60:[m[K   required from ‘[01m[Kstruct std::__result_of_impl<false, false, std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>, const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >&, std::integral_constant<long unsigned int, 0> >[m[K’
+ 2651 |       using type = decltype([01;36m[K_S_test<_Functor, _ArgTypes...>(0)[m[K);
+      |                             [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/type_traits:2656:12:[m[K   required from ‘[01m[Kstruct std::__invoke_result<std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>, const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >&, std::integral_constant<long unsigned int, 0> >[m[K’
+ 2656 |     struct [01;36m[K__invoke_result[m[K
+      |            [01;36m[K^~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/invoke.h:90:5:[m[K   required by substitution of ‘[01m[Ktemplate<class _Callable, class ... _Args> constexpr typename std::__invoke_result<_Functor, _ArgTypes>::type std::[01;32m[K__invoke[m[K(_Callable&&, _Args&& ...) [35m[K[with _Callable = std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>; _Args = {const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >&, std::integral_constant<long unsigned int, 0>}][m[K[m[K’
+   90 |     [01;36m[K__invoke[m[K(_Callable&& __fn, _Args&&... __args)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1049:17:[m[K   required from ‘[01m[Kstatic constexpr decltype(auto) std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<_Result_type (*)(_Visitor, _Variants ...)>, std::integer_sequence<long unsigned int, __indices ...> >::[01;32m[K__visit_invoke[m[K(_Visitor&&, _Variants ...) [35m[K[with _Result_type = std::__detail::__variant::__variant_idx_cookie; _Visitor = std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>&&; _Variants = {const std::variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&}; long unsigned int ...__indices = {0}][m[K[m[K’
+ 1049 |           [01;36m[Kstd::__invoke(std::forward<_Visitor>(__visitor),[m[K
+      |           [01;36m[K~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+ 1050 | [01;36m[K              __element_by_index_or_cookie<__indices>([m[K
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+ 1051 | [01;36m[K                std::forward<_Variants>(__vars))...,[m[K
+      |                 [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+ 1052 | [01;36m[K              integral_constant<size_t, __indices>()...)[m[K;
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1816:5:[m[K   required from ‘[01m[Kconstexpr decltype(auto) std::[01;32m[K__do_visit[m[K(_Visitor&&, _Variants&& ...) [35m[K[with _Result_type = __detail::__variant::__variant_idx_cookie; _Visitor = operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>; _Variants = {const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&}][m[K[m[K’
+ 1816 |                   [01;36m[K_GLIBCXX_VISIT_CASE[m[K(0)
+      |                   [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:184:44:[m[K   required from ‘[01m[Kconstexpr void std::__detail::__variant::[01;32m[K__raw_idx_visit[m[K(_Visitor&&, _Variants&& ...) [35m[K[with _Visitor = std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>; _Variants = {const std::variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&}][m[K[m[K’
+  184 |       [01;36m[Kstd::__do_visit<__variant_idx_cookie>(std::forward<_Visitor>(__visitor),[m[K
+      |       [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+  185 | [01;36m[K          std::forward<_Variants>(__variants)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K   required from ‘[01m[Kconstexpr bool std::[01;32m[Koperator!=[m[K(const variant<_Types ...>&, const variant<_Types ...>&) [35m[K[with _Types = {fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >}][m[K[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:474:62:[m[K   required from here
+  474 |             if (handler != generic_handler_t(&generic_handler[01;36m[K)[m[K)
+      |                                                              [01;36m[K^[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;31m[Kerror: [m[Kno match for ‘[01m[Koperator!=[m[K’ (operand types are ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ and ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’)
+ 1267 |   [01;31m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/bits/stl_algobase.h:64[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/bits/specfun.h:43[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/cmath:3898[m[K,
+                 from [01m[K./sup_def/common/config.h:73[m[K:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:1010:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _T1, class _T2, class _U1, class _U2> constexpr bool std::[01;32m[Koperator==[m[K(const pair<_T1, _T2>&, const pair<_U1, _U2>&)[m[K’ (reversed)
+ 1010 |     [01;36m[Koperator[m[K==(const pair<_T1, _T2>& __x, const pair<_U1, _U2>& __y)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:1010:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::pair<_T1, _T2>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/bits/stl_algobase.h:67[m[K:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:527:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _IteratorL, class _IteratorR> constexpr bool std::[01;32m[Koperator==[m[K(const reverse_iterator<_IteratorL>&, const reverse_iterator<_IteratorR>&) requires requires{{std::operator==::__x->base() == std::operator==::__y->base()} -> decltype(auto) [requires std::convertible_to<<placeholder>, bool>];}[m[K’ (reversed)
+  527 |     [01;36m[Koperator[m[K==(const reverse_iterator<_IteratorL>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:527:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::reverse_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:1667:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _IteratorL, class _IteratorR> constexpr bool std::[01;32m[Koperator==[m[K(const move_iterator<_IteratorL>&, const move_iterator<_IteratorR>&) requires requires{{std::operator==::__x->base() == std::operator==::__y->base()} -> decltype(auto) [requires std::convertible_to<<placeholder>, bool>];}[m[K’ (reversed)
+ 1667 |     [01;36m[Koperator[m[K==(const move_iterator<_IteratorL>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:1667:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::move_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/bits/ranges_algo.h:36[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/algorithm:63[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/x86_64-solus-linux/bits/stdc++.h:51[m[K:
+[01m[K/usr/local/include/c++/14.1.0/optional:1232:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_eq_t<_Tp, _Up> std::[01;32m[Koperator==[m[K(const optional<_Tp>&, const optional<_Up>&)[m[K’ (reversed)
+ 1232 |     [01;36m[Koperator[m[K==(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1232:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1292:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp> constexpr bool std::[01;32m[Koperator==[m[K(const optional<_Tp>&, nullopt_t)[m[K’ (reversed)
+ 1292 |     [01;36m[Koperator[m[K==(const optional<_Tp>& __lhs, nullopt_t) noexcept
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1292:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1360:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_eq_t<_Tp, _Up> std::[01;32m[Koperator==[m[K(const optional<_Tp>&, const _Up&)[m[K’ (reversed)
+ 1360 |     [01;36m[Koperator[m[K==(const optional<_Tp>& __lhs, const _Up& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1360:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1366:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_eq_t<_Up, _Tp> std::[01;32m[Koperator==[m[K(const _Up&, const optional<_Tp>&)[m[K’ (reversed)
+ 1366 |     [01;36m[Koperator[m[K==(const _Up& __lhs, const optional<_Tp>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1366:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/string:43[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/bitset:52[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/x86_64-solus-linux/bits/stdc++.h:52[m[K:
+[01m[K/usr/local/include/c++/14.1.0/bits/allocator.h:235:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _T1, class _T2> constexpr bool std::[01;32m[Koperator==[m[K(const allocator<_CharT>&, const allocator<_T2>&)[m[K’ (reversed)
+  235 |     [01;36m[Koperator[m[K==(const allocator<_T1>&, const allocator<_T2>&)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/allocator.h:235:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::allocator<_CharT>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:47[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/string:54[m[K:
+[01m[K/usr/local/include/c++/14.1.0/string_view:609:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _CharT, class _Traits> constexpr bool std::[01;32m[Koperator==[m[K(basic_string_view<_CharT, _Traits>, type_identity_t<basic_string_view<_CharT, _Traits> >)[m[K’ (reversed)
+  609 |     [01;36m[Koperator[m[K==(basic_string_view<_CharT, _Traits> __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/string_view:609:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kfu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kstd::basic_string_view<_CharT, _Traits>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:3772:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _CharT, class _Traits, class _Alloc> constexpr bool std::[01;32m[Koperator==[m[K(const __cxx11::basic_string<_CharT, _Traits, _Allocator>&, const _CharT*)[m[K’ (reversed)
+ 3772 |     [01;36m[Koperator[m[K==(const basic_string<_CharT, _Traits, _Alloc>& __lhs,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:3772:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::__cxx11::basic_string<_CharT, _Traits, _Allocator>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/bits/uses_allocator_args.h:39[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/bits/memory_resource.h:41[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/string:67[m[K:
+[01m[K/usr/local/include/c++/14.1.0/tuple:2556:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class ... _TElements, class ... _UElements> constexpr bool std::[01;32m[Koperator==[m[K(const tuple<_Ts ...>&, const tuple<_Elements ...>&)[m[K’ (reversed)
+ 2556 |     [01;36m[Koperator[m[K==(const tuple<_TElements...>& __t,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/tuple:2556:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::tuple<_Ts ...>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/functional:59[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/x86_64-solus-linux/bits/stdc++.h:53[m[K:
+[01m[K/usr/local/include/c++/14.1.0/bits/std_function.h:743:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Res, class ... _Args> bool std::[01;32m[Koperator==[m[K(const function<_Res(_ArgTypes ...)>&, nullptr_t)[m[K’ (reversed)
+  743 |     [01;36m[Koperator[m[K==(const function<_Res(_Args...)>& __f, nullptr_t) noexcept
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/std_function.h:743:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::function<_Res(_ArgTypes ...)>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/bits/ios_base.h:46[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/streambuf:43[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/bits/streambuf_iterator.h:35[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/iterator:66[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/x86_64-solus-linux/bits/stdc++.h:54[m[K:
+[01m[K/usr/local/include/c++/14.1.0/system_error:465:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Kbool std::[01;32m[Koperator==[m[K(const error_code&, const error_condition&)[m[K’ (reversed)
+  465 |   [01;36m[Koperator[m[K==(const error_code& __lhs, const error_condition& __rhs) noexcept
+      |   [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:465:32:[m[K [01;36m[Knote: [m[K  no known conversion for argument 1 from ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ to ‘[01m[Kconst std::error_code&[m[K’
+  465 |   operator==([01;36m[Kconst error_code& __lhs[m[K, const error_condition& __rhs) noexcept
+      |              [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:586:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Iterator> constexpr bool std::[01;32m[Koperator==[m[K(const reverse_iterator<_IteratorL>&, const reverse_iterator<_IteratorL>&) requires requires{{std::operator==::__x->base() == std::operator==::__y->base()} -> decltype(auto) [requires std::convertible_to<<placeholder>, bool>];}[m[K’ (rewritten)
+  586 |     [01;36m[Koperator[m[K==(const reverse_iterator<_Iterator>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:586:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::reverse_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:1737:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Iterator> constexpr bool std::[01;32m[Koperator==[m[K(const move_iterator<_IteratorL>&, const move_iterator<_IteratorL>&)[m[K’ (rewritten)
+ 1737 |     [01;36m[Koperator[m[K==(const move_iterator<_Iterator>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:1737:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::move_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/bits/char_traits.h:42[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/string:42[m[K:
+[01m[K/usr/local/include/c++/14.1.0/bits/postypes.h:192:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _StateT> bool std::[01;32m[Koperator==[m[K(const fpos<_StateT>&, const fpos<_StateT>&)[m[K’ (rewritten)
+  192 |     [01;36m[Koperator[m[K==(const fpos<_StateT>& __lhs, const fpos<_StateT>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/postypes.h:192:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::fpos<_StateT>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:3755:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _CharT, class _Traits, class _Alloc> constexpr bool std::[01;32m[Koperator==[m[K(const __cxx11::basic_string<_CharT, _Traits, _Allocator>&, const __cxx11::basic_string<_CharT, _Traits, _Allocator>&)[m[K’ (rewritten)
+ 3755 |     [01;36m[Koperator[m[K==(const basic_string<_CharT, _Traits, _Alloc>& __lhs,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:3755:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::__cxx11::basic_string<_CharT, _Traits, _Allocator>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/unordered_map:41[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/functional:63[m[K:
+[01m[K/usr/local/include/c++/14.1.0/bits/unordered_map.h:2144:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Key1, class _Tp1, class _Hash1, class _Pred1, class _Alloc1> bool std::[01;32m[Koperator==[m[K(const unordered_map<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&, const unordered_map<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&)[m[K’ (rewritten)
+ 2144 |     [01;36m[Koperator[m[K==(const unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/unordered_map.h:2144:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::unordered_map<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/unordered_map.h:2158:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Key1, class _Tp1, class _Hash1, class _Pred1, class _Alloc1> bool std::[01;32m[Koperator==[m[K(const unordered_multimap<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&, const unordered_multimap<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&)[m[K’ (rewritten)
+ 2158 |     [01;36m[Koperator[m[K==(const unordered_multimap<_Key, _Tp, _Hash, _Pred, _Alloc>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/unordered_map.h:2158:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::unordered_multimap<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/vector:66[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/functional:64[m[K:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_vector.h:2050:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Alloc> constexpr bool std::[01;32m[Koperator==[m[K(const vector<_Tp, _Alloc>&, const vector<_Tp, _Alloc>&)[m[K’ (rewritten)
+ 2050 |     [01;36m[Koperator[m[K==(const vector<_Tp, _Alloc>& __x, const vector<_Tp, _Alloc>& __y)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_vector.h:2050:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::vector<_Tp, _Alloc>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/functional:65[m[K:
+[01m[K/usr/local/include/c++/14.1.0/array:303:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, long unsigned int _Nm> constexpr bool std::[01;32m[Koperator==[m[K(const array<_Tp, _Nm>&, const array<_Tp, _Nm>&)[m[K’ (rewritten)
+  303 |     [01;36m[Koperator[m[K==(const array<_Tp, _Nm>& __one, const array<_Tp, _Nm>& __two)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/array:303:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::array<_Tp, _Nm>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/streambuf_iterator.h:234:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _CharT, class _Traits> bool std::[01;32m[Koperator==[m[K(const istreambuf_iterator<_CharT, _Traits>&, const istreambuf_iterator<_CharT, _Traits>&)[m[K’ (rewritten)
+  234 |     [01;36m[Koperator[m[K==(const istreambuf_iterator<_CharT, _Traits>& __a,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/streambuf_iterator.h:234:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::istreambuf_iterator<_CharT, _Traits>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1266:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class ... _Types> constexpr bool std::[01;32m[Koperator==[m[K(const variant<_Types ...>&, const variant<_Types ...>&)[m[K’ (rewritten)
+ 1266 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(==, equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1266:3:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::variant<_Types ...>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:449:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Kbool std::[01;32m[Koperator==[m[K(const error_code&, const error_code&)[m[K’ (rewritten)
+  449 |   [01;36m[Koperator[m[K==(const error_code& __lhs, const error_code& __rhs) noexcept
+      |   [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:449:32:[m[K [01;36m[Knote: [m[K  no known conversion for argument 1 from ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ to ‘[01m[Kconst std::error_code&[m[K’
+  449 |   operator==([01;36m[Kconst error_code& __lhs[m[K, const error_code& __rhs) noexcept
+      |              [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:480:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Kbool std::[01;32m[Koperator==[m[K(const error_condition&, const error_condition&)[m[K’ (rewritten)
+  480 |   [01;36m[Koperator[m[K==(const error_condition& __lhs,
+      |   [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:480:37:[m[K [01;36m[Knote: [m[K  no known conversion for argument 1 from ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ to ‘[01m[Kconst std::error_condition&[m[K’
+  480 |   operator==([01;36m[Kconst error_condition& __lhs[m[K,
+      |              [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~^~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Koperator!=(int, int)[m[K’ (built-in)
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  no known conversion for argument 2 from ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ to ‘[01m[Kint[m[K’
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:535:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _IteratorL, class _IteratorR> constexpr bool std::[01;32m[Koperator!=[m[K(const reverse_iterator<_IteratorL>&, const reverse_iterator<_IteratorR>&) requires requires{{std::operator!=::__x->base() != std::operator!=::__y->base()} -> decltype(auto) [requires std::convertible_to<<placeholder>, bool>];}[m[K’
+  535 |     [01;36m[Koperator[m[K!=(const reverse_iterator<_IteratorL>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:535:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::reverse_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1241:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_ne_t<_Tp, _Up> std::[01;32m[Koperator!=[m[K(const optional<_Tp>&, const optional<_Up>&)[m[K’
+ 1241 |     [01;36m[Koperator[m[K!=(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1241:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1372:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_ne_t<_Tp, _Up> std::[01;32m[Koperator!=[m[K(const optional<_Tp>&, const _Up&)[m[K’
+ 1372 |     [01;36m[Koperator[m[K!=(const optional<_Tp>& __lhs, const _Up& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1372:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1378:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_ne_t<_Up, _Tp> std::[01;32m[Koperator!=[m[K(const _Up&, const optional<_Tp>&)[m[K’
+ 1378 |     [01;36m[Koperator[m[K!=(const _Up& __lhs, const optional<_Tp>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1378:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/postypes.h:197:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _StateT> bool std::[01;32m[Koperator!=[m[K(const fpos<_StateT>&, const fpos<_StateT>&)[m[K’
+  197 |     [01;36m[Koperator[m[K!=(const fpos<_StateT>& __lhs, const fpos<_StateT>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/postypes.h:197:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::fpos<_StateT>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class ... _Types> constexpr bool std::[01;32m[Koperator!=[m[K(const variant<_Types ...>&, const variant<_Types ...>&)[m[K’
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::variant<_Types ...>[m[K’
+In file included from [01m[K./sup_def/common/sigmanager/sigmanager.hpp:32[m[K:
+[01m[Ksup_def/third_party/function2/include/function2/function2.hpp:1696:6:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class Config, class Property> bool fu2::abi_400::detail::[01;32m[Koperator!=[m[K(const function<Config, Property>&, std::nullptr_t)[m[K’
+ 1696 | bool [01;36m[Koperator[m[K!=(function<Config, Property> const& f, std::nullptr_t) {
+      |      [01;36m[K^~~~~~~~[m[K
+[01m[Ksup_def/third_party/function2/include/function2/function2.hpp:1696:6:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  cannot convert ‘[01m[K__rhs_mem[m[K’ (type ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’) to type ‘[01m[Kstd::nullptr_t[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/third_party/function2/include/function2/function2.hpp:1706:6:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class Config, class Property> bool fu2::abi_400::detail::[01;32m[Koperator!=[m[K(std::nullptr_t, const function<Config, Property>&)[m[K’
+ 1706 | bool [01;36m[Koperator[m[K!=(std::nullptr_t, function<Config, Property> const& f) {
+      |      [01;36m[K^~~~~~~~[m[K
+[01m[Ksup_def/third_party/function2/include/function2/function2.hpp:1706:6:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  cannot convert ‘[01m[K__this_mem[m[K’ (type ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >[m[K’) to type ‘[01m[Kstd::nullptr_t[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+/usr/local/include/c++/14.1.0/variant: In instantiation of ‘[01m[Kstd::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)> mutable [35m[K[with auto:24 = const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >&; auto:25 = std::integral_constant<long unsigned int, 1>][m[K[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/type_traits:2640:26:[m[K   required by substitution of ‘[01m[Ktemplate<class _Fn, class ... _Args> static std::__result_of_success<decltype (declval<_Fn>()((declval<_Args>)()...)), std::__invoke_other> std::__result_of_other_impl::[01;32m[K_S_test[m[K(int) [35m[K[with _Fn = std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>; _Args = {const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >&, std::integral_constant<long unsigned int, 1>}][m[K[m[K’
+ 2640 |       [01;36m[Kstd::declval<_Fn>()(std::declval<_Args>()...)[m[K
+      |       [01;36m[K~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/type_traits:2651:60:[m[K   required from ‘[01m[Kstruct std::__result_of_impl<false, false, std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>, const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >&, std::integral_constant<long unsigned int, 1> >[m[K’
+ 2651 |       using type = decltype([01;36m[K_S_test<_Functor, _ArgTypes...>(0)[m[K);
+      |                             [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/type_traits:2656:12:[m[K   required from ‘[01m[Kstruct std::__invoke_result<std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>, const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >&, std::integral_constant<long unsigned int, 1> >[m[K’
+ 2656 |     struct [01;36m[K__invoke_result[m[K
+      |            [01;36m[K^~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/invoke.h:90:5:[m[K   required by substitution of ‘[01m[Ktemplate<class _Callable, class ... _Args> constexpr typename std::__invoke_result<_Functor, _ArgTypes>::type std::[01;32m[K__invoke[m[K(_Callable&&, _Args&& ...) [35m[K[with _Callable = std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>; _Args = {const fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >&, std::integral_constant<long unsigned int, 1>}][m[K[m[K’
+   90 |     [01;36m[K__invoke[m[K(_Callable&& __fn, _Args&&... __args)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1049:17:[m[K   required from ‘[01m[Kstatic constexpr decltype(auto) std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<_Result_type (*)(_Visitor, _Variants ...)>, std::integer_sequence<long unsigned int, __indices ...> >::[01;32m[K__visit_invoke[m[K(_Visitor&&, _Variants ...) [35m[K[with _Result_type = std::__detail::__variant::__variant_idx_cookie; _Visitor = std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>&&; _Variants = {const std::variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&}; long unsigned int ...__indices = {1}][m[K[m[K’
+ 1049 |           [01;36m[Kstd::__invoke(std::forward<_Visitor>(__visitor),[m[K
+      |           [01;36m[K~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+ 1050 | [01;36m[K              __element_by_index_or_cookie<__indices>([m[K
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+ 1051 | [01;36m[K                std::forward<_Variants>(__vars))...,[m[K
+      |                 [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+ 1052 | [01;36m[K              integral_constant<size_t, __indices>()...)[m[K;
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1817:5:[m[K   required from ‘[01m[Kconstexpr decltype(auto) std::[01;32m[K__do_visit[m[K(_Visitor&&, _Variants&& ...) [35m[K[with _Result_type = __detail::__variant::__variant_idx_cookie; _Visitor = operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>; _Variants = {const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&}][m[K[m[K’
+ 1817 |                   [01;36m[K_GLIBCXX_VISIT_CASE[m[K(1)
+      |                   [01;36m[K^~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:184:44:[m[K   required from ‘[01m[Kconstexpr void std::__detail::__variant::[01;32m[K__raw_idx_visit[m[K(_Visitor&&, _Variants&& ...) [35m[K[with _Visitor = std::operator!=<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >(const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&, const variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&)::<lambda(auto:24&&, auto:25)>; _Variants = {const std::variant<fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> > >&}][m[K[m[K’
+  184 |       [01;36m[Kstd::__do_visit<__variant_idx_cookie>(std::forward<_Visitor>(__visitor),[m[K
+      |       [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+  185 | [01;36m[K          std::forward<_Variants>(__variants)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K   required from ‘[01m[Kconstexpr bool std::[01;32m[Koperator!=[m[K(const variant<_Types ...>&, const variant<_Types ...>&) [35m[K[with _Types = {fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int) noexcept> >, fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >}][m[K[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:474:62:[m[K   required from here
+  474 |             if (handler != generic_handler_t(&generic_handler[01;36m[K)[m[K)
+      |                                                              [01;36m[K^[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;31m[Kerror: [m[Kno match for ‘[01m[Koperator!=[m[K’ (operand types are ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ and ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’)
+ 1267 |   [01;31m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:1010:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _T1, class _T2, class _U1, class _U2> constexpr bool std::[01;32m[Koperator==[m[K(const pair<_T1, _T2>&, const pair<_U1, _U2>&)[m[K’ (reversed)
+ 1010 |     [01;36m[Koperator[m[K==(const pair<_T1, _T2>& __x, const pair<_U1, _U2>& __y)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:1010:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::pair<_T1, _T2>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:527:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _IteratorL, class _IteratorR> constexpr bool std::[01;32m[Koperator==[m[K(const reverse_iterator<_IteratorL>&, const reverse_iterator<_IteratorR>&) requires requires{{std::operator==::__x->base() == std::operator==::__y->base()} -> decltype(auto) [requires std::convertible_to<<placeholder>, bool>];}[m[K’ (reversed)
+  527 |     [01;36m[Koperator[m[K==(const reverse_iterator<_IteratorL>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:527:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::reverse_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:1667:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _IteratorL, class _IteratorR> constexpr bool std::[01;32m[Koperator==[m[K(const move_iterator<_IteratorL>&, const move_iterator<_IteratorR>&) requires requires{{std::operator==::__x->base() == std::operator==::__y->base()} -> decltype(auto) [requires std::convertible_to<<placeholder>, bool>];}[m[K’ (reversed)
+ 1667 |     [01;36m[Koperator[m[K==(const move_iterator<_IteratorL>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:1667:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::move_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1232:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_eq_t<_Tp, _Up> std::[01;32m[Koperator==[m[K(const optional<_Tp>&, const optional<_Up>&)[m[K’ (reversed)
+ 1232 |     [01;36m[Koperator[m[K==(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1232:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1292:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp> constexpr bool std::[01;32m[Koperator==[m[K(const optional<_Tp>&, nullopt_t)[m[K’ (reversed)
+ 1292 |     [01;36m[Koperator[m[K==(const optional<_Tp>& __lhs, nullopt_t) noexcept
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1292:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1360:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_eq_t<_Tp, _Up> std::[01;32m[Koperator==[m[K(const optional<_Tp>&, const _Up&)[m[K’ (reversed)
+ 1360 |     [01;36m[Koperator[m[K==(const optional<_Tp>& __lhs, const _Up& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1360:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1366:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_eq_t<_Up, _Tp> std::[01;32m[Koperator==[m[K(const _Up&, const optional<_Tp>&)[m[K’ (reversed)
+ 1366 |     [01;36m[Koperator[m[K==(const _Up& __lhs, const optional<_Tp>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1366:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/allocator.h:235:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _T1, class _T2> constexpr bool std::[01;32m[Koperator==[m[K(const allocator<_CharT>&, const allocator<_T2>&)[m[K’ (reversed)
+  235 |     [01;36m[Koperator[m[K==(const allocator<_T1>&, const allocator<_T2>&)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/allocator.h:235:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::allocator<_CharT>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/string_view:609:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _CharT, class _Traits> constexpr bool std::[01;32m[Koperator==[m[K(basic_string_view<_CharT, _Traits>, type_identity_t<basic_string_view<_CharT, _Traits> >)[m[K’ (reversed)
+  609 |     [01;36m[Koperator[m[K==(basic_string_view<_CharT, _Traits> __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/string_view:609:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kfu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kstd::basic_string_view<_CharT, _Traits>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:3772:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _CharT, class _Traits, class _Alloc> constexpr bool std::[01;32m[Koperator==[m[K(const __cxx11::basic_string<_CharT, _Traits, _Allocator>&, const _CharT*)[m[K’ (reversed)
+ 3772 |     [01;36m[Koperator[m[K==(const basic_string<_CharT, _Traits, _Alloc>& __lhs,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:3772:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::__cxx11::basic_string<_CharT, _Traits, _Allocator>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/tuple:2556:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class ... _TElements, class ... _UElements> constexpr bool std::[01;32m[Koperator==[m[K(const tuple<_Ts ...>&, const tuple<_Elements ...>&)[m[K’ (reversed)
+ 2556 |     [01;36m[Koperator[m[K==(const tuple<_TElements...>& __t,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/tuple:2556:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::tuple<_Ts ...>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/std_function.h:743:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Res, class ... _Args> bool std::[01;32m[Koperator==[m[K(const function<_Res(_ArgTypes ...)>&, nullptr_t)[m[K’ (reversed)
+  743 |     [01;36m[Koperator[m[K==(const function<_Res(_Args...)>& __f, nullptr_t) noexcept
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/std_function.h:743:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::function<_Res(_ArgTypes ...)>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:465:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Kbool std::[01;32m[Koperator==[m[K(const error_code&, const error_condition&)[m[K’ (reversed)
+  465 |   [01;36m[Koperator[m[K==(const error_code& __lhs, const error_condition& __rhs) noexcept
+      |   [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:465:32:[m[K [01;36m[Knote: [m[K  no known conversion for argument 1 from ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ to ‘[01m[Kconst std::error_code&[m[K’
+  465 |   operator==([01;36m[Kconst error_code& __lhs[m[K, const error_condition& __rhs) noexcept
+      |              [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:586:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Iterator> constexpr bool std::[01;32m[Koperator==[m[K(const reverse_iterator<_IteratorL>&, const reverse_iterator<_IteratorL>&) requires requires{{std::operator==::__x->base() == std::operator==::__y->base()} -> decltype(auto) [requires std::convertible_to<<placeholder>, bool>];}[m[K’ (rewritten)
+  586 |     [01;36m[Koperator[m[K==(const reverse_iterator<_Iterator>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:586:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::reverse_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:1737:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Iterator> constexpr bool std::[01;32m[Koperator==[m[K(const move_iterator<_IteratorL>&, const move_iterator<_IteratorL>&)[m[K’ (rewritten)
+ 1737 |     [01;36m[Koperator[m[K==(const move_iterator<_Iterator>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:1737:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::move_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/postypes.h:192:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _StateT> bool std::[01;32m[Koperator==[m[K(const fpos<_StateT>&, const fpos<_StateT>&)[m[K’ (rewritten)
+  192 |     [01;36m[Koperator[m[K==(const fpos<_StateT>& __lhs, const fpos<_StateT>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/postypes.h:192:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::fpos<_StateT>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:3755:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _CharT, class _Traits, class _Alloc> constexpr bool std::[01;32m[Koperator==[m[K(const __cxx11::basic_string<_CharT, _Traits, _Allocator>&, const __cxx11::basic_string<_CharT, _Traits, _Allocator>&)[m[K’ (rewritten)
+ 3755 |     [01;36m[Koperator[m[K==(const basic_string<_CharT, _Traits, _Alloc>& __lhs,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:3755:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::__cxx11::basic_string<_CharT, _Traits, _Allocator>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/unordered_map.h:2144:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Key1, class _Tp1, class _Hash1, class _Pred1, class _Alloc1> bool std::[01;32m[Koperator==[m[K(const unordered_map<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&, const unordered_map<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&)[m[K’ (rewritten)
+ 2144 |     [01;36m[Koperator[m[K==(const unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/unordered_map.h:2144:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::unordered_map<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/unordered_map.h:2158:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Key1, class _Tp1, class _Hash1, class _Pred1, class _Alloc1> bool std::[01;32m[Koperator==[m[K(const unordered_multimap<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&, const unordered_multimap<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>&)[m[K’ (rewritten)
+ 2158 |     [01;36m[Koperator[m[K==(const unordered_multimap<_Key, _Tp, _Hash, _Pred, _Alloc>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/unordered_map.h:2158:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::unordered_multimap<_Key1, _Tp1, _Hash1, _Pred1, _Alloc1>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_vector.h:2050:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Alloc> constexpr bool std::[01;32m[Koperator==[m[K(const vector<_Tp, _Alloc>&, const vector<_Tp, _Alloc>&)[m[K’ (rewritten)
+ 2050 |     [01;36m[Koperator[m[K==(const vector<_Tp, _Alloc>& __x, const vector<_Tp, _Alloc>& __y)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_vector.h:2050:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::vector<_Tp, _Alloc>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/array:303:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, long unsigned int _Nm> constexpr bool std::[01;32m[Koperator==[m[K(const array<_Tp, _Nm>&, const array<_Tp, _Nm>&)[m[K’ (rewritten)
+  303 |     [01;36m[Koperator[m[K==(const array<_Tp, _Nm>& __one, const array<_Tp, _Nm>& __two)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/array:303:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::array<_Tp, _Nm>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/streambuf_iterator.h:234:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _CharT, class _Traits> bool std::[01;32m[Koperator==[m[K(const istreambuf_iterator<_CharT, _Traits>&, const istreambuf_iterator<_CharT, _Traits>&)[m[K’ (rewritten)
+  234 |     [01;36m[Koperator[m[K==(const istreambuf_iterator<_CharT, _Traits>& __a,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/streambuf_iterator.h:234:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::istreambuf_iterator<_CharT, _Traits>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1266:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class ... _Types> constexpr bool std::[01;32m[Koperator==[m[K(const variant<_Types ...>&, const variant<_Types ...>&)[m[K’ (rewritten)
+ 1266 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(==, equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1266:3:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::variant<_Types ...>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:449:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Kbool std::[01;32m[Koperator==[m[K(const error_code&, const error_code&)[m[K’ (rewritten)
+  449 |   [01;36m[Koperator[m[K==(const error_code& __lhs, const error_code& __rhs) noexcept
+      |   [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:449:32:[m[K [01;36m[Knote: [m[K  no known conversion for argument 1 from ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ to ‘[01m[Kconst std::error_code&[m[K’
+  449 |   operator==([01;36m[Kconst error_code& __lhs[m[K, const error_code& __rhs) noexcept
+      |              [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:480:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Kbool std::[01;32m[Koperator==[m[K(const error_condition&, const error_condition&)[m[K’ (rewritten)
+  480 |   [01;36m[Koperator[m[K==(const error_condition& __lhs,
+      |   [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/system_error:480:37:[m[K [01;36m[Knote: [m[K  no known conversion for argument 1 from ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ to ‘[01m[Kconst std::error_condition&[m[K’
+  480 |   operator==([01;36m[Kconst error_condition& __lhs[m[K,
+      |              [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~^~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Koperator!=(int, int)[m[K’ (built-in)
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  no known conversion for argument 2 from ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ to ‘[01m[Kint[m[K’
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:535:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _IteratorL, class _IteratorR> constexpr bool std::[01;32m[Koperator!=[m[K(const reverse_iterator<_IteratorL>&, const reverse_iterator<_IteratorR>&) requires requires{{std::operator!=::__x->base() != std::operator!=::__y->base()} -> decltype(auto) [requires std::convertible_to<<placeholder>, bool>];}[m[K’
+  535 |     [01;36m[Koperator[m[K!=(const reverse_iterator<_IteratorL>& __x,
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:535:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::reverse_iterator<_IteratorL>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1241:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_ne_t<_Tp, _Up> std::[01;32m[Koperator!=[m[K(const optional<_Tp>&, const optional<_Up>&)[m[K’
+ 1241 |     [01;36m[Koperator[m[K!=(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1241:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1372:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_ne_t<_Tp, _Up> std::[01;32m[Koperator!=[m[K(const optional<_Tp>&, const _Up&)[m[K’
+ 1372 |     [01;36m[Koperator[m[K!=(const optional<_Tp>& __lhs, const _Up& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1372:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1378:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class _Up> constexpr std::__optional_ne_t<_Up, _Tp> std::[01;32m[Koperator!=[m[K(const _Up&, const optional<_Tp>&)[m[K’
+ 1378 |     [01;36m[Koperator[m[K!=(const _Up& __lhs, const optional<_Tp>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/optional:1378:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::optional<_Tp>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/postypes.h:197:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _StateT> bool std::[01;32m[Koperator!=[m[K(const fpos<_StateT>&, const fpos<_StateT>&)[m[K’
+  197 |     [01;36m[Koperator[m[K!=(const fpos<_StateT>& __lhs, const fpos<_StateT>& __rhs)
+      |     [01;36m[K^~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/postypes.h:197:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::fpos<_StateT>[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class ... _Types> constexpr bool std::[01;32m[Koperator!=[m[K(const variant<_Types ...>&, const variant<_Types ...>&)[m[K’
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’ is not derived from ‘[01m[Kconst std::variant<_Types ...>[m[K’
+[01m[Ksup_def/third_party/function2/include/function2/function2.hpp:1696:6:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class Config, class Property> bool fu2::abi_400::detail::[01;32m[Koperator!=[m[K(const function<Config, Property>&, std::nullptr_t)[m[K’
+ 1696 | bool [01;36m[Koperator[m[K!=(function<Config, Property> const& f, std::nullptr_t) {
+      |      [01;36m[K^~~~~~~~[m[K
+[01m[Ksup_def/third_party/function2/include/function2/function2.hpp:1696:6:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  cannot convert ‘[01m[K__rhs_mem[m[K’ (type ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’) to type ‘[01m[Kstd::nullptr_t[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/third_party/function2/include/function2/function2.hpp:1706:6:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class Config, class Property> bool fu2::abi_400::detail::[01;32m[Koperator!=[m[K(std::nullptr_t, const function<Config, Property>&)[m[K’
+ 1706 | bool [01;36m[Koperator[m[K!=(std::nullptr_t, function<Config, Property> const& f) {
+      |      [01;36m[K^~~~~~~~[m[K
+[01m[Ksup_def/third_party/function2/include/function2/function2.hpp:1706:6:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/variant:1267:3:[m[K [01;36m[Knote: [m[K  cannot convert ‘[01m[K__this_mem[m[K’ (type ‘[01m[Kconst fu2::abi_400::detail::function<fu2::abi_400::detail::config<true, true, fu2::capacity_default>, fu2::abi_400::detail::property<true, false, void(int, siginfo_t*, ucontext_t*) noexcept> >[m[K’) to type ‘[01m[Kstd::nullptr_t[m[K’
+ 1267 |   [01;36m[K_VARIANT_RELATION_FUNCTION_TEMPLATE[m[K(!=, not_equal)
+      |   [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/bits/stl_algobase.h:71[m[K:
+/usr/local/include/c++/14.1.0/bits/predefined_ops.h: In instantiation of ‘[01m[Kconstexpr bool __gnu_cxx::__ops::_Iter_pred<_Predicate>::[01;32m[Koperator()[m[K(_Iterator) [35m[K[with _Iterator = std::_Rb_tree_iterator<std::pair<const int, sigmgr::client_callbacks> >; _Predicate = sigmgr::reset_callbacks(const std::string&)::<lambda(const mm_iter_t&)>][m[K[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_algobase.h:2080:42:[m[K   required from ‘[01m[Kconstexpr _InputIterator std::[01;32m[K__find_if[m[K(_InputIterator, _InputIterator, _Predicate, input_iterator_tag) [35m[K[with _InputIterator = _Rb_tree_iterator<pair<const int, sigmgr::client_callbacks> >; _Predicate = __gnu_cxx::__ops::_Iter_pred<sigmgr::reset_callbacks(const std::string&)::<lambda(const mm_iter_t&)> >][m[K[m[K’
+ 2080 |       while (__first != __last && ![01;36m[K__pred(__first)[m[K)
+      |                                    [01;36m[K~~~~~~^~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_algobase.h:2142:23:[m[K   required from ‘[01m[Kconstexpr _Iterator std::[01;32m[K__find_if[m[K(_Iterator, _Iterator, _Predicate) [35m[K[with _Iterator = _Rb_tree_iterator<pair<const int, sigmgr::client_callbacks> >; _Predicate = __gnu_cxx::__ops::_Iter_pred<sigmgr::reset_callbacks(const std::string&)::<lambda(const mm_iter_t&)> >][m[K[m[K’
+ 2142 |       return [01;36m[K__find_if(__first, __last, __pred,[m[K
+      |              [01;36m[K~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+ 2143 | [01;36m[K                       std::__iterator_category(__first))[m[K;
+      |                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_algo.h:3875:28:[m[K   required from ‘[01m[Kconstexpr _IIter std::[01;32m[Kfind_if[m[K(_IIter, _IIter, _Predicate) [35m[K[with _IIter = _Rb_tree_iterator<pair<const int, sigmgr::client_callbacks> >; _Predicate = sigmgr::reset_callbacks(const std::string&)::<lambda(const mm_iter_t&)>][m[K[m[K’
+ 3875 |       return [01;36m[Kstd::__find_if(__first, __last,[m[K
+      |              [01;36m[K~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~[m[K
+ 3876 | [01;36m[K                            __gnu_cxx::__ops::__pred_iter(__pred))[m[K;
+      |                             [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:682:34:[m[K   required from here
+  682 |             (found = [01;36m[Kstd::find_if(found, signal_callbacks.end(), fdif)[m[K) != signal_callbacks.end()
+      |                      [01;36m[K~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/predefined_ops.h:318:30:[m[K [01;31m[Kerror: [m[Kno match for call to ‘[01m[K(sigmgr::reset_callbacks(const std::string&)::<lambda(const mm_iter_t&)>) (std::pair<const int, sigmgr::client_callbacks>&)[m[K’
+  318 |         { return bool([01;31m[K_M_pred(*__it)[m[K); }
+      |                       [01;31m[K~~~~~~~^~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:677:21:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ksigmgr::reset_callbacks(const std::string&)::<lambda(const mm_iter_t&)>[m[K’
+  677 |         auto fdif = [01;36m[K[[m[K&id](const mm_iter_t& it) -> bool
+      |                     [01;36m[K^[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:677:21:[m[K [01;36m[Knote: [m[K  no known conversion for argument 1 from ‘[01m[Kstd::pair<const int, sigmgr::client_callbacks>[m[K’ to ‘[01m[Kconst mm_iter_t&[m[K’ {aka ‘[01m[Kconst std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator&[m[K’}
+In file included from [01m[K/usr/local/include/c++/14.1.0/ext/alloc_traits.h:34[m[K,
+                 from [01m[K/usr/local/include/c++/14.1.0/bits/basic_string.h:39[m[K:
+/usr/local/include/c++/14.1.0/bits/alloc_traits.h: In instantiation of ‘[01m[Kstatic constexpr void std::allocator_traits<std::allocator<_CharT> >::[01;32m[Kconstruct[m[K(allocator_type&, _Up*, _Args&& ...) [35m[K[with _Up = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}; _Tp = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >; allocator_type = std::allocator<std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> > >][m[K[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:593:32:[m[K   required from ‘[01m[Kvoid std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_construct_node[m[K(_Link_type, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  593 |               [01;36m[K_Alloc_traits::construct(_M_get_Node_allocator(),[m[K
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+  594 | [01;36m[K                                       __node->_M_valptr(),[m[K
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~[m[K
+  595 | [01;36m[K                                       std::forward<_Args>(__args)...)[m[K;
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:610:21:[m[K   required from ‘[01m[Kstd::_Rb_tree_node<_Val>* std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_create_node[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  610 |           [01;36m[K_M_construct_node(__tmp, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:1633:32:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_Auto_node::[01;32m[K_Auto_node[m[K(std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>&, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >][m[K[m[K’
+ 1633 |             _M_node([01;36m[K__t._M_create_node(std::forward<_Args>(__args)...)[m[K)
+      |                     [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:2445:13:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_emplace_equal[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+ 2445 |         _Auto_node [01;36m[K__z[m[K(*this, std::forward<_Args>(__args)...);
+      |                    [01;36m[K^~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_multimap.h:498:32:[m[K   required from ‘[01m[Kstd::multimap<_Key, _Tp, _Compare, _Alloc>::iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::[01;32m[Kemplace[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Tp = sigmgr::client_callbacks; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+  498 |         { return [01;36m[K_M_t._M_emplace_equal(std::forward<_Args>(__args)...)[m[K; }
+      |                  [01;36m[K~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:564:48:[m[K   required from here
+  564 |             auto ret = [01;36m[Ksignal_callbacks.emplace(sig, client_callbacks(id))[m[K;
+      |                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/alloc_traits.h:536:28:[m[K [01;31m[Kerror: [m[Kno matching function for call to ‘[01m[Kconstruct_at(std::pair<const int, sigmgr::client_callbacks>*&, const int&, sigmgr::client_callbacks)[m[K’
+  536 |           [01;31m[Kstd::construct_at(__p, std::forward<_Args>(__args)...)[m[K;
+      |           [01;31m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/usr/local/include/c++/14.1.0/bits/stl_iterator.h:78[m[K:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_construct.h:94:5:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _Tp, class ... _Args> constexpr decltype (::new(void*(0)) _Tp) std::[01;32m[Kconstruct_at[m[K(_Tp*, _Args&& ...)[m[K’
+   94 |     [01;36m[Kconstruct_at[m[K(_Tp* __location, _Args&&... __args)
+      |     [01;36m[K^~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_construct.h:94:5:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+/usr/local/include/c++/14.1.0/bits/stl_construct.h: In substitution of ‘[01m[Ktemplate<class _Tp, class ... _Args> constexpr decltype (::new(void*(0)) _Tp) std::[01;32m[Kconstruct_at[m[K(_Tp*, _Args&& ...) [35m[K[with _Tp = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}][m[K[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/bits/alloc_traits.h:536:21:[m[K   required from ‘[01m[Kstatic constexpr void std::allocator_traits<std::allocator<_CharT> >::[01;32m[Kconstruct[m[K(allocator_type&, _Up*, _Args&& ...) [35m[K[with _Up = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}; _Tp = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >; allocator_type = std::allocator<std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> > >][m[K[m[K’
+  536 |           [01;36m[Kstd::construct_at(__p, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:593:32:[m[K   required from ‘[01m[Kvoid std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_construct_node[m[K(_Link_type, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  593 |               [01;36m[K_Alloc_traits::construct(_M_get_Node_allocator(),[m[K
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+  594 | [01;36m[K                                       __node->_M_valptr(),[m[K
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~[m[K
+  595 | [01;36m[K                                       std::forward<_Args>(__args)...)[m[K;
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:610:21:[m[K   required from ‘[01m[Kstd::_Rb_tree_node<_Val>* std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_create_node[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  610 |           [01;36m[K_M_construct_node(__tmp, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:1633:32:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_Auto_node::[01;32m[K_Auto_node[m[K(std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>&, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >][m[K[m[K’
+ 1633 |             _M_node([01;36m[K__t._M_create_node(std::forward<_Args>(__args)...)[m[K)
+      |                     [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:2445:13:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_emplace_equal[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+ 2445 |         _Auto_node [01;36m[K__z[m[K(*this, std::forward<_Args>(__args)...);
+      |                    [01;36m[K^~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_multimap.h:498:32:[m[K   required from ‘[01m[Kstd::multimap<_Key, _Tp, _Compare, _Alloc>::iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::[01;32m[Kemplace[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Tp = sigmgr::client_callbacks; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+  498 |         { return [01;36m[K_M_t._M_emplace_equal(std::forward<_Args>(__args)...)[m[K; }
+      |                  [01;36m[K~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:564:48:[m[K   required from here
+  564 |             auto ret = [01;36m[Ksignal_callbacks.emplace(sig, client_callbacks(id))[m[K;
+      |                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_construct.h:96:17:[m[K [01;31m[Kerror: [m[Kno matching function for call to ‘[01m[Kstd::pair<const int, sigmgr::client_callbacks>::pair(const int&, sigmgr::client_callbacks)[m[K’
+   96 |     -> decltype([01;31m[K::new((void*)0) _Tp(std::declval<_Args>()...)[m[K)
+      |                 [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:534:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _UPair>  requires (__eligible_pair_like<_UPair, std::pair<_T1, _T2> >) && (_S_constructible_from_pair_like<_UPair>() && _S_dangles_from_pair_like<_UPair>()) constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(_UPair&&) [35m[K[with _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’ (deleted)
+  534 |         [01;36m[Kpair[m[K(_UPair&&) = delete;
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:534:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:525:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _UPair>  requires (__eligible_pair_like<_UPair, std::pair<_T1, _T2> >) && (_S_constructible_from_pair_like<_UPair>() && !_S_dangles_from_pair_like<_UPair>()) constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(_UPair&&) [35m[K[with _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  525 |         [01;36m[Kpair[m[K(_UPair&& __p)
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:525:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:517:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<const _U1, const _U2>() && _S_dangles<const _U1, const _U2>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(const std::pair<_U1, _U2>&&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’ (deleted)
+  517 |         [01;36m[Kpair[m[K(const pair<_U1, _U2>&&) = delete;
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:517:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:507:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<const _U1, const _U2>() && !_S_dangles<const _U1, const _U2>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(const std::pair<_U1, _U2>&&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  507 |         [01;36m[Kpair[m[K(const pair<_U1, _U2>&& __p)
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:507:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:500:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<_U1&, _U2&>() && _S_dangles<_U1&, _U2&>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(std::pair<_U1, _U2>&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’ (deleted)
+  500 |         [01;36m[Kpair[m[K(pair<_U1, _U2>&) = delete;
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:500:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:492:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<_U1&, _U2&>() && !_S_dangles<_U1&, _U2&>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(std::pair<_U1, _U2>&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  492 |         [01;36m[Kpair[m[K(pair<_U1, _U2>& __p)
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:492:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:485:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<_U1, _U2>() && _S_dangles<_U1, _U2>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(std::pair<_U1, _U2>&&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’ (deleted)
+  485 |         [01;36m[Kpair[m[K(pair<_U1, _U2>&&) = delete;
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:485:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:476:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<_U1, _U2>() && !_S_dangles<_U1, _U2>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(std::pair<_U1, _U2>&&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  476 |         [01;36m[Kpair[m[K(pair<_U1, _U2>&& __p)
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:476:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:470:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<const _U1&, const _U2&>() && _S_dangles<const _U1&, const _U2&>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(const std::pair<_U1, _U2>&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’ (deleted)
+  470 |         [01;36m[Kpair[m[K(const pair<_U1, _U2>&) = delete;
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:470:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:461:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<const _U1&, const _U2&>() && !_S_dangles<_U1, _U2>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(const std::pair<_U1, _U2>&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  461 |         [01;36m[Kpair[m[K(const pair<_U1, _U2>& __p)
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:461:9:[m[K [01;36m[Knote: [m[K  candidate expects 1 argument, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:454:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<_U1, _U2>() && _S_dangles<_U1, _U2>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(_U1&&, _U2&&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’ (deleted)
+  454 |         [01;36m[Kpair[m[K(_U1&&, _U2&&) = delete;
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:454:9:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:454:9:[m[K [01;36m[Knote: [m[Kconstraints not satisfied
+/usr/local/include/c++/14.1.0/bits/stl_pair.h: In substitution of ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<_U1, _U2>() && _S_dangles<_U1, _U2>() constexpr std::pair<const int, sigmgr::client_callbacks>::[01;32m[Kpair[m[K(_U1&&, _U2&&) [35m[K[with _U1 = const int; _U2 = sigmgr::client_callbacks][m[K[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_construct.h:96:17:[m[K   required by substitution of ‘[01m[Ktemplate<class _Tp, class ... _Args> constexpr decltype (::new(void*(0)) _Tp) std::[01;32m[Kconstruct_at[m[K(_Tp*, _Args&& ...) [35m[K[with _Tp = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}][m[K[m[K’
+   96 |     -> decltype([01;36m[K::new((void*)0) _Tp(std::declval<_Args>()...)[m[K)
+      |                 [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/alloc_traits.h:536:21:[m[K   required from ‘[01m[Kstatic constexpr void std::allocator_traits<std::allocator<_CharT> >::[01;32m[Kconstruct[m[K(allocator_type&, _Up*, _Args&& ...) [35m[K[with _Up = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}; _Tp = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >; allocator_type = std::allocator<std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> > >][m[K[m[K’
+  536 |           [01;36m[Kstd::construct_at(__p, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:593:32:[m[K   required from ‘[01m[Kvoid std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_construct_node[m[K(_Link_type, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  593 |               [01;36m[K_Alloc_traits::construct(_M_get_Node_allocator(),[m[K
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+  594 | [01;36m[K                                       __node->_M_valptr(),[m[K
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~[m[K
+  595 | [01;36m[K                                       std::forward<_Args>(__args)...)[m[K;
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:610:21:[m[K   required from ‘[01m[Kstd::_Rb_tree_node<_Val>* std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_create_node[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  610 |           [01;36m[K_M_construct_node(__tmp, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:1633:32:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_Auto_node::[01;32m[K_Auto_node[m[K(std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>&, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >][m[K[m[K’
+ 1633 |             _M_node([01;36m[K__t._M_create_node(std::forward<_Args>(__args)...)[m[K)
+      |                     [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:2445:13:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_emplace_equal[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+ 2445 |         _Auto_node [01;36m[K__z[m[K(*this, std::forward<_Args>(__args)...);
+      |                    [01;36m[K^~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_multimap.h:498:32:[m[K   required from ‘[01m[Kstd::multimap<_Key, _Tp, _Compare, _Alloc>::iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::[01;32m[Kemplace[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Tp = sigmgr::client_callbacks; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+  498 |         { return [01;36m[K_M_t._M_emplace_equal(std::forward<_Args>(__args)...)[m[K; }
+      |                  [01;36m[K~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:564:48:[m[K   required from here
+  564 |             auto ret = [01;36m[Ksignal_callbacks.emplace(sig, client_callbacks(id))[m[K;
+      |                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:454:2:[m[K   required by the constraints of ‘[01m[Ktemplate<class _T1, class _T2> template<class _U1, class _U2>  requires  _S_constructible<_U1, _U2>() && _S_dangles<_U1, _U2>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(_U1&&, _U2&&)[m[K’
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:452:45:[m[K [01;36m[Knote: [m[Kthe expression ‘[01m[K_S_constructible<_U1, _U2>() [with _T1 = const int; _T2 = sigmgr::client_callbacks; _U1 = const int&; _U2 = sigmgr::client_callbacks][m[K’ evaluated to ‘[01m[Kfalse[m[K’
+  452 |         requires [01;36m[K(_S_constructible<_U1, _U2>())[m[K && (_S_dangles<_U1, _U2>())
+      |                  [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~[m[K
+/usr/local/include/c++/14.1.0/bits/stl_construct.h: In substitution of ‘[01m[Ktemplate<class _Tp, class ... _Args> constexpr decltype (::new(void*(0)) _Tp) std::[01;32m[Kconstruct_at[m[K(_Tp*, _Args&& ...) [35m[K[with _Tp = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}][m[K[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/bits/alloc_traits.h:536:21:[m[K   required from ‘[01m[Kstatic constexpr void std::allocator_traits<std::allocator<_CharT> >::[01;32m[Kconstruct[m[K(allocator_type&, _Up*, _Args&& ...) [35m[K[with _Up = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}; _Tp = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >; allocator_type = std::allocator<std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> > >][m[K[m[K’
+  536 |           [01;36m[Kstd::construct_at(__p, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:593:32:[m[K   required from ‘[01m[Kvoid std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_construct_node[m[K(_Link_type, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  593 |               [01;36m[K_Alloc_traits::construct(_M_get_Node_allocator(),[m[K
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+  594 | [01;36m[K                                       __node->_M_valptr(),[m[K
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~[m[K
+  595 | [01;36m[K                                       std::forward<_Args>(__args)...)[m[K;
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:610:21:[m[K   required from ‘[01m[Kstd::_Rb_tree_node<_Val>* std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_create_node[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  610 |           [01;36m[K_M_construct_node(__tmp, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:1633:32:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_Auto_node::[01;32m[K_Auto_node[m[K(std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>&, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >][m[K[m[K’
+ 1633 |             _M_node([01;36m[K__t._M_create_node(std::forward<_Args>(__args)...)[m[K)
+      |                     [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:2445:13:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_emplace_equal[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+ 2445 |         _Auto_node [01;36m[K__z[m[K(*this, std::forward<_Args>(__args)...);
+      |                    [01;36m[K^~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_multimap.h:498:32:[m[K   required from ‘[01m[Kstd::multimap<_Key, _Tp, _Compare, _Alloc>::iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::[01;32m[Kemplace[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Tp = sigmgr::client_callbacks; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+  498 |         { return [01;36m[K_M_t._M_emplace_equal(std::forward<_Args>(__args)...)[m[K; }
+      |                  [01;36m[K~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:564:48:[m[K   required from here
+  564 |             auto ret = [01;36m[Ksignal_callbacks.emplace(sig, client_callbacks(id))[m[K;
+      |                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:442:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<_U1, _U2>() && !_S_dangles<_U1, _U2>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(_U1&&, _U2&&) [35m[K[with _U2 = _U1; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  442 |         [01;36m[Kpair[m[K(_U1&& __x, _U2&& __y)
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:442:9:[m[K [01;36m[Knote: [m[K  template argument deduction/substitution failed:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:442:9:[m[K [01;36m[Knote: [m[Kconstraints not satisfied
+/usr/local/include/c++/14.1.0/bits/stl_pair.h: In substitution of ‘[01m[Ktemplate<class _U1, class _U2>  requires  _S_constructible<_U1, _U2>() && !_S_dangles<_U1, _U2>() constexpr std::pair<const int, sigmgr::client_callbacks>::[01;32m[Kpair[m[K(_U1&&, _U2&&) [35m[K[with _U1 = const int; _U2 = sigmgr::client_callbacks][m[K[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_construct.h:96:17:[m[K   required by substitution of ‘[01m[Ktemplate<class _Tp, class ... _Args> constexpr decltype (::new(void*(0)) _Tp) std::[01;32m[Kconstruct_at[m[K(_Tp*, _Args&& ...) [35m[K[with _Tp = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}][m[K[m[K’
+   96 |     -> decltype([01;36m[K::new((void*)0) _Tp(std::declval<_Args>()...)[m[K)
+      |                 [01;36m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/alloc_traits.h:536:21:[m[K   required from ‘[01m[Kstatic constexpr void std::allocator_traits<std::allocator<_CharT> >::[01;32m[Kconstruct[m[K(allocator_type&, _Up*, _Args&& ...) [35m[K[with _Up = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}; _Tp = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >; allocator_type = std::allocator<std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> > >][m[K[m[K’
+  536 |           [01;36m[Kstd::construct_at(__p, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:593:32:[m[K   required from ‘[01m[Kvoid std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_construct_node[m[K(_Link_type, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  593 |               [01;36m[K_Alloc_traits::construct(_M_get_Node_allocator(),[m[K
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+  594 | [01;36m[K                                       __node->_M_valptr(),[m[K
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~[m[K
+  595 | [01;36m[K                                       std::forward<_Args>(__args)...)[m[K;
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:610:21:[m[K   required from ‘[01m[Kstd::_Rb_tree_node<_Val>* std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_create_node[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  610 |           [01;36m[K_M_construct_node(__tmp, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:1633:32:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_Auto_node::[01;32m[K_Auto_node[m[K(std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>&, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >][m[K[m[K’
+ 1633 |             _M_node([01;36m[K__t._M_create_node(std::forward<_Args>(__args)...)[m[K)
+      |                     [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:2445:13:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_emplace_equal[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+ 2445 |         _Auto_node [01;36m[K__z[m[K(*this, std::forward<_Args>(__args)...);
+      |                    [01;36m[K^~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_multimap.h:498:32:[m[K   required from ‘[01m[Kstd::multimap<_Key, _Tp, _Compare, _Alloc>::iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::[01;32m[Kemplace[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Tp = sigmgr::client_callbacks; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+  498 |         { return [01;36m[K_M_t._M_emplace_equal(std::forward<_Args>(__args)...)[m[K; }
+      |                  [01;36m[K~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:564:48:[m[K   required from here
+  564 |             auto ret = [01;36m[Ksignal_callbacks.emplace(sig, client_callbacks(id))[m[K;
+      |                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:442:2:[m[K   required by the constraints of ‘[01m[Ktemplate<class _T1, class _T2> template<class _U1, class _U2>  requires  _S_constructible<_U1, _U2>() && !_S_dangles<_U1, _U2>() constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(_U1&&, _U2&&)[m[K’
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:440:45:[m[K [01;36m[Knote: [m[Kthe expression ‘[01m[K_S_constructible<_U1, _U2>() [with _T1 = const int; _T2 = sigmgr::client_callbacks; _U1 = const int&; _U2 = sigmgr::client_callbacks][m[K’ evaluated to ‘[01m[Kfalse[m[K’
+  440 |         requires [01;36m[K(_S_constructible<_U1, _U2>())[m[K && (!_S_dangles<_U1, _U2>())
+      |                  [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~[m[K
+/usr/local/include/c++/14.1.0/bits/stl_construct.h: In substitution of ‘[01m[Ktemplate<class _Tp, class ... _Args> constexpr decltype (::new(void*(0)) _Tp) std::[01;32m[Kconstruct_at[m[K(_Tp*, _Args&& ...) [35m[K[with _Tp = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}][m[K[m[K’:
+[01m[K/usr/local/include/c++/14.1.0/bits/alloc_traits.h:536:21:[m[K   required from ‘[01m[Kstatic constexpr void std::allocator_traits<std::allocator<_CharT> >::[01;32m[Kconstruct[m[K(allocator_type&, _Up*, _Args&& ...) [35m[K[with _Up = std::pair<const int, sigmgr::client_callbacks>; _Args = {const int&, sigmgr::client_callbacks}; _Tp = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >; allocator_type = std::allocator<std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> > >][m[K[m[K’
+  536 |           [01;36m[Kstd::construct_at(__p, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:593:32:[m[K   required from ‘[01m[Kvoid std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_construct_node[m[K(_Link_type, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  593 |               [01;36m[K_Alloc_traits::construct(_M_get_Node_allocator(),[m[K
+      |               [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+  594 | [01;36m[K                                       __node->_M_valptr(),[m[K
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~[m[K
+  595 | [01;36m[K                                       std::forward<_Args>(__args)...)[m[K;
+      |                                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:610:21:[m[K   required from ‘[01m[Kstd::_Rb_tree_node<_Val>* std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_create_node[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; _Link_type = std::_Rb_tree_node<std::pair<const int, sigmgr::client_callbacks> >*][m[K[m[K’
+  610 |           [01;36m[K_M_construct_node(__tmp, std::forward<_Args>(__args)...)[m[K;
+      |           [01;36m[K~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:1633:32:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_Auto_node::[01;32m[K_Auto_node[m[K(std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>&, _Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >][m[K[m[K’
+ 1633 |             _M_node([01;36m[K__t._M_create_node(std::forward<_Args>(__args)...)[m[K)
+      |                     [01;36m[K~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_tree.h:2445:13:[m[K   required from ‘[01m[Kstd::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::iterator std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::[01;32m[K_M_emplace_equal[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Val = std::pair<const int, sigmgr::client_callbacks>; _KeyOfValue = std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+ 2445 |         _Auto_node [01;36m[K__z[m[K(*this, std::forward<_Args>(__args)...);
+      |                    [01;36m[K^~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_multimap.h:498:32:[m[K   required from ‘[01m[Kstd::multimap<_Key, _Tp, _Compare, _Alloc>::iterator std::multimap<_Key, _Tp, _Compare, _Alloc>::[01;32m[Kemplace[m[K(_Args&& ...) [35m[K[with _Args = {const int&, sigmgr::client_callbacks}; _Key = int; _Tp = sigmgr::client_callbacks; _Compare = std::less<int>; _Alloc = std::allocator<std::pair<const int, sigmgr::client_callbacks> >; iterator = std::_Rb_tree<int, std::pair<const int, sigmgr::client_callbacks>, std::_Select1st<std::pair<const int, sigmgr::client_callbacks> >, std::less<int>, std::allocator<std::pair<const int, sigmgr::client_callbacks> > >::iterator][m[K[m[K’
+  498 |         { return [01;36m[K_M_t._M_emplace_equal(std::forward<_Args>(__args)...)[m[K; }
+      |                  [01;36m[K~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[Ksup_def/common/sigmanager/sigmanager.cpp:564:48:[m[K   required from here
+  564 |             auto ret = [01;36m[Ksignal_callbacks.emplace(sig, client_callbacks(id))[m[K;
+      |                        [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:335:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class ... _Args1, long unsigned int ..._Indexes1, class ... _Args2, long unsigned int ..._Indexes2> constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(std::tuple<_Args1 ...>&, std::tuple<_Args2 ...>&, std::_Index_tuple<_Indexes1 ...>, std::_Index_tuple<_Indexes2 ...>) [35m[K[with _Args1 = {_Args1 ...}; long unsigned int ..._Indexes1 = {_Indexes1 ...}; _Args2 = {_Args2 ...}; long unsigned int ..._Indexes2 = {_Indexes2 ...}; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  335 |         [01;36m[Kpair[m[K(tuple<_Args1...>&, tuple<_Args2...>&,
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:335:9:[m[K [01;36m[Knote: [m[K  candidate expects 4 arguments, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:299:9:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Ktemplate<class ... _Args1, class ... _Args2> constexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(std::piecewise_construct_t, std::tuple<_Args1 ...>, std::tuple<_Args2 ...>) [35m[K[with _Args1 = {_Args1 ...}; _Args2 = {_Args2 ...}; _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  299 |         [01;36m[Kpair[m[K(piecewise_construct_t, tuple<_Args1...>, tuple<_Args2...>);
+      |         [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:299:9:[m[K [01;36m[Knote: [m[K  candidate expects 3 arguments, 2 provided
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:428:7:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Kconstexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K(const _T1&, const _T2&) requires  _S_constructible<const _T1&, const _T2&>() [35m[K[with _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  428 |       [01;36m[Kpair[m[K(const _T1& __x, const _T2& __y)
+      |       [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:428:7:[m[K [01;36m[Knote: [m[Kconstraints not satisfied
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:346:7:[m[K [01;36m[Knote: [m[Kcandidate: ‘[01m[Kconstexpr std::pair<_T1, _T2>::[01;32m[Kpair[m[K() requires (is_default_constructible_v<_T1>) && (is_default_constructible_v<_T2>) [35m[K[with _T1 = const int; _T2 = sigmgr::client_callbacks][m[K[m[K’
+  346 |       [01;36m[Kpair[m[K()
+      |       [01;36m[K^~~~[m[K
+[01m[K/usr/local/include/c++/14.1.0/bits/stl_pair.h:346:7:[m[K [01;36m[Knote: [m[K  candidate expects 0 arguments, 2 provided

@@ -16,3 +16,6 @@
 [submodule "sup_def/third_party/incbin"]
 	path = sup_def/third_party/incbin
 	url = https://github.com/graphitemaster/incbin.git
+[submodule "sup_def/third_party/function2"]
+	path = sup_def/third_party/function2
+	url = https://github.com/Naios/function2.git
